@@ -2807,20 +2807,18 @@ async function autoSetup() {
 
   // 2. Ejecutar migraciones de Prisma (crea dev.db si no existe)
   try {
-    // Usar el binario local de Prisma (no depende de npx del sistema)
-    // Esto garantiza que funciona en cualquier hosting (Hostinger, VPS, local)
-    const isWin = process.platform === 'win32';
-    const prismaBin = path.join(BASE, 'node_modules', '.bin', isWin ? 'prisma.cmd' : 'prisma');
+    // Usar la CLI de Prisma directamente con Node para evitar problemas de permisos de ejecución
+    const prismaCli = path.join(BASE, 'node_modules', 'prisma', 'build', 'index.js');
 
     console.log('⚙️  [Auto-Setup] Generando cliente de Prisma...');
-    execSync(`"${prismaBin}" generate`, { cwd: BASE, stdio: 'inherit' });
+    execSync(`node "${prismaCli}" generate`, { cwd: BASE, stdio: 'inherit' });
 
     // Instanciar Prisma una vez generado el cliente para el entorno actual
     const { PrismaClient } = require('@prisma/client');
     prisma = new PrismaClient();
 
     console.log('⚙️  [Auto-Setup] Aplicando migraciones de base de datos...');
-    execSync(`"${prismaBin}" migrate deploy`, {
+    execSync(`node "${prismaCli}" migrate deploy`, {
       cwd: BASE,
       stdio: 'inherit',
       env: { ...process.env, DATABASE_URL: process.env.DATABASE_URL || 'file:./dev.db' }
