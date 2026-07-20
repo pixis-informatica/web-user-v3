@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PIXIS — Panel de Ventas</title>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <!-- ── PANTALLA DE ACCESO (LOGIN DE DOS PASOS) ── -->
+  <div id="loginScreen" class="auth-container">
+    <div class="auth-card">
+      <div class="logo-wrap">
+        <img src="../img/logo_pixis.png" alt="Pixis Informática">
+      </div>
+      <h1>Panel de Ventas</h1>
+      <p class="subtitle">Solo personal autorizado</p>
+
+      <div class="auth-error" id="loginErrorMsg"></div>
+      <div id="loginSuccessMsg" style="display:none; background: rgba(0, 230, 118, 0.1); border: 1px solid var(--success); color: var(--success); padding: 12px; border-radius: 8px; font-size: 0.9rem; margin-bottom: 15px; text-align: center;"></div>
+
+      <!-- Paso 1: Credenciales -->
+      <form id="formAdminLogin" onsubmit="handleAdminLogin(event)">
+        <div class="form-group">
+          <label for="adminEmail">Correo Electrónico</label>
+          <input type="email" id="adminEmail" required placeholder="vendedor@pixis.com">
+        </div>
+        <div class="form-group">
+          <label for="adminPassword">Contraseña</label>
+          <input type="password" id="adminPassword" required placeholder="••••••••">
+        </div>
+        <button type="submit" class="btn-submit" id="btnLoginNext">Continuar</button>
+      </form>
+
+      <!-- Paso 2: 2FA -->
+      <form id="formAdmin2FA" onsubmit="handleAdmin2FA(event)" style="display: none;">
+        <div id="qrContainer" style="display: none; margin-bottom: 20px; text-align: center;">
+          <p style="font-size: 0.85rem; margin-bottom: 10px; color: var(--gold);">Escaneá este código QR con Google o Microsoft Authenticator para configurar tu 2FA:</p>
+          <img id="qrImage" src="" alt="Código QR 2FA" style="border: 4px solid #fff; border-radius: 8px; max-width: 180px;">
+        </div>
+        <div class="form-group">
+          <label for="adminOTP">Código de 6 dígitos</label>
+          <input type="text" id="adminOTP" required placeholder="000000" pattern="\d{6}" maxlength="6" style="text-align: center; font-size: 1.8rem; letter-spacing: 8px; font-family: 'Orbitron';">
+        </div>
+        <button type="submit" class="btn-submit" id="btnLoginSubmit">Verificar y Entrar</button>
+        <button type="button" class="btn-back" onclick="backToStep1()">Volver</button>
+        <button type="button" class="btn-back" id="btnRequest2FAReset" onclick="open2FARecoveryModal()" style="margin-top: 10px; background: transparent; border: 1px solid rgba(255, 255, 255, 0.15); color: #ccc;">¿Perdiste tu 2FA? Restablecer por correo seguro</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- ── MODAL RECUPERACIÓN 2FA ── -->
+  <div id="modalRecovery" class="modal-container" style="display: none;">
+    <div class="modal-overlay" onclick="close2FARecoveryModal()"></div>
+    <div class="modal-content">
+      <h3>Restablecer 2FA</h3>
+      <p style="font-size: 0.9rem; color: #aaa; margin-bottom: 15px;">Ingresá tu correo de administración. Se enviará un código de restablecimiento al correo seguro de recuperación.</p>
+      
+      <div class="auth-error" id="recoveryErrorMsg" style="display:none; margin-bottom: 15px;"></div>
+      <div id="recoverySuccessMsg" style="display:none; background: rgba(0, 230, 118, 0.1); border: 1px solid var(--success); color: var(--success); padding: 12px; border-radius: 8px; font-size: 0.9rem; margin-bottom: 15px;"></div>
+
+      <!-- Paso A: Solicitar código -->
+      <form id="formRequestRecovery" onsubmit="requestRecovery2FA(event)">
+        <div class="form-group">
+          <label for="recoveryEmail">Tu Correo de Administración</label>
+          <input type="email" id="recoveryEmail" required placeholder="vendedor@pixis.com">
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="btn-secondary" onclick="close2FARecoveryModal()">Cancelar</button>
+          <button type="submit" class="btn-submit" style="width:auto;">Enviar Código</button>
+        </div>
+      </form>
+
+      <!-- Paso B: Confirmar código -->
+      <form id="formConfirmRecovery" onsubmit="confirmRecovery2FA(event)" style="display:none;">
+        <div class="form-group">
+          <label for="recoveryCode">Código de Seguridad (6 dígitos)</label>
+          <input type="text" id="recoveryCode" required placeholder="000000" pattern="\d{6}" maxlength="6" style="text-align: center; font-size: 1.5rem; letter-spacing: 4px; font-family: 'Orbitron';">
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="btn-secondary" onclick="close2FARecoveryModal()">Cancelar</button>
+          <button type="submit" class="btn-submit" style="width:auto; background: linear-gradient(135deg, var(--gold), #ffd700); color:#000;">Restablecer 2FA</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ── PANEL PRINCIPAL (DASHBOARD) ── -->
+  <div id="adminPanel" class="panel-container" style="display: none;">
+    <!-- Barra superior -->
+    <header class="panel-header">
+      <div class="header-logo">
+        <img src="../img/logo_pixis.png" alt="Pixis">
+        <span>Ventas</span>
+      </div>
+      <div class="user-meta" style="display: flex; align-items: center; gap: 15px;">
+        <span id="loggedInUser">vendedor@pixis.com</span>
+        <button id="btnThemeToggle" onclick="toggleTheme()" class="btn-theme" title="Cambiar tema" style="background:none; border:none; font-size:1.2rem; cursor:pointer;">🌙</button>
+        <button class="btn-logout" onclick="handleLogout()">Salir</button>
+      </div>
+    </header>
+
+    <!-- Métricas -->
+    <section class="metrics-grid">
+      <div class="metric-card" onclick="switchMainTab('pedidos'); filterByTab('pendiente_revision')">
+        <div class="metric-val" id="metricPendientes">0</div>
+        <div class="metric-lbl">Pendientes de Revisión</div>
+      </div>
+      <div class="metric-card" onclick="switchMainTab('pedidos'); filterByTab('reservado')">
+        <div class="metric-val" id="metricReservados">0</div>
+        <div class="metric-lbl">Reservados (Activos)</div>
+      </div>
+      <div class="metric-card" onclick="switchMainTab('pedidos'); filterByTab('completado')">
+        <div class="metric-val" id="metricCompletados">0</div>
+        <div class="metric-lbl">Completados</div>
+      </div>
+      <div class="metric-card" onclick="switchMainTab('clientes')">
+        <div class="metric-val" id="metricClientes">—</div>
+        <div class="metric-lbl">Clientes Registrados</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-val" id="metricTotalHistorico">—</div>
+        <div class="metric-lbl">Total Pedidos Web</div>
+      </div>
+    </section>
+
+    <!-- Tabs Principales: Pedidos / Clientes / Ajustes -->
+    <div class="panel-controls">
+      <div class="tabs-row">
+        <button class="main-tab-btn active" id="mainTab-pedidos" onclick="switchMainTab('pedidos')">📦 Pedidos</button>
+        <button class="main-tab-btn" id="mainTab-clientes" onclick="switchMainTab('clientes')">👥 Clientes</button>
+        <button class="main-tab-btn" id="mainTab-ajustes" onclick="switchMainTab('ajustes')">⚙️ Ajustes</button>
+      </div>
+    </div>
+
+    <!-- ── SECCIÓN PEDIDOS ── -->
+    <div id="seccionPedidos">
+      <div class="panel-controls" style="margin-top:12px; flex-wrap: wrap; gap: 10px;">
+        <div class="tabs-row" style="flex: 1; min-width: 280px;">
+          <button class="tab-btn active" id="tab-pendiente_revision" onclick="filterByTab('pendiente_revision')">Pendientes</button>
+          <button class="tab-btn" id="tab-reservado" onclick="filterByTab('reservado')">Reservados</button>
+          <button class="tab-btn" id="tab-completado" onclick="filterByTab('completado')">Completados</button>
+          <button class="tab-btn" id="tab-rechazado" onclick="filterByTab('rechazado')">Rechazados</button>
+        </div>
+        <div style="display: flex; gap: 8px; align-items: center; width: 100%; max-width: 400px;">
+          <input type="search" id="orderSearch" placeholder="Buscar por # pedido o cliente..."
+            oninput="buscarPedidos()"
+            style="flex:1; padding:8px 12px; border-radius:8px; border:1px solid #333; background:#111; color:#fff; font-size:13px;">
+          <button class="btn-refresh" onclick="loadOrders()" style="flex-shrink:0;">🔄 Recargar</button>
+        </div>
+      </div>
+      <main class="orders-list" id="ordersContainer">
+        <div class="loading-state">Cargando pedidos...</div>
+      </main>
+    </div>
+
+    <!-- ── SECCIÓN CLIENTES ── -->
+    <div id="seccionClientes" style="display:none;">
+      <!-- Aviso legal (Ley 25.326) -->
+      <div class="legal-warning" style="background: rgba(245, 197, 24, 0.05); border-left: 4px solid var(--gold); padding: 12px 16px; border-radius: 4px; margin-top: 14px; font-size: 0.85rem; color: #ccc; line-height: 1.4;">
+        ⚖️ <strong>Aviso legal:</strong> De acuerdo con la Ley N° 25.326 de Protección de Datos Personales, solo los clientes con <strong>Acepta Marketing = SÍ</strong> pueden ser contactados para campañas de difusión.
+      </div>
+
+      <div class="panel-controls" style="margin-top:16px; gap:10px; flex-wrap:wrap;">
+        <div style="display:flex; gap:8px; flex:1; min-width:200px;">
+          <input type="search" id="clienteSearch" placeholder="Buscar por nombre o email..."
+            oninput="buscarClientes()" style="flex:1; padding:8px 12px; border-radius:8px; border:1px solid #333; background:#111; color:#fff; font-size:13px;">
+          <select id="clienteMarketingFilter" onchange="buscarClientes()" style="padding:8px; border-radius:8px; border:1px solid #333; background:#111; color:#fff; font-size:13px;">
+            <option value="">Todos los clientes</option>
+            <option value="true">✅ Solo acepta marketing</option>
+            <option value="false">❌ No acepta marketing</option>
+          </select>
+        </div>
+        <div style="display:flex; gap:8px;">
+          <button class="btn-refresh" style="background: linear-gradient(135deg, var(--gold), #ffd700); color: #000; font-weight: 700; border-color: transparent;" onclick="exportarClientesCSVActiveFilter()" title="Exportar clientes respetando el filtro actual">📥 Exportar CSV</button>
+          <button class="btn-refresh" onclick="loadClientes()">🔄 Recargar</button>
+        </div>
+      </div>
+      <div id="clientesStatsBar" style="padding:8px 0; font-size:12px; color:#666; text-align:right;"></div>
+      <div id="clientesContainer" class="orders-list">
+        <div class="loading-state">Cargando clientes...</div>
+      </div>
+    </div>
+
+    <!-- ── SECCIÓN AJUSTES ── -->
+    <div id="seccionAjustes" style="display:none; max-width: 600px; margin: 16px auto 0 auto; padding: 20px; background: var(--panel); border: 1px solid var(--border); border-radius: 16px;">
+      <h2 style="margin-bottom: 20px; font-family: 'Orbitron'; font-size: 1.4rem; color: var(--gold); display: flex; align-items: center; gap: 10px;">⚙️ Ajustes</h2>
+      
+      <div id="ajustesErrorMsg" class="auth-error" style="display:none; margin-bottom:15px;"></div>
+      <div id="ajustesSuccessMsg" style="display:none; background: rgba(0, 230, 118, 0.1); border: 1px solid var(--success); color: var(--success); padding: 12px; border-radius: 8px; font-size: 0.9rem; margin-bottom: 15px;"></div>
+
+      <!-- Form 1: Cambiar Nombre -->
+      <form id="formAjustesNombre" onsubmit="updateAdminName(event)" style="margin-bottom: 30px; padding-bottom: 20px; border-bottom: 1px solid rgba(255,255,255,0.08);">
+        <h3 style="font-size: 1rem; margin-bottom: 12px; color: #fff;">Cambiar Nombre Comercial</h3>
+        <div class="form-group">
+          <label for="ajustesNombre">Nombre Comercial / Personal</label>
+          <input type="text" id="ajustesNombre" required placeholder="Vendedor Pixis">
+        </div>
+        <button type="submit" class="btn-submit" style="width: auto; padding: 8px 20px; font-size: 13px;">Guardar Nombre</button>
+      </form>
+
+      <!-- Form 2: Cambiar Credenciales -->
+      <form id="formAjustesCredenciales" onsubmit="updateAdminCredentials(event)" style="margin-bottom: 30px; padding-bottom: 20px; border-bottom: 1px solid rgba(255,255,255,0.08);">
+        <h3 style="font-size: 1rem; margin-bottom: 12px; color: #fff;">Cambiar Email / Contraseña</h3>
+        <p style="font-size:0.75rem; color:#aaa; margin-bottom:10px;">Completá solo lo que desees cambiar. Se cerrará la sesión tras guardar.</p>
+        <div class="form-group">
+          <label for="ajustesEmail">Nuevo Correo Electrónico</label>
+          <input type="email" id="ajustesEmail" placeholder="vendedor@pixis.com">
+        </div>
+        <div class="form-group">
+          <label for="ajustesPassword">Nueva Contraseña (mínimo 8 caracteres)</label>
+          <input type="password" id="ajustesPassword" placeholder="••••••••">
+        </div>
+        <div class="form-group">
+          <label for="ajustesCredOTP" style="color:var(--gold);">Código OTP de tu 2FA Actual (Requerido)</label>
+          <input type="text" id="ajustesCredOTP" required placeholder="000000" pattern="\d{6}" maxlength="6" style="text-align: center; font-size: 1.3rem; letter-spacing: 4px; font-family: 'Orbitron';">
+        </div>
+        <button type="submit" class="btn-submit" style="width: auto; padding: 8px 20px; font-size: 13px;">Actualizar Credenciales</button>
+      </form>
+
+      <!-- Form 3: Cambiar Email de Recuperación -->
+      <form id="formAjustesRecovery" onsubmit="updateRecoveryEmail(event)" style="margin-bottom: 30px; padding-bottom: 20px; border-bottom: 1px solid rgba(255,255,255,0.08);">
+        <h3 style="font-size: 1rem; margin-bottom: 12px; color: #fff;">Configurar Correo Seguro de Recuperación</h3>
+        <p style="font-size:0.75rem; color:#aaa; margin-bottom:10px;">Correo seguro donde se enviarán las alertas de login y códigos de reset 2FA.</p>
+        <div class="form-group">
+          <label for="ajustesRecoveryEmail">Correo Seguro</label>
+          <input type="email" id="ajustesRecoveryEmail" required placeholder="correo-seguro@gmail.com">
+        </div>
+        <div class="form-group">
+          <label for="ajustesRecoveryOTP" style="color:var(--gold);">Código OTP de tu 2FA Actual (Requerido)</label>
+          <input type="text" id="ajustesRecoveryOTP" required placeholder="000000" pattern="\d{6}" maxlength="6" style="text-align: center; font-size: 1.3rem; letter-spacing: 4px; font-family: 'Orbitron';">
+        </div>
+        <button type="submit" class="btn-submit" style="width: auto; padding: 8px 20px; font-size: 13px;">Guardar Correo Seguro</button>
+      </form>
+
+      <!-- Form 4: Cambiar URL del Panel -->
+      <form id="formAjustesPath" onsubmit="updatePanelPath(event)">
+        <h3 style="font-size: 1rem; margin-bottom: 12px; color: #fff;">Cambiar URL del Panel</h3>
+        <p style="font-size:0.75rem; color:#aaa; margin-bottom:10px;">Cambia la ruta de acceso (ej: de `/admin-panel` a `/mi-secreto`).</p>
+        <div class="form-group">
+          <label for="ajustesPath">Nueva Ruta (min. 3 carac, letras, números y guiones)</label>
+          <input type="text" id="ajustesPath" required placeholder="mi-panel-secreto" oninput="previewNewPath()">
+          <span style="font-size:0.75rem; color:#888; display:block; margin-top:4px;">Tu nueva URL será: <strong id="previewUrlSpan" style="color:var(--gold);">pixistech.store/admin-panel</strong></span>
+        </div>
+        <div class="form-group">
+          <label for="ajustesPathOTP" style="color:var(--gold);">Código OTP de tu 2FA Actual (Requerido)</label>
+          <input type="text" id="ajustesPathOTP" required placeholder="000000" pattern="\d{6}" maxlength="6" style="text-align: center; font-size: 1.3rem; letter-spacing: 4px; font-family: 'Orbitron';">
+        </div>
+        <button type="submit" class="btn-submit" style="width: auto; padding: 8px 20px; font-size: 13px; background: linear-gradient(135deg, var(--error), #ff4d4d); border-color: transparent;">Actualizar Ruta de Acceso</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- ── MODAL RECHAZAR PEDIDO ── -->
+  <div id="modalReject" class="modal-container" style="display: none;">
+    <div class="modal-overlay" onclick="closeRejectModal()"></div>
+    <div class="modal-content">
+      <h3>Rechazar Pedido</h3>
+      <p style="font-size: 0.9rem; color: #aaa; margin-bottom: 15px;">Ingresá el motivo del rechazo. Este mensaje será enviado por email al cliente.</p>
+      <form id="formReject" onsubmit="submitReject(event)">
+        <input type="hidden" id="rejectOrderId">
+        <div class="form-group">
+          <label for="rejectReason">Motivo del Rechazo</label>
+          <textarea id="rejectReason" required placeholder="Ej: No se recibió la acreditación del comprobante de transferencia." rows="4"></textarea>
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="btn-secondary" onclick="closeRejectModal()">Cancelar</button>
+          <button type="submit" class="btn-danger" id="btnConfirmReject">Rechazar Pedido</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script src="panel.js"></script>
+</body>
+</html>

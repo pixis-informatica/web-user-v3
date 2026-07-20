@@ -1,0 +1,5 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://pixistech.store/sitemap.xml
+Host: https://pixistech.store

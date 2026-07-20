@@ -1,0 +1,121 @@
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model Usuario {
+  id                         Int       @id @default(autoincrement())
+  nombre                     String
+  email                      String    @unique
+  telefono                   String
+  password_hash              String
+  acepta_marketing           Boolean   @default(false)
+  direccion                  String?
+  provincia                  String?
+  localidad                  String?
+  codigo_postal              String?
+  codigo_recuperacion        String?
+  codigo_recuperacion_expira DateTime?
+  creado_en                  DateTime  @default(now())
+  pedidos                    Pedido[]
+
+  @@map("usuarios")
+}
+
+model EmpleadoVentas {
+  id                         Int             @id @default(autoincrement())
+  nombre                     String
+  email                      String          @unique
+  password_hash              String
+  totp_secret                String?
+  totp_activado              Boolean         @default(false)
+  codigo_recuperacion        String?
+  codigo_recuperacion_expira DateTime?
+  activo                     Boolean         @default(true)
+  creado_en                  DateTime        @default(now())
+  comprobantes_revisados     Comprobante[]
+  temp_tokens_2fa            TempTokens2FA[]
+
+  @@map("empleados_ventas")
+}
+
+model Pedido {
+  id              Int           @id @default(autoincrement())
+  usuario_id      Int
+  usuario         Usuario       @relation(fields: [usuario_id], references: [id])
+  estado          String        @default("pendiente_revision") // pendiente_revision, reservado, completado, rechazado, vencido
+  motivo_rechazo  String?
+  stock_descontado Boolean      @default(false)
+  entrega         String        // retiro, envio
+  direccion       String?
+  forma_pago      String        // efectivo, transferencia, tarjeta
+  cuotas          Int?
+  total           Float
+  reservado_hasta DateTime?
+  creado_en       DateTime      @default(now())
+  actualizado_en  DateTime      @updatedAt
+  items           ItemPedido[]
+  comprobantes    Comprobante[]
+
+  @@map("pedidos")
+}
+
+model ItemPedido {
+  id                        Int    @id @default(autoincrement())
+  pedido_id                 Int
+  pedido                    Pedido @relation(fields: [pedido_id], references: [id])
+  producto_id               String
+  nombre_snapshot           String
+  precio_unitario_snapshot  Float
+  cantidad                  Int
+
+  @@map("items_pedido")
+}
+
+model Comprobante {
+  id             Int             @id @default(autoincrement())
+  pedido_id      Int
+  pedido         Pedido          @relation(fields: [pedido_id], references: [id])
+  archivo_url    String
+  subido_en      DateTime        @default(now())
+  revisado_por   Int?
+  revisor        EmpleadoVentas? @relation(fields: [revisado_por], references: [id])
+  revisado_en    DateTime?
+
+  @@map("comprobantes")
+}
+
+model IntentosLogin {
+  id              Int       @id @default(autoincrement())
+  email           String
+  tipo            String    // 'cliente' o 'empleado'
+  cantidad        Int       @default(0)
+  ultimo_intento  DateTime  @default(now())
+  bloqueado_hasta DateTime?
+
+  @@unique([email, tipo])
+  @@map("intentos_login")
+}
+
+model TempTokens2FA {
+  id          String         @id @default(uuid())
+  empleado_id Int
+  empleado    EmpleadoVentas @relation(fields: [empleado_id], references: [id])
+  usado       Boolean        @default(false)
+  expira_en   DateTime
+  creado_en   DateTime       @default(now())
+
+  @@map("temp_tokens_2fa")
+}
+
+model ConfigGlobal {
+  clave  String @id
+  valor  String
+
+  @@map("config_global")
+}
+
