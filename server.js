@@ -2775,6 +2775,11 @@ app.use((req, res, next) => {
 // ── SERVIR ARCHIVOS ESTÁTICOS ─────────────────────────────────
 app.use(express.static(BASE));
 
+// Fallback para URLs limpias de productos locales (evita 404 al abrir en pestaña nueva)
+app.get('/*--id-*', (req, res) => {
+  res.sendFile(path.join(BASE, 'index.html'));
+});
+
 // Manejo de errores 404 para archivos no encontrados
 app.use((req, res) => {
   res.status(404).send(`404 - No encontrado: ${req.path}`);
