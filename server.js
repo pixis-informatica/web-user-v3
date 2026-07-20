@@ -2776,8 +2776,12 @@ app.use((req, res, next) => {
 app.use(express.static(BASE));
 
 // Fallback para URLs limpias de productos locales (evita 404 al abrir en pestaña nueva)
-app.get('/*--id-*', (req, res) => {
-  res.sendFile(path.join(BASE, 'index.html'));
+// Compatible con Express v5 (no usa wildcards * en rutas, usa middleware manual)
+app.use((req, res, next) => {
+  if (req.method === 'GET' && req.path.includes('--id-') && !req.path.includes('.')) {
+    return res.sendFile(path.join(BASE, 'index.html'));
+  }
+  next();
 });
 
 // Manejo de errores 404 para archivos no encontrados

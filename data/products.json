@@ -478,11 +478,11 @@
     "priceVisible": "$55.500",
     "subcategoria": "Camara de seguridad",
     "price": 58000,
-    "priceLocal": 565500,
+    "priceLocal": 55500,
     "inStock": true,
     "id": "prod-c-mara-de-seguridad-tapo-c310--173",
     "priceNum": "58000",
-    "cashPrice": "565500",
+    "cashPrice": "55500",
     "customButtons": [
       {
         "label": "review",
