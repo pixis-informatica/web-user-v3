@@ -1,6 +1,7 @@
 {
   "scripts": {
-    "start": "npx prisma generate && node server.js"
+    "start": "node server.js",
+    "postinstall": "prisma generate"
   },
   "dependencies": {
     "@prisma/client": "^6.19.3",
