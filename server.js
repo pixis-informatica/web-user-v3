@@ -27,7 +27,8 @@ const PORT = process.env.PORT || 8080;
 const BASE = __dirname;
 const JWT_SECRET = process.env.JWT_SECRET || 'PIXIS_SUPER_SECRET_JWT_KEY';
 
-let prisma;
+const { PrismaClient } = require('@prisma/client');
+const prisma = new PrismaClient();
 
 // CONFIGURACIÓN DE SEGURIDAD (Mantenida parcialmente para servicios SMTP legacy)
 const ADMIN_CONFIG = {
@@ -2812,10 +2813,6 @@ async function autoSetup() {
 
     console.log('⚙️  [Auto-Setup] Generando cliente de Prisma...');
     execSync(`node "${prismaCli}" generate`, { cwd: BASE, stdio: 'inherit' });
-
-    // Instanciar Prisma una vez generado el cliente para el entorno actual
-    const { PrismaClient } = require('@prisma/client');
-    prisma = new PrismaClient();
 
     console.log('⚙️  [Auto-Setup] Aplicando migraciones de base de datos...');
     execSync(`node "${prismaCli}" migrate deploy`, {
