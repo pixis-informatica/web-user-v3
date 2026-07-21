@@ -5849,6 +5849,33 @@ onPixisDOMReady(() => {
     document.getElementById('authViewConfirmRecovery').style.display = view === 'confirmRecovery' ? 'block' : 'none';
     document.getElementById('authViewVerifyEmail').style.display = view === 'verifyEmail' ? 'block' : 'none';
     clearAuthAlerts();
+
+    if (view === 'recovery') {
+      const baseLink = (window.PixisState && window.PixisState.state && window.PixisState.state.site && window.PixisState.state.site.whatsappLink) || 'https://wa.me/message/EYUUSVNG5HPNF1';
+      let waLink = baseLink;
+      const emailInput = document.getElementById('recEmail')?.value.trim() || '';
+      const msg = `Hola Pixis! Solicito recuperar el acceso a mi cuenta. Mi correo es: ${emailInput}`;
+      if (baseLink.includes('/message/')) {
+        waLink = `${baseLink}?text=${encodeURIComponent(msg)}`;
+      } else {
+        waLink = `${baseLink.replace(/\/$/, '')}?text=${encodeURIComponent(msg)}`;
+      }
+      const waBtn = document.getElementById('btnRecoveryWhatsapp');
+      if (waBtn) {
+        waBtn.href = waLink;
+        // Actualizar enlace al escribir el correo
+        const recEmail = document.getElementById('recEmail');
+        if (recEmail) {
+          recEmail.oninput = function() {
+            const emailInput = recEmail.value.trim();
+            const dynamicMsg = `Hola Pixis! Solicito recuperar el acceso a mi cuenta. Mi correo es: ${emailInput}`;
+            waBtn.href = baseLink.includes('/message/')
+              ? `${baseLink}?text=${encodeURIComponent(dynamicMsg)}`
+              : `${baseLink.replace(/\/$/, '')}?text=${encodeURIComponent(dynamicMsg)}`;
+          };
+        }
+      }
+    }
   };
 
   function showAuthError(msg) {
@@ -6034,6 +6061,30 @@ onPixisDOMReady(() => {
         closeClientAuthModal();
         realizarReservaOnline();
       }, 1500);
+    } catch (e) {
+      showAuthError('Error al conectar con el servidor.');
+    }
+  };
+
+  window.handleResendVerification = async function() {
+    clearAuthAlerts();
+    const email = window._verifyEmailAddress;
+    if (!email) {
+      showAuthError('Falta el correo de verificación.');
+      return;
+    }
+    try {
+      const res = await fetch('/api/shop/resend-verification', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email })
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        showAuthError(data.error || 'Error al reenviar.');
+      } else {
+        showAuthSuccess('Se ha enviado un código de activación nuevo.');
+      }
     } catch (e) {
       showAuthError('Error al conectar con el servidor.');
     }

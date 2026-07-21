@@ -8,23 +8,41 @@
  */
 
 const nodemailer = require('nodemailer');
-const GMAIL_USER = process.env.GMAIL_USER || 'pixisinformatica.contacto@gmail.com';
-const GMAIL_APP_PASSWORD = process.env.GMAIL_APP_PASSWORD || 'yqvmurocfzytezvg';
+const SMTP_HOST = process.env.SMTP_HOST || 'smtp.gmail.com';
+const SMTP_PORT = parseInt(process.env.SMTP_PORT, 10) || 465;
+const SMTP_USER = process.env.SMTP_USER || 'pixisinformatica.contacto@gmail.com';
+const SMTP_PASS = process.env.SMTP_PASS || 'yqvmurocfzytezvg';
+
 let transporter = null;
+let smtpOverride = null;
+
+function setSmtpConfig(config) {
+  smtpOverride = config;
+  transporter = null; // Fuerza la recreación del transporter
+}
 
 function getTransporter() {
   if (transporter) return transporter;
-  if (!GMAIL_USER || !GMAIL_APP_PASSWORD) {
-    console.warn('⚠️ [MAIL] GMAIL_USER o GMAIL_APP_PASSWORD no configurados. Los mails no se enviarán.');
+
+  const host = (smtpOverride && smtpOverride.host) || SMTP_HOST;
+  const port = (smtpOverride && smtpOverride.port) || SMTP_PORT;
+  const user = (smtpOverride && smtpOverride.user) || SMTP_USER;
+  const pass = (smtpOverride && smtpOverride.pass) || SMTP_PASS;
+
+  if (!user || !pass) {
+    console.warn('⚠️ [MAIL] SMTP no configurado. Los mails no se enviarán.');
     return null;
   }
   transporter = nodemailer.createTransport({
-    host: 'smtp.gmail.com',
-    port: 465,
-    secure: true,
+    host,
+    port,
+    secure: port === 465,
     auth: {
-      user: GMAIL_USER,
-      pass: GMAIL_APP_PASSWORD
+      user,
+      pass
+    },
+    tls: {
+      rejectUnauthorized: false
     }
   });
   return transporter;
@@ -53,7 +71,7 @@ async function sendMail(to, subject, html) {
   }
   try {
     await t.sendMail({
-      from: `"Pixis Informática" <${GMAIL_USER}>`,
+      from: `"Pixis Informática" <${SMTP_USER}>`,
       to,
       subject,
       html
@@ -189,5 +207,6 @@ module.exports = {
   enviarPedidoRechazado,
   notificarAdminComprobanteNuevo,
   enviarCodigoReset2FA,
-  enviarAlertaLogin
+  enviarAlertaLogin,
+  setSmtpConfig
 };

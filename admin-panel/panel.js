@@ -505,6 +505,7 @@ function switchMainTab(tab) {
     document.getElementById('ajustesErrorMsg').style.display = 'none';
     document.getElementById('ajustesSuccessMsg').style.display = 'none';
     previewNewPath();
+    loadSMTPSettings();
   } else {
     seccionPedidos.style.display  = 'block';
     btnPedidos.classList.add('active');
@@ -565,8 +566,12 @@ function renderClientes(clientes) {
   const rows = clientes.map(c => {
     const fecha = new Date(c.creado_en).toLocaleDateString('es-AR');
     const mktBadge = c.acepta_marketing
-      ? '<span class="badge-marketing si">✅ Sí</span>'
-      : '<span class="badge-marketing no">❌ No</span>';
+      ? '<span class="badge-marketing si">Mkt: Sí</span>'
+      : '<span class="badge-marketing no">Mkt: No</span>';
+    const verificadoBadge = c.verificado
+      ? '<span class="badge-marketing si" style="display:block; margin-top:4px;">Activo</span>'
+      : `<span class="badge-marketing no" style="display:block; margin-top:4px; margin-bottom:4px;">Pendiente</span><button onclick="activarCliente(${c.id}, '${c.nombre}')" style="background:#22c55e; color:#fff; border:none; padding:4px 8px; border-radius:4px; font-size:10px; font-weight:700; cursor:pointer;" title="Activar cuenta manualmente">Activar</button>`;
+    
     const waLink = c.telefono
       ? `<a href="https://wa.me/${c.telefono.replace(/\D/g,'')}" target="_blank" style="color:#4ade80; text-decoration:none;" title="Abrir WhatsApp">💬 ${c.telefono}</a>`
       : '—';
@@ -580,10 +585,14 @@ function renderClientes(clientes) {
         <td style="font-size: 0.85rem; color: #ccc;">${c.direccion || '—'}</td>
         <td style="font-size: 0.85rem; color: #ccc;">${c.provincia || '—'}</td>
         <td style="font-size: 0.85rem; color: #ccc;">${c.localidad || '—'}</td>
-        <td>${mktBadge}</td>
+        <td>
+          ${mktBadge}
+          ${verificadoBadge}
+        </td>
         <td style="text-align:center; font-weight:700; color: var(--gold);">${c.pedidos_mes}</td>
         <td style="color:#666;">${fecha}</td>
         <td style="text-align:center;">
+          <button onclick="restablecerClaveCliente(${c.id}, '${c.nombre}')" style="background:transparent; border:none; color:var(--gold); cursor:pointer; margin-right:6px;" title="Restablecer contraseña"><i class="fas fa-key"></i></button>
           <button onclick="eliminarClienteIndividual(${c.id}, '${c.nombre}')" style="background:transparent; border:none; color:#ef4444; cursor:pointer;" title="Eliminar cliente permanentemente"><i class="fas fa-trash-alt"></i></button>
         </td>
       </tr>`;
@@ -602,7 +611,7 @@ function renderClientes(clientes) {
             <th>Dirección</th>
             <th>Provincia</th>
             <th>Localidad</th>
-            <th>Marketing</th>
+            <th>Mkt / Estado</th>
             <th style="text-align:center;" title="Pedidos realizados en los últimos 30 días">Pedidos (30d)</th>
             <th>Registrado</th>
             <th style="width:60px; text-align:center;">Acciones</th>
@@ -849,3 +858,81 @@ function previewNewPath() {
     preview.textContent = `pixistech.store/${path}`;
   }
 }
+
+// ── ACTIVACIÓN Y RESTABLECIMIENTO DE CLIENTES ──
+window.activarCliente = async function(id, nombre) {
+  if (!confirm(`¿Confirmas la activación manual de la cuenta de "${nombre}"?`)) return;
+  try {
+    const res = await fetch(`/api/admin/customers/${id}/verify`, { method: 'POST' });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Error al activar');
+    alert('✅ Cuenta de cliente activada con éxito.');
+    loadClientes();
+  } catch (err) {
+    alert('❌ Error al activar: ' + err.message);
+  }
+};
+
+window.restablecerClaveCliente = async function(id, nombre) {
+  if (!confirm(`¿Deseas restablecer la contraseña de "${nombre}"?\nSe generará una contraseña temporal.`)) return;
+  try {
+    const res = await fetch(`/api/admin/customers/${id}/reset-password`, { method: 'POST' });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Error al restablecer');
+    alert(`✅ Contraseña restablecida con éxito.\n\nNueva clave temporal: ${data.tempPassword}\n\nCopiala y envíasela al cliente por WhatsApp.`);
+    loadClientes();
+  } catch (err) {
+    alert('❌ Error al restablecer contraseña: ' + err.message);
+  }
+};
+
+// ── CONFIGURACIÓN SMTP DINÁMICA ──
+async function loadSMTPSettings() {
+  try {
+    const res = await fetch('/api/admin/settings/smtp');
+    if (!res.ok) return;
+    const data = await res.json();
+    if (data.host) document.getElementById('smtpHost').value = data.host;
+    if (data.port) document.getElementById('smtpPort').value = data.port;
+    if (data.user) document.getElementById('smtpUser').value = data.user;
+  } catch (err) {
+    console.error('Error al cargar config SMTP de la API:', err);
+  }
+}
+
+async function updateSMTPSettings(event) {
+  event.preventDefault();
+  const host = document.getElementById('smtpHost').value.trim();
+  const port = parseInt(document.getElementById('smtpPort').value, 10);
+  const user = document.getElementById('smtpUser').value.trim();
+  const pass = document.getElementById('smtpPass').value;
+
+  const errorBox = document.getElementById('ajustesErrorMsg');
+  const successBox = document.getElementById('ajustesSuccessMsg');
+
+  errorBox.style.display = 'none';
+  successBox.style.display = 'none';
+
+  try {
+    const res = await fetch('/api/admin/settings/smtp', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ host, port, user, pass })
+    });
+    const data = await res.json();
+
+    if (!res.ok) {
+      errorBox.textContent = data.error || 'Error al guardar la configuración SMTP.';
+      errorBox.style.display = 'block';
+    } else {
+      successBox.textContent = data.message || 'Configuración SMTP guardada correctamente.';
+      successBox.style.display = 'block';
+      document.getElementById('smtpPass').value = ''; // Limpiar contraseña por seguridad
+    }
+  } catch (err) {
+    errorBox.textContent = 'Error de red al guardar la configuración SMTP.';
+    errorBox.style.display = 'block';
+  }
+}
+
+window.updateSMTPSettings = updateSMTPSettings;

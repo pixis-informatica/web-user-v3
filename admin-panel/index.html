@@ -195,6 +195,29 @@
       <div id="ajustesErrorMsg" class="auth-error" style="display:none; margin-bottom:15px;"></div>
       <div id="ajustesSuccessMsg" style="display:none; background: rgba(0, 230, 118, 0.1); border: 1px solid var(--success); color: var(--success); padding: 12px; border-radius: 8px; font-size: 0.9rem; margin-bottom: 15px;"></div>
 
+      <!-- Formulario de Configuración SMTP -->
+      <form id="formAjustesSMTP" onsubmit="updateSMTPSettings(event)" style="margin-bottom: 30px; padding-bottom: 20px; border-bottom: 1px solid rgba(255,255,255,0.08);">
+        <h3 style="font-size: 1rem; margin-bottom: 12px; color: #fff;">Configurar Servidor de Correo (SMTP)</h3>
+        <p style="font-size:0.75rem; color:#aaa; margin-bottom:10px;">Establecé tu servidor de correo para notificaciones automáticas y recuperación de claves.</p>
+        <div class="form-group">
+          <label for="smtpHost">Servidor SMTP</label>
+          <input type="text" id="smtpHost" required placeholder="smtp.gmail.com">
+        </div>
+        <div class="form-group">
+          <label for="smtpPort">Puerto SMTP (465 SSL, 587 TLS)</label>
+          <input type="number" id="smtpPort" required placeholder="465">
+        </div>
+        <div class="form-group">
+          <label for="smtpUser">Correo de Envío (Usuario)</label>
+          <input type="email" id="smtpUser" required placeholder="tu-correo@gmail.com">
+        </div>
+        <div class="form-group">
+          <label for="smtpPass">Contraseña de Correo / Password de App</label>
+          <input type="password" id="smtpPass" required placeholder="••••••••">
+        </div>
+        <button type="submit" class="btn-submit" style="width: auto; padding: 8px 20px; font-size: 13px;">Guardar Servidor SMTP</button>
+      </form>
+
       <!-- Form 1: Cambiar Nombre -->
       <form id="formAjustesNombre" onsubmit="updateAdminName(event)" style="margin-bottom: 30px; padding-bottom: 20px; border-bottom: 1px solid rgba(255,255,255,0.08);">
         <h3 style="font-size: 1rem; margin-bottom: 12px; color: #fff;">Cambiar Nombre Comercial</h3>

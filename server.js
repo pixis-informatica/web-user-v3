@@ -346,10 +346,8 @@ app.post('/api/shop/register', async (req, res) => {
     }
     
     const passwordHash = await bcrypt.hash(password, 10);
-    const code = Math.floor(100000 + Math.random() * 900000).toString();
-    const expira = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 horas
     
-    await prisma.usuario.create({
+    const user = await prisma.usuario.create({
       data: {
         nombre,
         email,
@@ -360,16 +358,37 @@ app.post('/api/shop/register', async (req, res) => {
         provincia: provincia || null,
         localidad: localidad || null,
         codigo_postal: codigo_postal || null,
-        verificado: false,
-        codigo_verificacion: code,
-        codigo_verificacion_expira: expira
+        verificado: true,
+        codigo_verificacion: null,
+        codigo_verificacion_expira: null
       }
     });
 
-    console.log(`📧 [ACTIVACIÓN CLIENTE] Código para ${email}: ${code}`);
-    mail.enviarCodigoVerificacion(email, code).catch(console.error);
+    const token = jwt.sign(
+      { id: user.id, email: user.email, role: 'customer' },
+      JWT_SECRET,
+      { expiresIn: '7d' }
+    );
     
-    res.status(201).json({ ok: true, requiereVerificacion: true, email, message: 'Usuario registrado. Se ha enviado un código de verificación.' });
+    res.cookie('customer_token', token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+      path: '/'
+    });
+    
+    registerActiveClient(user.id);
+    
+    res.status(201).json({
+      ok: true,
+      user: {
+        id: user.id,
+        nombre: user.nombre,
+        email: user.email,
+        telefono: user.telefono
+      }
+    });
   } catch (e) {
     console.error('Error en register:', e);
     res.status(500).json({ error: 'Error interno del servidor.' });
@@ -413,6 +432,33 @@ app.post('/api/shop/verify-email', async (req, res) => {
     res.json({ ok: true, user: { id: user.id, nombre: user.nombre, email: user.email, telefono: user.telefono } });
   } catch (e) {
     console.error('Error en verify-email:', e);
+    res.status(500).json({ error: 'Error interno del servidor.' });
+  }
+});
+
+app.post('/api/shop/resend-verification', async (req, res) => {
+  try {
+    const { email } = req.body;
+    if (!email) return res.status(400).json({ error: 'Email es obligatorio.' });
+
+    const user = await prisma.usuario.findUnique({ where: { email } });
+    if (!user) return res.status(404).json({ error: 'Usuario no encontrado.' });
+    if (user.verificado) return res.status(400).json({ error: 'Esta cuenta ya está verificada.' });
+
+    const code = Math.floor(100000 + Math.random() * 900000).toString();
+    const expira = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 horas
+
+    await prisma.usuario.update({
+      where: { id: user.id },
+      data: { codigo_verificacion: code, codigo_verificacion_expira: expira }
+    });
+
+    console.log(`📧 [REENVÍO ACTIVACIÓN CLIENTE] Código para ${email}: ${code}`);
+    mail.enviarCodigoVerificacion(email, code).catch(console.error);
+
+    res.json({ ok: true, message: 'Se ha enviado un nuevo código a tu correo.' });
+  } catch (e) {
+    console.error('Error al reenviar código:', e);
     res.status(500).json({ error: 'Error interno del servidor.' });
   }
 });
@@ -1518,6 +1564,7 @@ app.get('/admin/customers', verifyAdminToken, async (req, res) => {
         provincia:        true,
         localidad:        true,
         acepta_marketing: true,
+        verificado:       true,
         creado_en:        true,
         _count:           { select: { pedidos: true } },
         pedidos: {
@@ -1536,6 +1583,7 @@ app.get('/admin/customers', verifyAdminToken, async (req, res) => {
       provincia: c.provincia,
       localidad: c.localidad,
       acepta_marketing: c.acepta_marketing,
+      verificado: c.verificado,
       creado_en: c.creado_en,
       _count: c._count,
       pedidos_mes: c.pedidos.length
@@ -1589,6 +1637,48 @@ app.post('/api/admin/customers/remove', verifyAdminToken, async (req, res) => {
     res.json({ ok: true, message: 'Clientes y sus pedidos asociados eliminados con éxito.' });
   } catch (e) {
     console.error('Error al eliminar clientes (admin):', e);
+    res.status(500).json({ error: 'Error interno del servidor.' });
+  }
+});
+
+app.post('/api/admin/customers/:id/verify', verifyAdminToken, async (req, res) => {
+  try {
+    const id = parseInt(req.params.id, 10);
+    if (isNaN(id)) return res.status(400).json({ error: 'ID inválido.' });
+
+    await prisma.usuario.update({
+      where: { id },
+      data: { verificado: true, codigo_verificacion: null, codigo_verificacion_expira: null }
+    });
+
+    res.json({ ok: true, message: 'Cliente activado con éxito.' });
+  } catch (e) {
+    console.error('Error al activar cliente (admin):', e);
+    res.status(500).json({ error: 'Error interno del servidor.' });
+  }
+});
+
+app.post('/api/admin/customers/:id/reset-password', verifyAdminToken, async (req, res) => {
+  try {
+    const id = parseInt(req.params.id, 10);
+    if (isNaN(id)) return res.status(400).json({ error: 'ID inválido.' });
+
+    const pin = Math.floor(1000 + Math.random() * 9000).toString();
+    const tempPassword = `Pixis-${pin}`;
+    const passwordHash = await bcrypt.hash(tempPassword, 10);
+
+    await prisma.usuario.update({
+      where: { id },
+      data: {
+        password_hash: passwordHash,
+        codigo_recuperacion: null,
+        codigo_recuperacion_expira: null
+      }
+    });
+
+    res.json({ ok: true, tempPassword, message: 'Nueva contraseña generada con éxito.' });
+  } catch (e) {
+    console.error('Error al restablecer contraseña (admin):', e);
     res.status(500).json({ error: 'Error interno del servidor.' });
   }
 });
@@ -2183,6 +2273,59 @@ app.post('/api/admin/settings/panel-path', verifyAdminToken, async (req, res) =>
     res.json({ ok: true, message: `URL del panel de ventas reconfigurada con éxito. La nueva ruta es /${targetPath}` });
   } catch (e) {
     console.error('Error al cambiar path del panel:', e);
+    res.status(500).json({ error: 'Error interno del servidor.' });
+  }
+});
+
+app.get('/api/admin/settings/smtp', verifyAdminToken, async (req, res) => {
+  try {
+    const host = await prisma.configGlobal.findUnique({ where: { clave: 'smtp_host' } });
+    const port = await prisma.configGlobal.findUnique({ where: { clave: 'smtp_port' } });
+    const user = await prisma.configGlobal.findUnique({ where: { clave: 'smtp_user' } });
+    res.json({
+      ok: true,
+      host: host ? host.valor : '',
+      port: port ? port.valor : '',
+      user: user ? user.valor : ''
+    });
+  } catch (e) {
+    res.status(500).json({ error: 'Error interno del servidor.' });
+  }
+});
+
+app.post('/api/admin/settings/smtp', verifyAdminToken, async (req, res) => {
+  try {
+    const { host, port, user, pass } = req.body;
+    if (!host || !port || !user || !pass) {
+      return res.status(400).json({ error: 'Todos los campos son obligatorios.' });
+    }
+
+    await prisma.configGlobal.upsert({
+      where: { clave: 'smtp_host' },
+      update: { valor: host.trim() },
+      create: { clave: 'smtp_host', valor: host.trim() }
+    });
+    await prisma.configGlobal.upsert({
+      where: { clave: 'smtp_port' },
+      update: { valor: port.toString().trim() },
+      create: { clave: 'smtp_port', valor: port.toString().trim() }
+    });
+    await prisma.configGlobal.upsert({
+      where: { clave: 'smtp_user' },
+      update: { valor: user.trim() },
+      create: { clave: 'smtp_user', valor: user.trim() }
+    });
+    await prisma.configGlobal.upsert({
+      where: { clave: 'smtp_pass' },
+      update: { valor: pass.trim() },
+      create: { clave: 'smtp_pass', valor: pass.trim() }
+    });
+
+    await loadSmtpConfig(); // Recarga dinámica inmediata en caliente
+
+    res.json({ ok: true, message: 'Configuración de servidor SMTP guardada con éxito.' });
+  } catch (e) {
+    console.error('Error al guardar config SMTP:', e);
     res.status(500).json({ error: 'Error interno del servidor.' });
   }
 });
@@ -2903,7 +3046,28 @@ async function loadAdminPath() {
   }
 }
 
-// loadAdminPath() se ejecuta dentro de la secuencia de auto-setup al final
+async function loadSmtpConfig() {
+  try {
+    const host = await prisma.configGlobal.findUnique({ where: { clave: 'smtp_host' } });
+    const port = await prisma.configGlobal.findUnique({ where: { clave: 'smtp_port' } });
+    const user = await prisma.configGlobal.findUnique({ where: { clave: 'smtp_user' } });
+    const pass = await prisma.configGlobal.findUnique({ where: { clave: 'smtp_pass' } });
+
+    if (host && port && user && pass) {
+      mail.setSmtpConfig({
+        host: host.valor,
+        port: parseInt(port.valor, 10),
+        user: user.valor,
+        pass: pass.valor
+      });
+      console.log('📧 [MAIL] Servidor SMTP personalizado cargado desde la Base de Datos.');
+    }
+  } catch (e) {
+    // Si la DB no está lista o no tiene registros
+  }
+}
+
+// loadAdminPath() y loadSmtpConfig() se ejecutan dentro de la secuencia de auto-setup al final
 
 app.use((req, res, next) => {
   const normPath = req.path.replace(/\/$/, '');
@@ -3045,6 +3209,7 @@ async function autoSetup() {
 (async () => {
   await autoSetup();
   await loadAdminPath();
+  await loadSmtpConfig();
 
   const server = app.listen(PORT, () => {
     console.log('\x1b[95m');
