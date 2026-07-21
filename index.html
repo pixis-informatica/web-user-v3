@@ -1696,6 +1696,21 @@
                         </div>
                     </div>
 
+                    <!-- 5. VISTA DE VERIFICACIÓN DE EMAIL -->
+                    <div id="authViewVerifyEmail" style="display: none;">
+                        <h3>Verificar Correo</h3>
+                        <p style="font-size:0.85rem; color:#aaa; margin-bottom:15px; text-align:center;">Ingresá el código de 6 dígitos enviado a tu correo.</p>
+                        <form id="formClientVerifyEmail" onsubmit="handleClientVerifyEmail(event)">
+                            <div class="form-group">
+                                <label for="verifyCode">Código de 6 dígitos</label>
+                                <input type="text" id="verifyCode" required placeholder="123456" pattern="\d{6}" maxlength="6" style="text-align: center; font-size: 1.3rem; letter-spacing: 4px; font-family: 'Orbitron'; background: #111; color: #fff; border: 1px solid #333; border-radius: 8px; padding: 8px; width: 100%; box-sizing: border-box;">
+                            </div>
+                            <button type="submit" class="btn-submit">Verificar Cuenta</button>
+                        </form>
+                        <div class="auth-switch" style="margin-top: 15px;">
+                            ¿Volver al inicio? <a onclick="switchAuthView('login')">Iniciá sesión</a>
+                        </div>
+                    </div>
 
                     <!-- 3. VISTA DE RECUPERACIÓN (PASO 1: SOLICITAR CÓDIGO) -->
                     <div id="authViewRecovery" style="display: none;">

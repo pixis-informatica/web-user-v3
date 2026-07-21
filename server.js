@@ -30,6 +30,11 @@ const JWT_SECRET = process.env.JWT_SECRET || 'PIXIS_SUPER_SECRET_JWT_KEY';
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 
+const activeClients = new Map();
+function registerActiveClient(userId) {
+  if (userId) activeClients.set(userId, Date.now());
+}
+
 // CONFIGURACIÓN DE SEGURIDAD (Mantenida parcialmente para servicios SMTP legacy)
 const ADMIN_CONFIG = {
   recoveryEmail: 'pixisinformatica.contacto@gmail.com',
@@ -250,6 +255,15 @@ app.use('/uploads/comprobantes', (req, res) => {
   res.status(403).send('Forbidden');
 });
 
+const isAllowedEmailDomain = (email) => {
+  if (!email || !email.includes('@')) return false;
+  const domain = email.trim().toLowerCase().split('@')[1];
+  if (!domain) return false;
+  // Permitir gmail, hotmail, outlook, live con extensiones regionales como .com.ar, .es, .cl, etc.
+  const regex = /^(gmail|hotmail|outlook|live)\.[a-z]{2,3}(\.[a-z]{2})?$/i;
+  return regex.test(domain);
+};
+
 // ── HELPERS DE RATE LIMITING EN BASE DE DATOS ────────────────
 const MAX_FAILED_ATTEMPTS = 5;
 const LOCK_TIME_MS = 15 * 60 * 1000; // 15 minutos
@@ -321,6 +335,10 @@ app.post('/api/shop/register', async (req, res) => {
     if (!nombre || !email || !telefono || !password) {
       return res.status(400).json({ error: 'Todos los campos son obligatorios.' });
     }
+
+    if (!isAllowedEmailDomain(email)) {
+      return res.status(400).json({ error: 'Solo se permiten correos de Gmail, Outlook y Hotmail.' });
+    }
     
     const existing = await prisma.usuario.findUnique({ where: { email } });
     if (existing) {
@@ -328,6 +346,8 @@ app.post('/api/shop/register', async (req, res) => {
     }
     
     const passwordHash = await bcrypt.hash(password, 10);
+    const code = Math.floor(100000 + Math.random() * 900000).toString();
+    const expira = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 horas
     
     await prisma.usuario.create({
       data: {
@@ -339,13 +359,59 @@ app.post('/api/shop/register', async (req, res) => {
         direccion: direccion || null,
         provincia: provincia || null,
         localidad: localidad || null,
-        codigo_postal: codigo_postal || null
+        codigo_postal: codigo_postal || null,
+        verificado: false,
+        codigo_verificacion: code,
+        codigo_verificacion_expira: expira
       }
     });
+
+    mail.enviarCodigoVerificacion(email, code).catch(console.error);
     
-    res.status(201).json({ ok: true, message: 'Usuario registrado con éxito.' });
+    res.status(201).json({ ok: true, requiereVerificacion: true, email, message: 'Usuario registrado. Se ha enviado un código de verificación.' });
   } catch (e) {
     console.error('Error en register:', e);
+    res.status(500).json({ error: 'Error interno del servidor.' });
+  }
+});
+
+app.post('/api/shop/verify-email', async (req, res) => {
+  try {
+    const { email, codigo } = req.body;
+    if (!email || !codigo) {
+      return res.status(400).json({ error: 'Email y código son obligatorios.' });
+    }
+
+    const user = await prisma.usuario.findUnique({ where: { email } });
+    if (!user) return res.status(404).json({ error: 'Usuario no encontrado.' });
+    if (user.verificado) return res.status(400).json({ error: 'Esta cuenta ya está verificada.' });
+
+    if (user.codigo_verificacion !== codigo.trim()) {
+      return res.status(400).json({ error: 'Código de verificación incorrecto.' });
+    }
+
+    const now = new Date();
+    if (user.codigo_verificacion_expira && user.codigo_verificacion_expira < now) {
+      return res.status(400).json({ error: 'El código ha expirado. Solicitá uno nuevo.' });
+    }
+
+    await prisma.usuario.update({
+      where: { id: user.id },
+      data: { verificado: true, codigo_verificacion: null, codigo_verificacion_expira: null }
+    });
+
+    const token = jwt.sign({ id: user.id, email: user.email, role: 'customer' }, JWT_SECRET, { expiresIn: '7d' });
+    res.cookie('customer_token', token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+      path: '/'
+    });
+
+    res.json({ ok: true, user: { id: user.id, nombre: user.nombre, email: user.email, telefono: user.telefono } });
+  } catch (e) {
+    console.error('Error en verify-email:', e);
     res.status(500).json({ error: 'Error interno del servidor.' });
   }
 });
@@ -377,6 +443,28 @@ app.post('/api/shop/login', async (req, res) => {
       await recordFailedLoginAttempt(email, 'cliente');
       return res.status(401).json({ error: 'Credenciales inválidas' }); // Mensaje genérico
     }
+
+    // Verificar si la cuenta está activa/verificada (Bloque 2)
+    if (!user.verificado) {
+      const code = Math.floor(100000 + Math.random() * 900000).toString();
+      const expira = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 horas
+      
+      await prisma.usuario.update({
+        where: { id: user.id },
+        data: {
+          codigo_verificacion: code,
+          codigo_verificacion_expira: expira
+        }
+      });
+      
+      mail.enviarCodigoVerificacion(email, code).catch(console.error);
+
+      return res.status(403).json({
+        error: 'Tu cuenta no está verificada. Se ha enviado un nuevo código de activación a tu correo.',
+        requiereVerificacion: true,
+        email: user.email
+      });
+    }
     
     // Éxito
     await clearLoginAttempts(email, 'cliente');
@@ -394,6 +482,8 @@ app.post('/api/shop/login', async (req, res) => {
       maxAge: 7 * 24 * 60 * 60 * 1000, // 7 días
       path: '/'
     });
+    
+    registerActiveClient(user.id);
     
     res.json({
       ok: true,
@@ -510,6 +600,7 @@ const verifyCustomerToken = async (req, res, next) => {
       return res.status(401).json({ error: 'Usuario no encontrado.' });
     }
     req.user = user;
+    registerActiveClient(user.id);
     next();
   } catch (err) {
     return res.status(401).json({ error: 'Sesión expirada. Por favor iniciá sesión nuevamente.' });
@@ -528,6 +619,7 @@ app.get('/api/shop/me', async (req, res) => {
     if (!user) {
       return res.json({ loggedIn: false });
     }
+    registerActiveClient(user.id);
     return res.json({
       loggedIn: true,
       user: {
@@ -1085,7 +1177,24 @@ app.get('/api/admin/stats', verifyAdminToken, async (req, res) => {
     const cfg = await prisma.configGlobal.findUnique({
       where: { clave: 'total_pedidos_historico' }
     });
-    res.json({ ok: true, total_pedidos_historico: parseInt(cfg?.valor || '0', 10) });
+
+    // Limpiar clientes inactivos de más de 60 segundos
+    const now = Date.now();
+    for (const [userId, lastActive] of activeClients.entries()) {
+      if (now - lastActive > 60000) {
+        activeClients.delete(userId);
+      }
+    }
+
+    const totalClientes = await prisma.usuario.count();
+    const totalOnline = activeClients.size;
+
+    res.json({
+      ok: true,
+      total_pedidos_historico: parseInt(cfg?.valor || '0', 10),
+      total_clientes: totalClientes,
+      total_online: totalOnline
+    });
   } catch (e) {
     console.error('Error al obtener estadísticas:', e);
     res.status(500).json({ error: 'Error al obtener estadísticas.' });
@@ -1433,6 +1542,51 @@ app.get('/admin/customers', verifyAdminToken, async (req, res) => {
     res.json({ ok: true, total: clientesMapeados.length, clientes: clientesMapeados });
   } catch (e) {
     console.error('Error al listar clientes (admin):', e);
+    res.status(500).json({ error: 'Error interno del servidor.' });
+  }
+});
+
+app.post('/api/admin/customers/remove', verifyAdminToken, async (req, res) => {
+  try {
+    const { ids } = req.body;
+    if (!ids || !Array.isArray(ids) || ids.length === 0) {
+      return res.status(400).json({ error: 'Lista de IDs inválida.' });
+    }
+
+    const userIds = ids.map(id => parseInt(id, 10)).filter(id => !isNaN(id));
+
+    await prisma.$transaction(async (tx) => {
+      // 1. Buscar los pedidos de estos usuarios
+      const pedidos = await tx.pedido.findMany({
+        where: { usuario_id: { in: userIds } },
+        select: { id: true }
+      });
+      const pedidoIds = pedidos.map(p => p.id);
+
+      // 2. Eliminar comprobantes
+      await tx.comprobante.deleteMany({
+        where: { pedido_id: { in: pedidoIds } }
+      });
+
+      // 3. Eliminar items de pedidos
+      await tx.itemPedido.deleteMany({
+        where: { pedido_id: { in: pedidoIds } }
+      });
+
+      // 4. Eliminar los pedidos
+      await tx.pedido.deleteMany({
+        where: { usuario_id: { in: userIds } }
+      });
+
+      // 5. Eliminar los usuarios
+      await tx.usuario.deleteMany({
+        where: { id: { in: userIds } }
+      });
+    });
+
+    res.json({ ok: true, message: 'Clientes y sus pedidos asociados eliminados con éxito.' });
+  } catch (e) {
+    console.error('Error al eliminar clientes (admin):', e);
     res.status(500).json({ error: 'Error interno del servidor.' });
   }
 });

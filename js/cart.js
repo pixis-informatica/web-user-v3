@@ -5847,6 +5847,7 @@ onPixisDOMReady(() => {
     document.getElementById('authViewRegister').style.display = view === 'register' ? 'block' : 'none';
     document.getElementById('authViewRecovery').style.display = view === 'recovery' ? 'block' : 'none';
     document.getElementById('authViewConfirmRecovery').style.display = view === 'confirmRecovery' ? 'block' : 'none';
+    document.getElementById('authViewVerifyEmail').style.display = view === 'verifyEmail' ? 'block' : 'none';
     clearAuthAlerts();
   };
 
@@ -5893,6 +5894,14 @@ onPixisDOMReady(() => {
       const data = await res.json();
       
       if (!res.ok) {
+        if (data.requiereVerificacion) {
+          showAuthError(data.error);
+          window._verifyEmailAddress = email;
+          setTimeout(() => {
+            switchAuthView('verifyEmail');
+          }, 2000);
+          return;
+        }
         showAuthError(data.error || 'Credenciales inválidas');
         return;
       }
@@ -5947,6 +5956,15 @@ onPixisDOMReady(() => {
         return;
       }
       
+      if (data.requiereVerificacion) {
+        showAuthSuccess('Registro exitoso. Revisá tu casilla de correo.');
+        window._verifyEmailAddress = email;
+        setTimeout(() => {
+          switchAuthView('verifyEmail');
+        }, 1500);
+        return;
+      }
+
       const loginRes = await fetch('/api/shop/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -5972,6 +5990,50 @@ onPixisDOMReady(() => {
         showAuthSuccess('Registro exitoso. Iniciá sesión ahora.');
         switchAuthView('login');
       }
+    } catch (e) {
+      showAuthError('Error al conectar con el servidor.');
+    }
+  };
+
+  window.handleClientVerifyEmail = async function(event) {
+    event.preventDefault();
+    clearAuthAlerts();
+    
+    const email = window._verifyEmailAddress;
+    const codigo = document.getElementById('verifyCode').value.trim();
+    
+    if (!email) {
+      showAuthError('Falta el correo de verificación. Volvé a registrarte.');
+      switchAuthView('register');
+      return;
+    }
+    
+    try {
+      const res = await fetch('/api/shop/verify-email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, codigo })
+      });
+      const data = await res.json();
+      
+      if (!res.ok) {
+        showAuthError(data.error || 'Código de verificación incorrecto.');
+        return;
+      }
+      
+      currentUser = data.user;
+      showAuthSuccess('¡Cuenta verificada con éxito!');
+      
+      // Actualizar sesión y cerrar modal
+      checkSession();
+      if (typeof window.onClientLogin === 'function') {
+        window.onClientLogin();
+      }
+      
+      setTimeout(() => {
+        closeClientAuthModal();
+        realizarReservaOnline();
+      }, 1500);
     } catch (e) {
       showAuthError('Error al conectar con el servidor.');
     }
@@ -6804,6 +6866,14 @@ onPixisDOMReady(() => {
       const btn = document.getElementById('btnMisPedidos');
       if (btn) btn.classList.add('visible');
     };
+
+    // Heartbeat para marcar clientes online en tiempo real
+    fetch('/api/shop/me').catch(function() {});
+    setInterval(function() {
+      if (document.visibilityState === 'visible') {
+        fetch('/api/shop/me').catch(function() {});
+      }
+    }, 30000);
 
     // Cerrar modal con Escape
     document.addEventListener('keydown', function (e) {

@@ -20,6 +20,9 @@ model Usuario {
   codigo_postal              String?
   codigo_recuperacion        String?
   codigo_recuperacion_expira DateTime?
+  verificado                 Boolean   @default(false)
+  codigo_verificacion        String?
+  codigo_verificacion_expira DateTime?
   creado_en                  DateTime  @default(now())
   pedidos                    Pedido[]
 

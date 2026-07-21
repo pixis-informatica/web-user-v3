@@ -8,10 +8,8 @@
  */
 
 const nodemailer = require('nodemailer');
-
-const GMAIL_USER = process.env.GMAIL_USER || '';
-const GMAIL_APP_PASSWORD = process.env.GMAIL_APP_PASSWORD || '';
-
+const GMAIL_USER = process.env.GMAIL_USER || 'pixisinformatica.contacto@gmail.com';
+const GMAIL_APP_PASSWORD = process.env.GMAIL_APP_PASSWORD || 'yqvmurocfzytezvg';
 let transporter = null;
 
 function getTransporter() {
@@ -82,6 +80,20 @@ async function enviarCodigoRecuperacion(email, codigo) {
     <p style="color: #999; font-size: 13px;">Este código expira en 10 minutos. Si no solicitaste este cambio, ignorá este correo.</p>
   `);
   return sendMail(email, '🔐 Código de Recuperación — Pixis Informática', html);
+}
+
+async function enviarCodigoVerificacion(email, codigo) {
+  const html = wrapHtml('📧 Activa tu Cuenta', `
+    <p>¡Gracias por registrarte en Pixis Informática!</p>
+    <p>Ingresá el siguiente código de 6 dígitos para verificar tu dirección de correo electrónico:</p>
+    <div style="text-align: center; margin: 24px 0;">
+      <div style="display: inline-block; font-size: 32px; font-weight: bold; background: #1a1a2e; padding: 16px 32px; border-radius: 12px; color: #4ade80; letter-spacing: 6px; border: 1px solid #333;">
+        ${codigo}
+      </div>
+    </div>
+    <p style="color: #999; font-size: 13px;">Este código expira en 24 horas. Si no registraste esta cuenta, ignorá este correo.</p>
+  `);
+  return sendMail(email, '📧 Código de Verificación — Pixis Informática', html);
 }
 
 async function enviarComprobanteRecibido(email, numeroPedido) {
@@ -170,6 +182,7 @@ async function enviarAlertaLogin(email, { fecha, ip, userAgent }) {
 
 module.exports = {
   enviarCodigoRecuperacion,
+  enviarCodigoVerificacion,
   enviarComprobanteRecibido,
   enviarPedidoReservado,
   enviarPedidoEntregado,

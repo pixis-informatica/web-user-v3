@@ -32,6 +32,7 @@ function showPanel() {
   document.getElementById('adminPanel').style.display = 'block';
   loadOrders();
   loadStats();
+  setInterval(loadStats, 15000);
 }
 
 // ── FLUX DE AUTENTICACIÓN ──
@@ -244,9 +245,13 @@ async function loadStats() {
     const res = await fetch('/api/admin/stats');
     if (!res.ok) throw new Error();
     const data = await res.json();
-    const metricTotal = document.getElementById('metricTotalHistorico');
-    if (metricTotal && data.ok) {
-      metricTotal.textContent = data.total_pedidos_historico;
+    if (data.ok) {
+      const metricTotal = document.getElementById('metricTotalHistorico');
+      if (metricTotal) metricTotal.textContent = data.total_pedidos_historico;
+      const metricClientes = document.getElementById('metricClientes');
+      if (metricClientes) metricClientes.textContent = data.total_clientes;
+      const metricClientesOnline = document.getElementById('metricClientesOnline');
+      if (metricClientesOnline) metricClientesOnline.textContent = data.total_online;
     }
   } catch (e) {
     // ignorar silenciosamente
@@ -562,6 +567,7 @@ function renderClientes(clientes) {
       : '—';
     return `
       <tr>
+        <td style="text-align:center;"><input type="checkbox" class="chk-cliente" value="${c.id}" onchange="onClienteSelectionChange()"></td>
         <td style="font-weight:700; color:#c084fc;">#${c.id}</td>
         <td>${c.nombre}</td>
         <td><a href="mailto:${c.email}" style="color:#a855f7;">${c.email}</a></td>
@@ -572,6 +578,9 @@ function renderClientes(clientes) {
         <td>${mktBadge}</td>
         <td style="text-align:center; font-weight:700; color: var(--gold);">${c.pedidos_mes}</td>
         <td style="color:#666;">${fecha}</td>
+        <td style="text-align:center;">
+          <button onclick="eliminarClienteIndividual(${c.id}, '${c.nombre}')" style="background:transparent; border:none; color:#ef4444; cursor:pointer;" title="Eliminar cliente permanentemente"><i class="fas fa-trash-alt"></i></button>
+        </td>
       </tr>`;
   }).join('');
 
@@ -580,6 +589,7 @@ function renderClientes(clientes) {
       <table class="clientes-table">
         <thead>
           <tr>
+            <th style="width:40px; text-align:center;"><input type="checkbox" id="chkClientesMaster" onchange="toggleSelectAllClientes(this)"></th>
             <th>ID</th>
             <th>Nombre</th>
             <th>Email</th>
@@ -590,11 +600,57 @@ function renderClientes(clientes) {
             <th>Marketing</th>
             <th style="text-align:center;" title="Pedidos realizados en los últimos 30 días">Pedidos (30d)</th>
             <th>Registrado</th>
+            <th style="width:60px; text-align:center;">Acciones</th>
           </tr>
         </thead>
         <tbody>${rows}</tbody>
       </table>
     </div>`;
+}
+
+window.toggleSelectAllClientes = function(master) {
+  document.querySelectorAll('.chk-cliente').forEach(chk => {
+    chk.checked = master.checked;
+  });
+  onClienteSelectionChange();
+};
+
+window.onClienteSelectionChange = function() {
+  const checked = document.querySelectorAll('.chk-cliente:checked');
+  const btn = document.getElementById('btnDeleteSelectedClientes');
+  if (btn) {
+    btn.style.display = checked.length > 0 ? 'inline-block' : 'none';
+  }
+};
+
+window.eliminarClienteIndividual = async function(id, nombre) {
+  if (!confirm(`⚠️ ATENCIÓN: Se eliminará permanentemente al cliente "${nombre}" y todos sus pedidos asociados.\n\nEsta acción no se puede deshacer. ¿Deseas continuar?`)) return;
+  await ejecutarEliminacion([id]);
+};
+
+window.eliminarClientesSeleccionados = async function() {
+  const checked = document.querySelectorAll('.chk-cliente:checked');
+  const ids = Array.from(checked).map(chk => parseInt(chk.value, 10));
+  if (ids.length === 0) return;
+  if (!confirm(`⚠️ ATENCIÓN: Se eliminarán permanentemente los ${ids.length} clientes seleccionados y todos sus pedidos asociados.\n\nEsta acción no se puede deshacer. ¿Deseas continuar?`)) return;
+  await ejecutarEliminacion(ids);
+};
+
+async function ejecutarEliminacion(ids) {
+  try {
+    const res = await fetch('/api/admin/customers/remove', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ids })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Error al eliminar');
+    alert('✅ Clientes eliminados correctamente.');
+    loadClientes();
+    loadStats();
+  } catch (err) {
+    alert('❌ Error al eliminar clientes: ' + err.message);
+  }
 }
 
 function exportarClientesCSVActiveFilter() {
