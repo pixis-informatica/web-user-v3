@@ -5842,6 +5842,30 @@ onPixisDOMReady(() => {
     }
   };
 
+  function buildWhatsappTextLink(msg) {
+    const site = window.PixisState && window.PixisState.state && window.PixisState.state.site;
+    const baseLink = (site && site.whatsappLink) || 'https://wa.me/message/EYUUSVNG5HPNF1';
+    
+    // Si es un link de mensaje directo wa.me/message/..., usamos el número de teléfono limpio
+    if (baseLink.includes('/message/') || baseLink.includes('EYUUSVNG5HPNF1')) {
+      const rawPhone = (site && site.phone) || '+54 9 3856 97-0135';
+      const cleanPhone = rawPhone.replace(/\D/g, ''); // Deja solo los dígitos
+      return `https://api.whatsapp.com/send?phone=${cleanPhone}&text=${encodeURIComponent(msg)}`;
+    }
+    
+    // Si es un link con número directo, reformatearlo con api.whatsapp.com para garantizar compatibilidad
+    const cleanLink = baseLink.replace(/\/$/, '');
+    const numMatch = cleanLink.match(/wa\.me\/(\d+)/) || cleanLink.match(/whatsapp\.com\/send\?phone=(\d+)/);
+    if (numMatch && numMatch[1]) {
+      return `https://api.whatsapp.com/send?phone=${numMatch[1]}&text=${encodeURIComponent(msg)}`;
+    }
+    
+    // Fallback por defecto
+    return baseLink.includes('/message/')
+      ? `${baseLink}?text=${encodeURIComponent(msg)}`
+      : `${baseLink.replace(/\/$/, '')}?text=${encodeURIComponent(msg)}`;
+  }
+
   window.switchAuthView = function(view) {
     document.getElementById('authViewLogin').style.display = view === 'login' ? 'block' : 'none';
     document.getElementById('authViewRegister').style.display = view === 'register' ? 'block' : 'none';
@@ -5850,30 +5874,22 @@ onPixisDOMReady(() => {
     document.getElementById('authViewVerifyEmail').style.display = view === 'verifyEmail' ? 'block' : 'none';
     clearAuthAlerts();
 
-    if (view === 'recovery') {
-      const baseLink = (window.PixisState && window.PixisState.state && window.PixisState.state.site && window.PixisState.state.site.whatsappLink) || 'https://wa.me/message/EYUUSVNG5HPNF1';
-      let waLink = baseLink;
-      const emailInput = document.getElementById('recEmail')?.value.trim() || '';
-      const msg = `Hola Pixis! Solicito recuperar el acceso a mi cuenta. Mi correo es: ${emailInput}`;
-      if (baseLink.includes('/message/')) {
-        waLink = `${baseLink}?text=${encodeURIComponent(msg)}`;
-      } else {
-        waLink = `${baseLink.replace(/\/$/, '')}?text=${encodeURIComponent(msg)}`;
-      }
+    if (view === 'confirmRecovery') {
+      const email = window._recEmail || '';
+      const msg = `Solicito Codigo de Recuperacion Para la habilitar mi cuenta. Correo: ${email}`;
       const waBtn = document.getElementById('btnRecoveryWhatsapp');
       if (waBtn) {
-        waBtn.href = waLink;
-        // Actualizar enlace al escribir el correo
-        const recEmail = document.getElementById('recEmail');
-        if (recEmail) {
-          recEmail.oninput = function() {
-            const emailInput = recEmail.value.trim();
-            const dynamicMsg = `Hola Pixis! Solicito recuperar el acceso a mi cuenta. Mi correo es: ${emailInput}`;
-            waBtn.href = baseLink.includes('/message/')
-              ? `${baseLink}?text=${encodeURIComponent(dynamicMsg)}`
-              : `${baseLink.replace(/\/$/, '')}?text=${encodeURIComponent(dynamicMsg)}`;
-          };
-        }
+        waBtn.href = buildWhatsappTextLink(msg);
+      }
+    }
+
+    if (view === 'verifyEmail') {
+      const email = window._verifyEmailAddress || '';
+      const nombre = window._verifyEmailName || '';
+      const msg = `Solicito habilitación de la cuenta a nombre de ${nombre} y mail ${email}`;
+      const waBtn = document.getElementById('btnVerifyWhatsapp');
+      if (waBtn) {
+        waBtn.href = buildWhatsappTextLink(msg);
       }
     }
   };
@@ -5924,6 +5940,7 @@ onPixisDOMReady(() => {
         if (data.requiereVerificacion) {
           showAuthError(data.error);
           window._verifyEmailAddress = email;
+          window._verifyEmailName = data.nombre || '';
           setTimeout(() => {
             switchAuthView('verifyEmail');
           }, 2000);
@@ -5986,6 +6003,7 @@ onPixisDOMReady(() => {
       if (data.requiereVerificacion) {
         showAuthSuccess('Registro exitoso. Revisá tu casilla de correo.');
         window._verifyEmailAddress = email;
+        window._verifyEmailName = nombre;
         setTimeout(() => {
           switchAuthView('verifyEmail');
         }, 1500);

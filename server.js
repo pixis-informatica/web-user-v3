@@ -496,7 +496,8 @@ app.post('/api/shop/login', async (req, res) => {
       return res.status(403).json({
         error: 'Tu cuenta no está verificada. Se ha enviado un nuevo código de activación a tu correo.',
         requiereVerificacion: true,
-        email: user.email
+        email: user.email,
+        nombre: user.nombre
       });
     }
     
