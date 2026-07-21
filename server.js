@@ -346,8 +346,10 @@ app.post('/api/shop/register', async (req, res) => {
     }
     
     const passwordHash = await bcrypt.hash(password, 10);
+    const code = Math.floor(100000 + Math.random() * 900000).toString();
+    const expira = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 horas
     
-    const user = await prisma.usuario.create({
+    await prisma.usuario.create({
       data: {
         nombre,
         email,
@@ -358,36 +360,20 @@ app.post('/api/shop/register', async (req, res) => {
         provincia: provincia || null,
         localidad: localidad || null,
         codigo_postal: codigo_postal || null,
-        verificado: true,
-        codigo_verificacion: null,
-        codigo_verificacion_expira: null
+        verificado: false, // Requiere verificación obligatoria
+        codigo_verificacion: code,
+        codigo_verificacion_expira: expira
       }
     });
 
-    const token = jwt.sign(
-      { id: user.id, email: user.email, role: 'customer' },
-      JWT_SECRET,
-      { expiresIn: '7d' }
-    );
-    
-    res.cookie('customer_token', token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      maxAge: 7 * 24 * 60 * 60 * 1000,
-      path: '/'
-    });
-    
-    registerActiveClient(user.id);
+    console.log(`📧 [ACTIVACIÓN CLIENTE] Código para ${email}: ${code}`);
+    mail.enviarCodigoVerificacion(email, code).catch(console.error);
     
     res.status(201).json({
       ok: true,
-      user: {
-        id: user.id,
-        nombre: user.nombre,
-        email: user.email,
-        telefono: user.telefono
-      }
+      requiereVerificacion: true,
+      email,
+      message: 'Usuario registrado. Se ha enviado un código de verificación.'
     });
   } catch (e) {
     console.error('Error en register:', e);
@@ -567,13 +553,12 @@ app.post('/api/shop/password/solicitar-codigo', async (req, res) => {
     
     if (user) {
       const code = Math.floor(100000 + Math.random() * 900000).toString();
-      const codeHash = await bcrypt.hash(code, 10);
-      const expira = new Date(Date.now() + 10 * 60 * 1000); // 10 min
+      const expira = new Date(Date.now() + 2 * 60 * 60 * 1000); // 2 horas (evita vencimiento al chatear)
       
       await prisma.usuario.update({
         where: { id: user.id },
         data: {
-          codigo_recuperacion: codeHash,
+          codigo_recuperacion: code,
           codigo_recuperacion_expira: expira
         }
       });
@@ -581,7 +566,7 @@ app.post('/api/shop/password/solicitar-codigo', async (req, res) => {
       console.log(`📧 [RECOVERY CODE CLIENTE] Código para ${email}: ${code}`);
       
       // Enviar mail con el código (no bloquea el response)
-      mail.enviarCodigoRecuperacion(email, code);
+      mail.enviarCodigoRecuperacion(email, code).catch(console.error);
     }
     
     res.json({ ok: true, message: genericMsg });
@@ -609,8 +594,7 @@ app.post('/api/shop/password/confirmar', async (req, res) => {
       return res.status(400).json({ error: 'Código de recuperación inválido o vencido.' });
     }
     
-    const match = await bcrypt.compare(codigo, user.codigo_recuperacion);
-    if (!match) {
+    if (user.codigo_recuperacion !== codigo.trim()) {
       return res.status(400).json({ error: 'Código de recuperación inválido o vencido.' });
     }
     
@@ -1565,6 +1549,8 @@ app.get('/admin/customers', verifyAdminToken, async (req, res) => {
         localidad:        true,
         acepta_marketing: true,
         verificado:       true,
+        codigo_verificacion: true,
+        codigo_recuperacion: true,
         creado_en:        true,
         _count:           { select: { pedidos: true } },
         pedidos: {
@@ -1584,6 +1570,8 @@ app.get('/admin/customers', verifyAdminToken, async (req, res) => {
       localidad: c.localidad,
       acepta_marketing: c.acepta_marketing,
       verificado: c.verificado,
+      codigo_verificacion: c.codigo_verificacion,
+      codigo_recuperacion: c.codigo_recuperacion,
       creado_en: c.creado_en,
       _count: c._count,
       pedidos_mes: c.pedidos.length

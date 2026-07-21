@@ -570,8 +570,14 @@ function renderClientes(clientes) {
       : '<span class="badge-marketing no">Mkt: No</span>';
     const verificadoBadge = c.verificado
       ? '<span class="badge-marketing si" style="display:block; margin-top:4px;">Activo</span>'
-      : `<span class="badge-marketing no" style="display:block; margin-top:4px; margin-bottom:4px;">Pendiente</span><button onclick="activarCliente(${c.id}, '${c.nombre}')" style="background:#22c55e; color:#fff; border:none; padding:4px 8px; border-radius:4px; font-size:10px; font-weight:700; cursor:pointer;" title="Activar cuenta manualmente">Activar</button>`;
+      : `<span class="badge-marketing no" style="display:block; margin-top:4px; margin-bottom:4px;">Pendiente</span>
+         <div style="font-size:10px; color:#a855f7; margin-bottom:4px; font-family:monospace; font-weight:700;">Pin Reg: ${c.codigo_verificacion || '—'}</div>
+         <button onclick="activarCliente(${c.id}, '${c.nombre}')" style="background:#22c55e; color:#fff; border:none; padding:4px 8px; border-radius:4px; font-size:10px; font-weight:700; cursor:pointer;" title="Activar cuenta manualmente">Activar</button>`;
     
+    const recoveryInfo = c.codigo_recuperacion
+      ? `<div style="font-size:10px; color:var(--gold); margin-top:4px; font-family:monospace; font-weight:700;">Pin Recup: ${c.codigo_recuperacion}</div>`
+      : '';
+      
     const waLink = c.telefono
       ? `<a href="https://wa.me/${c.telefono.replace(/\D/g,'')}" target="_blank" style="color:#4ade80; text-decoration:none;" title="Abrir WhatsApp">💬 ${c.telefono}</a>`
       : '—';
@@ -588,6 +594,7 @@ function renderClientes(clientes) {
         <td>
           ${mktBadge}
           ${verificadoBadge}
+          ${recoveryInfo}
         </td>
         <td style="text-align:center; font-weight:700; color: var(--gold);">${c.pedidos_mes}</td>
         <td style="color:#666;">${fecha}</td>
