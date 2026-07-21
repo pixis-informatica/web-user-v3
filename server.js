@@ -366,6 +366,7 @@ app.post('/api/shop/register', async (req, res) => {
       }
     });
 
+    console.log(`📧 [ACTIVACIÓN CLIENTE] Código para ${email}: ${code}`);
     mail.enviarCodigoVerificacion(email, code).catch(console.error);
     
     res.status(201).json({ ok: true, requiereVerificacion: true, email, message: 'Usuario registrado. Se ha enviado un código de verificación.' });
@@ -457,6 +458,7 @@ app.post('/api/shop/login', async (req, res) => {
         }
       });
       
+      console.log(`📧 [ACTIVACIÓN CLIENTE] Código para ${email}: ${code}`);
       mail.enviarCodigoVerificacion(email, code).catch(console.error);
 
       return res.status(403).json({

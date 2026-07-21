@@ -134,7 +134,12 @@ function backToStep1() {
   document.getElementById('loginErrorMsg').style.display = 'none';
 }
 
-function handleLogout() {
+async function handleLogout() {
+  try {
+    await fetch('/admin/logout', { method: 'POST' });
+  } catch (err) {
+    console.error('Error al cerrar sesión en el servidor:', err);
+  }
   document.cookie = 'admin_token=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT;';
   showLogin();
   location.reload();
