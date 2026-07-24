@@ -1561,8 +1561,11 @@ app.get('/admin/customers', verifyAdminToken, async (req, res) => {
         email:            true,
         telefono:         true,
         direccion:        true,
+        numero:           true,
+        barrio:           true,
         provincia:        true,
         localidad:        true,
+        codigo_postal:    true,
         acepta_marketing: true,
         verificado:       true,
         codigo_verificacion: true,
@@ -1582,8 +1585,11 @@ app.get('/admin/customers', verifyAdminToken, async (req, res) => {
       email: c.email,
       telefono: c.telefono,
       direccion: c.direccion,
+      numero: c.numero,
+      barrio: c.barrio,
       provincia: c.provincia,
       localidad: c.localidad,
+      codigo_postal: c.codigo_postal,
       acepta_marketing: c.acepta_marketing,
       verificado: c.verificado,
       codigo_verificacion: c.codigo_verificacion,
@@ -1704,8 +1710,11 @@ app.get('/admin/customers/export', verifyAdminToken, async (req, res) => {
         email:            true,
         telefono:         true,
         direccion:        true,
+        numero:           true,
+        barrio:           true,
         provincia:        true,
         localidad:        true,
+        codigo_postal:    true,
         acepta_marketing: true,
         creado_en:        true,
         _count:           { select: { pedidos: true } }
@@ -1722,7 +1731,7 @@ app.get('/admin/customers/export', verifyAdminToken, async (req, res) => {
       return str;
     };
 
-    const headers = ['ID', 'Nombre', 'Email', 'Telefono', 'Direccion', 'Provincia', 'Localidad', 'Acepta Marketing', 'Total Pedidos', 'Registrado'];
+    const headers = ['ID', 'Nombre', 'Email', 'Telefono', 'Direccion', 'Numero', 'Barrio', 'Provincia', 'Localidad', 'Codigo Postal', 'Acepta Marketing', 'Total Pedidos', 'Registrado'];
 
     const rows = clientes.map(c => [
       c.id,
@@ -1730,8 +1739,11 @@ app.get('/admin/customers/export', verifyAdminToken, async (req, res) => {
       c.email,
       c.telefono || '',
       c.direccion || '',
+      c.numero || '',
+      c.barrio || '',
       c.provincia || '',
       c.localidad || '',
+      c.codigo_postal || '',
       c.acepta_marketing ? 'Si' : 'No',
       c._count.pedidos,
       new Date(c.creado_en).toLocaleDateString('es-AR')

@@ -8,8 +8,17 @@
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
+  <!-- Pantalla de verificación de sesión (anti-flash) -->
+  <div id="authCheckingScreen" style="display:flex; position:fixed; inset:0; background:#0c0214; align-items:center; justify-content:center; z-index:999999;">
+    <div style="text-align:center;">
+      <img src="../img/logo_pixis.png" alt="Pixis" style="width:80px; opacity:0.7; margin-bottom:15px;">
+      <div style="width:36px; height:36px; border:3px solid rgba(168,85,247,0.2); border-top-color:#a855f7; border-radius:50%; animation:spin 0.8s linear infinite; margin:0 auto;"></div>
+    </div>
+  </div>
+  <style>@keyframes spin{to{transform:rotate(360deg)}}</style>
+
   <!-- ── PANTALLA DE ACCESO (LOGIN DE DOS PASOS) ── -->
-  <div id="loginScreen" class="auth-container">
+  <div id="loginScreen" class="auth-container" style="display:none;">
     <div class="auth-card">
       <div class="logo-wrap">
         <img src="../img/logo_pixis.png" alt="Pixis Informática">
@@ -189,94 +198,100 @@
     </div>
 
     <!-- ── SECCIÓN AJUSTES ── -->
-    <div id="seccionAjustes" style="display:none; max-width: 600px; margin: 16px auto 0 auto; padding: 20px; background: var(--panel); border: 1px solid var(--border); border-radius: 16px;">
+    <div id="seccionAjustes" style="display:none; max-width: 1200px; width: 100%; margin: 16px auto 0 auto; padding: 20px; background: var(--panel); border: 1px solid var(--border); border-radius: 16px;">
       <h2 style="margin-bottom: 20px; font-family: 'Orbitron'; font-size: 1.4rem; color: var(--gold); display: flex; align-items: center; gap: 10px;">⚙️ Ajustes</h2>
       
       <div id="ajustesErrorMsg" class="auth-error" style="display:none; margin-bottom:15px;"></div>
       <div id="ajustesSuccessMsg" style="display:none; background: rgba(0, 230, 118, 0.1); border: 1px solid var(--success); color: var(--success); padding: 12px; border-radius: 8px; font-size: 0.9rem; margin-bottom: 15px;"></div>
 
-      <!-- Formulario de Configuración SMTP -->
-      <form id="formAjustesSMTP" onsubmit="updateSMTPSettings(event)" style="margin-bottom: 30px; padding-bottom: 20px; border-bottom: 1px solid rgba(255,255,255,0.08);">
-        <h3 style="font-size: 1rem; margin-bottom: 12px; color: #fff;">Configurar Servidor de Correo (SMTP)</h3>
-        <p style="font-size:0.75rem; color:#aaa; margin-bottom:10px;">Establecé tu servidor de correo para notificaciones automáticas y recuperación de claves.</p>
-        <div class="form-group">
-          <label for="smtpHost">Servidor SMTP</label>
-          <input type="text" id="smtpHost" required placeholder="smtp.gmail.com">
+      <div class="ajustes-grid">
+        <!-- TARJETA 1: Servidor SMTP -->
+        <div class="ajustes-card">
+          <form id="formAjustesSMTP" onsubmit="updateSMTPSettings(event)">
+            <h3 style="font-size: 1.05rem; color: var(--gold); margin-bottom: 8px;"><i class="fas fa-paper-plane"></i> 1. Servidor de Correo (SMTP)</h3>
+            <p style="font-size:0.75rem; color:#aaa; margin-bottom:15px;">Establecé tu servidor de correo para notificaciones automáticas y recuperación de claves.</p>
+            <div class="form-group">
+              <label for="smtpHost">Servidor SMTP</label>
+              <input type="text" id="smtpHost" required placeholder="smtp.gmail.com">
+            </div>
+            <div class="form-group">
+              <label for="smtpPort">Puerto SMTP (465 SSL, 587 TLS)</label>
+              <input type="number" id="smtpPort" required placeholder="465">
+            </div>
+            <div class="form-group">
+              <label for="smtpUser">Correo de Envío (Usuario)</label>
+              <input type="email" id="smtpUser" required placeholder="tu-correo@gmail.com">
+            </div>
+            <div class="form-group">
+              <label for="smtpPass">Contraseña de Correo / Password de App</label>
+              <input type="password" id="smtpPass" required placeholder="••••••••">
+            </div>
+            <button type="submit" class="btn-submit" style="width: 100%; padding: 10px; font-size: 13px;">Guardar Servidor SMTP</button>
+          </form>
         </div>
-        <div class="form-group">
-          <label for="smtpPort">Puerto SMTP (465 SSL, 587 TLS)</label>
-          <input type="number" id="smtpPort" required placeholder="465">
-        </div>
-        <div class="form-group">
-          <label for="smtpUser">Correo de Envío (Usuario)</label>
-          <input type="email" id="smtpUser" required placeholder="tu-correo@gmail.com">
-        </div>
-        <div class="form-group">
-          <label for="smtpPass">Contraseña de Correo / Password de App</label>
-          <input type="password" id="smtpPass" required placeholder="••••••••">
-        </div>
-        <button type="submit" class="btn-submit" style="width: auto; padding: 8px 20px; font-size: 13px;">Guardar Servidor SMTP</button>
-      </form>
 
-      <!-- Form 1: Cambiar Nombre -->
-      <form id="formAjustesNombre" onsubmit="updateAdminName(event)" style="margin-bottom: 30px; padding-bottom: 20px; border-bottom: 1px solid rgba(255,255,255,0.08);">
-        <h3 style="font-size: 1rem; margin-bottom: 12px; color: #fff;">Cambiar Nombre Comercial</h3>
-        <div class="form-group">
-          <label for="ajustesNombre">Nombre Comercial / Personal</label>
-          <input type="text" id="ajustesNombre" required placeholder="Vendedor Pixis">
-        </div>
-        <button type="submit" class="btn-submit" style="width: auto; padding: 8px 20px; font-size: 13px;">Guardar Nombre</button>
-      </form>
+        <!-- TARJETA 2: Identidad & Recuperación -->
+        <div class="ajustes-card">
+          <form id="formAjustesNombre" onsubmit="updateAdminName(event)" style="margin-bottom: 25px; padding-bottom: 20px; border-bottom: 1px solid rgba(255,255,255,0.08);">
+            <h3 style="font-size: 1.05rem; color: #a855f7; margin-bottom: 8px;"><i class="fas fa-store"></i> 2. Nombre Comercial</h3>
+            <div class="form-group">
+              <label for="ajustesNombre">Nombre Comercial / Personal</label>
+              <input type="text" id="ajustesNombre" required placeholder="Vendedor Pixis">
+            </div>
+            <button type="submit" class="btn-submit" style="width: 100%; padding: 10px; font-size: 13px;">Guardar Nombre</button>
+          </form>
 
-      <!-- Form 2: Cambiar Credenciales -->
-      <form id="formAjustesCredenciales" onsubmit="updateAdminCredentials(event)" style="margin-bottom: 30px; padding-bottom: 20px; border-bottom: 1px solid rgba(255,255,255,0.08);">
-        <h3 style="font-size: 1rem; margin-bottom: 12px; color: #fff;">Cambiar Email / Contraseña</h3>
-        <p style="font-size:0.75rem; color:#aaa; margin-bottom:10px;">Completá solo lo que desees cambiar. Se cerrará la sesión tras guardar.</p>
-        <div class="form-group">
-          <label for="ajustesEmail">Nuevo Correo Electrónico</label>
-          <input type="email" id="ajustesEmail" placeholder="vendedor@pixis.com">
+          <form id="formAjustesRecovery" onsubmit="updateRecoveryEmail(event)">
+            <h3 style="font-size: 1.05rem; color: #a855f7; margin-bottom: 8px;"><i class="fas fa-shield-alt"></i> 3. Correo Seguro de Recuperación</h3>
+            <p style="font-size:0.75rem; color:#aaa; margin-bottom:12px;">Correo donde se enviarán las alertas de login y códigos de reset 2FA.</p>
+            <div class="form-group">
+              <label for="ajustesRecoveryEmail">Correo Seguro</label>
+              <input type="email" id="ajustesRecoveryEmail" required placeholder="correo-seguro@gmail.com">
+            </div>
+            <div class="form-group">
+              <label for="ajustesRecoveryOTP" style="color:var(--gold);">Código OTP de tu 2FA Actual (Requerido)</label>
+              <input type="text" id="ajustesRecoveryOTP" required placeholder="000000" pattern="\d{6}" maxlength="6" style="text-align: center; font-size: 1.3rem; letter-spacing: 4px; font-family: 'Orbitron';">
+            </div>
+            <button type="submit" class="btn-submit" style="width: 100%; padding: 10px; font-size: 13px;">Guardar Correo Seguro</button>
+          </form>
         </div>
-        <div class="form-group">
-          <label for="ajustesPassword">Nueva Contraseña (mínimo 8 caracteres)</label>
-          <input type="password" id="ajustesPassword" placeholder="••••••••">
-        </div>
-        <div class="form-group">
-          <label for="ajustesCredOTP" style="color:var(--gold);">Código OTP de tu 2FA Actual (Requerido)</label>
-          <input type="text" id="ajustesCredOTP" required placeholder="000000" pattern="\d{6}" maxlength="6" style="text-align: center; font-size: 1.3rem; letter-spacing: 4px; font-family: 'Orbitron';">
-        </div>
-        <button type="submit" class="btn-submit" style="width: auto; padding: 8px 20px; font-size: 13px;">Actualizar Credenciales</button>
-      </form>
 
-      <!-- Form 3: Cambiar Email de Recuperación -->
-      <form id="formAjustesRecovery" onsubmit="updateRecoveryEmail(event)" style="margin-bottom: 30px; padding-bottom: 20px; border-bottom: 1px solid rgba(255,255,255,0.08);">
-        <h3 style="font-size: 1rem; margin-bottom: 12px; color: #fff;">Configurar Correo Seguro de Recuperación</h3>
-        <p style="font-size:0.75rem; color:#aaa; margin-bottom:10px;">Correo seguro donde se enviarán las alertas de login y códigos de reset 2FA.</p>
-        <div class="form-group">
-          <label for="ajustesRecoveryEmail">Correo Seguro</label>
-          <input type="email" id="ajustesRecoveryEmail" required placeholder="correo-seguro@gmail.com">
-        </div>
-        <div class="form-group">
-          <label for="ajustesRecoveryOTP" style="color:var(--gold);">Código OTP de tu 2FA Actual (Requerido)</label>
-          <input type="text" id="ajustesRecoveryOTP" required placeholder="000000" pattern="\d{6}" maxlength="6" style="text-align: center; font-size: 1.3rem; letter-spacing: 4px; font-family: 'Orbitron';">
-        </div>
-        <button type="submit" class="btn-submit" style="width: auto; padding: 8px 20px; font-size: 13px;">Guardar Correo Seguro</button>
-      </form>
+        <!-- TARJETA 3: Credenciales & Seguridad de Ruta -->
+        <div class="ajustes-card">
+          <form id="formAjustesCredenciales" onsubmit="updateAdminCredentials(event)" style="margin-bottom: 25px; padding-bottom: 20px; border-bottom: 1px solid rgba(255,255,255,0.08);">
+            <h3 style="font-size: 1.05rem; color: #4ade80; margin-bottom: 8px;"><i class="fas fa-user-lock"></i> 4. Cambiar Email / Contraseña</h3>
+            <p style="font-size:0.75rem; color:#aaa; margin-bottom:12px;">Completá solo lo que desees cambiar. Se cerrará la sesión tras guardar.</p>
+            <div class="form-group">
+              <label for="ajustesEmail">Nuevo Correo Electrónico</label>
+              <input type="email" id="ajustesEmail" placeholder="vendedor@pixis.com">
+            </div>
+            <div class="form-group">
+              <label for="ajustesPassword">Nueva Contraseña (mínimo 8 caracteres)</label>
+              <input type="password" id="ajustesPassword" placeholder="••••••••">
+            </div>
+            <div class="form-group">
+              <label for="ajustesCredOTP" style="color:var(--gold);">Código OTP de tu 2FA Actual (Requerido)</label>
+              <input type="text" id="ajustesCredOTP" required placeholder="000000" pattern="\d{6}" maxlength="6" style="text-align: center; font-size: 1.3rem; letter-spacing: 4px; font-family: 'Orbitron';">
+            </div>
+            <button type="submit" class="btn-submit" style="width: 100%; padding: 10px; font-size: 13px;">Actualizar Credenciales</button>
+          </form>
 
-      <!-- Form 4: Cambiar URL del Panel -->
-      <form id="formAjustesPath" onsubmit="updatePanelPath(event)">
-        <h3 style="font-size: 1rem; margin-bottom: 12px; color: #fff;">Cambiar URL del Panel</h3>
-        <p style="font-size:0.75rem; color:#aaa; margin-bottom:10px;">Cambia la ruta de acceso (ej: de `/admin-panel` a `/mi-secreto`).</p>
-        <div class="form-group">
-          <label for="ajustesPath">Nueva Ruta (min. 3 carac, letras, números y guiones)</label>
-          <input type="text" id="ajustesPath" required placeholder="mi-panel-secreto" oninput="previewNewPath()">
-          <span style="font-size:0.75rem; color:#888; display:block; margin-top:4px;">Tu nueva URL será: <strong id="previewUrlSpan" style="color:var(--gold);">pixistech.store/admin-panel</strong></span>
+          <form id="formAjustesPath" onsubmit="updatePanelPath(event)">
+            <h3 style="font-size: 1.05rem; color: #ef4444; margin-bottom: 8px;"><i class="fas fa-link"></i> 5. Cambiar URL del Panel</h3>
+            <p style="font-size:0.75rem; color:#aaa; margin-bottom:12px;">Cambia la ruta de acceso (ej: de `/admin-panel` a `/mi-secreto`).</p>
+            <div class="form-group">
+              <label for="ajustesPath">Nueva Ruta (min. 3 carac, letras, números y guiones)</label>
+              <input type="text" id="ajustesPath" required placeholder="mi-panel-secreto" oninput="previewNewPath()">
+              <span style="font-size:0.75rem; color:#888; display:block; margin-top:4px;">Tu nueva URL será: <strong id="previewUrlSpan" style="color:var(--gold);">pixistech.store/admin-panel</strong></span>
+            </div>
+            <div class="form-group">
+              <label for="ajustesPathOTP" style="color:var(--gold);">Código OTP de tu 2FA Actual (Requerido)</label>
+              <input type="text" id="ajustesPathOTP" required placeholder="000000" pattern="\d{6}" maxlength="6" style="text-align: center; font-size: 1.3rem; letter-spacing: 4px; font-family: 'Orbitron';">
+            </div>
+            <button type="submit" class="btn-submit" style="width: 100%; padding: 10px; font-size: 13px; background: linear-gradient(135deg, var(--error), #ff4d4d); border-color: transparent;">Actualizar Ruta de Acceso</button>
+          </form>
         </div>
-        <div class="form-group">
-          <label for="ajustesPathOTP" style="color:var(--gold);">Código OTP de tu 2FA Actual (Requerido)</label>
-          <input type="text" id="ajustesPathOTP" required placeholder="000000" pattern="\d{6}" maxlength="6" style="text-align: center; font-size: 1.3rem; letter-spacing: 4px; font-family: 'Orbitron';">
-        </div>
-        <button type="submit" class="btn-submit" style="width: auto; padding: 8px 20px; font-size: 13px; background: linear-gradient(135deg, var(--error), #ff4d4d); border-color: transparent;">Actualizar Ruta de Acceso</button>
-      </form>
+      </div>
     </div>
   </div>
 

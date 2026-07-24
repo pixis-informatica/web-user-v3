@@ -6,6 +6,8 @@ let currentMainTab = 'pedidos';
 window.addEventListener('DOMContentLoaded', async () => {
   loadTheme();
   const isLoggedIn = await checkSession();
+  const authScreen = document.getElementById('authCheckingScreen');
+  if (authScreen) authScreen.style.display = 'none';
   if (isLoggedIn) {
     showPanel();
   } else {
@@ -588,9 +590,9 @@ function renderClientes(clientes) {
         <td>${c.nombre}</td>
         <td><a href="mailto:${c.email}" style="color:#a855f7;">${c.email}</a></td>
         <td>${waLink}</td>
-        <td style="font-size: 0.85rem; color: #ccc;">${c.direccion || '—'}</td>
-        <td style="font-size: 0.85rem; color: #ccc;">${c.provincia || '—'}</td>
-        <td style="font-size: 0.85rem; color: #ccc;">${c.localidad || '—'}</td>
+        <td style="font-size: 0.85rem; color: #ccc;">${c.direccion || '—'}${c.numero ? ' ' + c.numero : ''}</td>
+        <td style="font-size: 0.85rem; color: #ccc;">${c.barrio ? c.barrio + ' — ' : ''}${c.localidad || '—'}</td>
+        <td style="font-size: 0.85rem; color: #ccc;">${c.provincia || '—'}${c.codigo_postal ? ' (CP ' + c.codigo_postal + ')' : ''}</td>
         <td>
           ${mktBadge}
           ${verificadoBadge}
@@ -616,8 +618,8 @@ function renderClientes(clientes) {
             <th>Email</th>
             <th>Teléfono</th>
             <th>Dirección</th>
-            <th>Provincia</th>
-            <th>Localidad</th>
+            <th>Barrio / Localidad</th>
+            <th>Provincia / C.P.</th>
             <th>Mkt / Estado</th>
             <th style="text-align:center;" title="Pedidos realizados en los últimos 30 días">Pedidos (30d)</th>
             <th>Registrado</th>
