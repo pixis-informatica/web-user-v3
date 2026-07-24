@@ -7488,18 +7488,22 @@ body.product-page-active .modal-thumbs:empty {
 
 /* Posicionamiento fijo del menú de categorías sobre la página de producto */
 @media (min-width: 769px) {
+  body.product-page-active #modalProducto .modal-content {
+    margin-top: 195px !important;
+  }
+
   body.product-page-active .categorias-nav {
     position: fixed !important;
-    top: 295px !important; /* Alineado debajo de la barra de retroceso del producto */
+    top: 185px !important; /* Posicionado por debajo del header fijo de 175px */
     left: 50% !important;
     transform: translateX(-50%) translateY(0) !important;
-    z-index: 100002 !important; /* Asegura quedar encima de todos los elementos del modal */
-    width: 95vw !important;    /* Usa el viewport completo para simetría correcta */
+    z-index: 100002 !important; /* Encima del modal pero sin obstruir controles */
+    width: 95vw !important;
     max-width: 1100px !important;
   }
   
   body.product-page-active.scrolled .categorias-nav {
-    top: 270px !important;
+    top: 180px !important;
   }
 
   body.product-page-active .categorias-nav.active {
@@ -8939,5 +8943,33 @@ body.light-mode .btn-view-toggle.active {
 }
 .modal-client-auth .modal-content::-webkit-scrollbar-track {
   background: rgba(0, 0, 0, 0.25) !important;
+}
+
+/* ── BLOQUE 1: Legibilidad en Detalle de Pedido (Modo Oficina / Light) ── */
+body.light-mode .pedido-items-table td {
+  color: #111827 !important;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.1) !important;
+}
+
+body.light-mode .pedido-items-table td strong {
+  color: #000000 !important;
+}
+
+body.light-mode .pedido-items-table th {
+  color: #7c3aed !important;
+  border-bottom: 2px solid rgba(124, 58, 237, 0.3) !important;
+}
+
+body.light-mode .pedido-detalle-info {
+  color: #374151 !important;
+}
+
+body.light-mode .pedido-detalle-info span {
+  color: #111827 !important;
+  font-weight: 600 !important;
+}
+
+body.light-mode .pedido-detalle-header h3 {
+  color: #6b21a8 !important;
 }
 

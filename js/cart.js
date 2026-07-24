@@ -6816,12 +6816,13 @@ onPixisDOMReady(() => {
       if (res.ok) {
         const data = await res.json();
         const u = data.user || {};
-        document.getElementById('editClienteNombre').value = u.nombre || '';
-        document.getElementById('editClienteTelefono').value = u.telefono || '';
-        document.getElementById('editClienteDireccion').value = u.direccion || '';
-        document.getElementById('editClienteProvincia').value = u.provincia || '';
-        document.getElementById('editClienteLocalidad').value = u.localidad || '';
-        document.getElementById('editClienteCodigoPostal').value = u.codigo_postal || '';
+        if (document.getElementById('editClienteNombre')) document.getElementById('editClienteNombre').value = u.nombre || '';
+        if (document.getElementById('editClienteEmail')) document.getElementById('editClienteEmail').value = u.email || '';
+        if (document.getElementById('editClienteTelefono')) document.getElementById('editClienteTelefono').value = u.telefono || '';
+        if (document.getElementById('editClienteDireccion')) document.getElementById('editClienteDireccion').value = u.direccion || '';
+        if (document.getElementById('editClienteProvincia')) document.getElementById('editClienteProvincia').value = u.provincia || '';
+        if (document.getElementById('editClienteLocalidad')) document.getElementById('editClienteLocalidad').value = u.localidad || '';
+        if (document.getElementById('editClienteCodigoPostal')) document.getElementById('editClienteCodigoPostal').value = u.codigo_postal || '';
       }
     } catch (err) {
       console.warn('[EditarPerfil] No se pudieron pre-cargar los datos:', err);
