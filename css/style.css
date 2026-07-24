@@ -7490,8 +7490,8 @@ body.product-page-active .modal-thumbs:empty {
 @media (min-width: 769px) {
   body.product-page-active #modalProduct .modal-content,
   body.product-page-active .modal-product .modal-content {
-    margin-top: 195px !important;
-    padding-top: 15px !important;
+    margin-top: 175px !important;
+    padding-top: 2px !important;
   }
 
   body.product-page-active .product-page-back-container {
@@ -7501,7 +7501,7 @@ body.product-page-active .modal-thumbs:empty {
 
   body.product-page-active .categorias-nav {
     position: fixed !important;
-    top: 180px !important; /* Alineado directamente debajo del header de 175px */
+    top: 170px !important;
     left: 50% !important;
     transform: translateX(-50%) translateY(0) !important;
     z-index: 100002 !important;

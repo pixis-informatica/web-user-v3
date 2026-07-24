@@ -5978,6 +5978,8 @@ onPixisDOMReady(() => {
     const password  = document.getElementById('regPassword').value;
     const acepta_marketing = document.getElementById('regMarketing').checked;
     const direccion    = document.getElementById('regDireccion')?.value.trim() || '';
+    const numero       = document.getElementById('regNumero')?.value.trim() || '';
+    const barrio       = document.getElementById('regBarrio')?.value.trim() || '';
     const provincia    = document.getElementById('regProvincia')?.value.trim() || '';
     const localidad    = document.getElementById('regLocalidad')?.value.trim() || '';
     const codigo_postal = document.getElementById('regCodigoPostal')?.value.trim() || '';
@@ -5991,7 +5993,7 @@ onPixisDOMReady(() => {
       const res = await fetch('/api/shop/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ nombre, email, telefono, password, acepta_marketing, direccion, provincia, localidad, codigo_postal })
+        body: JSON.stringify({ nombre, email, telefono, password, acepta_marketing, direccion, numero, barrio, provincia, localidad, codigo_postal })
       });
       const data = await res.json();
       
@@ -6795,6 +6797,16 @@ onPixisDOMReady(() => {
 
   // ── Editar datos del perfil ──
 
+  window.togglePasswordVisibility = function (inputId, btn) {
+    const input = document.getElementById(inputId);
+    if (!input) return;
+    const isPassword = input.type === 'password';
+    input.type = isPassword ? 'text' : 'password';
+    const icon = btn ? btn.querySelector('i') : null;
+    if (icon) {
+      icon.className = isPassword ? 'far fa-eye-slash' : 'far fa-eye';
+    }
+  };
 
   window.abrirEditarPerfil = async function () {
     const vistaLista = document.getElementById('vistaListaPedidos');
@@ -6810,6 +6822,10 @@ onPixisDOMReady(() => {
       alertEl.textContent = '';
     }
 
+    if (document.getElementById('editClientePassword')) {
+      document.getElementById('editClientePassword').value = '';
+    }
+
     // Pre-poblar campos con los datos actuales desde la API
     try {
       const res = await fetch('/api/shop/me', { credentials: 'include' });
@@ -6820,6 +6836,8 @@ onPixisDOMReady(() => {
         if (document.getElementById('editClienteEmail')) document.getElementById('editClienteEmail').value = u.email || '';
         if (document.getElementById('editClienteTelefono')) document.getElementById('editClienteTelefono').value = u.telefono || '';
         if (document.getElementById('editClienteDireccion')) document.getElementById('editClienteDireccion').value = u.direccion || '';
+        if (document.getElementById('editClienteNumero')) document.getElementById('editClienteNumero').value = u.numero || '';
+        if (document.getElementById('editClienteBarrio')) document.getElementById('editClienteBarrio').value = u.barrio || '';
         if (document.getElementById('editClienteProvincia')) document.getElementById('editClienteProvincia').value = u.provincia || '';
         if (document.getElementById('editClienteLocalidad')) document.getElementById('editClienteLocalidad').value = u.localidad || '';
         if (document.getElementById('editClienteCodigoPostal')) document.getElementById('editClienteCodigoPostal').value = u.codigo_postal || '';
@@ -6845,13 +6863,28 @@ onPixisDOMReady(() => {
       alertEl.textContent = '';
     }
 
+    const passwordVal = document.getElementById('editClientePassword')?.value || '';
+    if (passwordVal && passwordVal.trim().length > 0 && passwordVal.trim().length < 6) {
+      if (alertEl) {
+        alertEl.style.display = 'block';
+        alertEl.style.background = 'rgba(248,113,113,0.1)';
+        alertEl.style.border = '1px solid rgba(248,113,113,0.3)';
+        alertEl.style.color = '#f87171';
+        alertEl.textContent = 'La nueva contraseña debe tener al menos 6 caracteres.';
+      }
+      return;
+    }
+
     const profileData = {
       nombre: document.getElementById('editClienteNombre').value.trim(),
       telefono: document.getElementById('editClienteTelefono').value.trim(),
-      direccion: document.getElementById('editClienteDireccion').value.trim(),
-      provincia: document.getElementById('editClienteProvincia').value.trim(),
-      localidad: document.getElementById('editClienteLocalidad').value.trim(),
-      codigo_postal: document.getElementById('editClienteCodigoPostal').value.trim()
+      password: passwordVal.trim(),
+      direccion: document.getElementById('editClienteDireccion')?.value.trim() || '',
+      numero: document.getElementById('editClienteNumero')?.value.trim() || '',
+      barrio: document.getElementById('editClienteBarrio')?.value.trim() || '',
+      provincia: document.getElementById('editClienteProvincia')?.value.trim() || '',
+      localidad: document.getElementById('editClienteLocalidad')?.value.trim() || '',
+      codigo_postal: document.getElementById('editClienteCodigoPostal')?.value.trim() || ''
     };
 
     try {
@@ -6882,7 +6915,6 @@ onPixisDOMReady(() => {
           alertEl.style.color = '#34d49a';
           alertEl.textContent = 'Datos actualizados con éxito.';
         }
-        // Actualizar también el botón de login del header con el nombre nuevo
         const userActualizado = data.user;
         const btnLogin = document.getElementById('btn-client-login');
         if (btnLogin && userActualizado && userActualizado.nombre) {

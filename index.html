@@ -1581,32 +1581,49 @@
                         </div>
                         <form id="formEditarPerfil" onsubmit="guardarPerfilCliente(event)" style="margin-top: 15px; text-align: left; display: flex; flex-direction: column; gap: 10px;">
                             <div>
-                                <label style="display:block; font-size:12px; color:#c084fc; margin-bottom:4px;">Nombre completo:</label>
+                                <label style="display:block; font-size:12px; color:#c084fc; margin-bottom:4px;">1. Nombre completo:</label>
                                 <input type="text" id="editClienteNombre" required style="width:100%; padding:8px; border-radius:6px; border:1px solid #c084fc; background:#120024; color:#fff; box-sizing:border-box;">
                             </div>
                             <div>
-                                <label style="display:block; font-size:12px; color:#c084fc; margin-bottom:4px;">Correo electrónico (cuenta):</label>
+                                <label style="display:block; font-size:12px; color:#c084fc; margin-bottom:4px;">2. Correo electrónico (cuenta):</label>
                                 <input type="email" id="editClienteEmail" disabled readonly style="width:100%; padding:8px; border-radius:6px; border:1px solid rgba(192,132,252,0.4); background:rgba(255,255,255,0.05); color:#aaa; box-sizing:border-box; cursor:not-allowed;">
                             </div>
                             <div>
-                                <label style="display:block; font-size:12px; color:#c084fc; margin-bottom:4px;">Teléfono celular:</label>
+                                <label style="display:block; font-size:12px; color:#c084fc; margin-bottom:4px;">3. Celular (WhatsApp):</label>
                                 <input type="text" id="editClienteTelefono" required style="width:100%; padding:8px; border-radius:6px; border:1px solid #c084fc; background:#120024; color:#fff; box-sizing:border-box;">
                             </div>
                             <div>
-                                <label style="display:block; font-size:12px; color:#c084fc; margin-bottom:4px;">Dirección de entrega:</label>
-                                <input type="text" id="editClienteDireccion" style="width:100%; padding:8px; border-radius:6px; border:1px solid #c084fc; background:#120024; color:#fff; box-sizing:border-box;">
+                                <label style="display:block; font-size:12px; color:#c084fc; margin-bottom:4px;">4. Contraseña (dejar en blanco si no deseás cambiarla):</label>
+                                <div style="position:relative; width:100%;">
+                                    <input type="password" id="editClientePassword" placeholder="Ingresá nueva clave si deseás actualizarla" style="width:100%; padding:8px 36px 8px 8px; border-radius:6px; border:1px solid #c084fc; background:#120024; color:#fff; box-sizing:border-box;">
+                                    <button type="button" onclick="togglePasswordVisibility('editClientePassword', this)" style="position:absolute; right:8px; top:50%; transform:translateY(-50%); background:none; border:none; color:#c084fc; cursor:pointer; font-size:14px;" title="Ver/Ocultar contraseña">
+                                        <i class="far fa-eye"></i>
+                                    </button>
+                                </div>
                             </div>
                             <div>
-                                <label style="display:block; font-size:12px; color:#c084fc; margin-bottom:4px;">Provincia:</label>
-                                <input type="text" id="editClienteProvincia" style="width:100%; padding:8px; border-radius:6px; border:1px solid #c084fc; background:#120024; color:#fff; box-sizing:border-box;">
+                                <label style="display:block; font-size:12px; color:#c084fc; margin-bottom:4px;">5. Dirección (calle del domicilio):</label>
+                                <input type="text" id="editClienteDireccion" placeholder="Ej: San Martín" style="width:100%; padding:8px; border-radius:6px; border:1px solid #c084fc; background:#120024; color:#fff; box-sizing:border-box;">
                             </div>
                             <div>
-                                <label style="display:block; font-size:12px; color:#c084fc; margin-bottom:4px;">Localidad:</label>
-                                <input type="text" id="editClienteLocalidad" style="width:100%; padding:8px; border-radius:6px; border:1px solid #c084fc; background:#120024; color:#fff; box-sizing:border-box;">
+                                <label style="display:block; font-size:12px; color:#c084fc; margin-bottom:4px;">6. Número (altura / dpto / datos adicionales):</label>
+                                <input type="text" id="editClienteNumero" placeholder="Ej: 1234 2°B" style="width:100%; padding:8px; border-radius:6px; border:1px solid #c084fc; background:#120024; color:#fff; box-sizing:border-box;">
                             </div>
                             <div>
-                                <label style="display:block; font-size:12px; color:#c084fc; margin-bottom:4px;">Código Postal:</label>
-                                <input type="text" id="editClienteCodigoPostal" style="width:100%; padding:8px; border-radius:6px; border:1px solid #c084fc; background:#120024; color:#fff; box-sizing:border-box;">
+                                <label style="display:block; font-size:12px; color:#c084fc; margin-bottom:4px;">7. Barrio:</label>
+                                <input type="text" id="editClienteBarrio" placeholder="Ej: Centro / San José" style="width:100%; padding:8px; border-radius:6px; border:1px solid #c084fc; background:#120024; color:#fff; box-sizing:border-box;">
+                            </div>
+                            <div>
+                                <label style="display:block; font-size:12px; color:#c084fc; margin-bottom:4px;">8. Localidad:</label>
+                                <input type="text" id="editClienteLocalidad" placeholder="Ej: Frías / San Miguel" style="width:100%; padding:8px; border-radius:6px; border:1px solid #c084fc; background:#120024; color:#fff; box-sizing:border-box;">
+                            </div>
+                            <div>
+                                <label style="display:block; font-size:12px; color:#c084fc; margin-bottom:4px;">9. Provincia:</label>
+                                <input type="text" id="editClienteProvincia" placeholder="Ej: Santiago del Estero" style="width:100%; padding:8px; border-radius:6px; border:1px solid #c084fc; background:#120024; color:#fff; box-sizing:border-box;">
+                            </div>
+                            <div>
+                                <label style="display:block; font-size:12px; color:#c084fc; margin-bottom:4px;">10. Código Postal:</label>
+                                <input type="text" id="editClienteCodigoPostal" placeholder="Ej: 4200" style="width:100%; padding:8px; border-radius:6px; border:1px solid #c084fc; background:#120024; color:#fff; box-sizing:border-box;">
                             </div>
                             <div id="editarPerfilAlert" style="display:none; font-size:12px; padding:8px; border-radius:6px; text-align:center;"></div>
                             <button type="submit" style="width:100%; padding:10px; margin-top:5px; background:var(--gold); border:none; border-radius:8px; font-weight:bold; cursor:pointer; color:#000; text-transform:uppercase; font-family:'Orbitron', sans-serif;">Guardar Cambios</button>
@@ -1654,40 +1671,50 @@
                         <h3>Crear Cuenta</h3>
                         <form id="formClientRegister" onsubmit="handleClientRegister(event)">
                             <div class="form-group">
-                                <label for="regNombre">Nombre Completo</label>
+                                <label for="regNombre">1. Nombre Completo</label>
                                 <input type="text" id="regNombre" required placeholder="Juan Pérez">
                             </div>
                             <div class="form-group">
-                                <label for="regEmail">Correo Electrónico</label>
+                                <label for="regEmail">2. Correo Electrónico</label>
                                 <input type="email" id="regEmail" required placeholder="ejemplo@correo.com">
                             </div>
                             <div class="form-group">
-                                <label for="regTelefono">Celular (WhatsApp)</label>
+                                <label for="regTelefono">3. Celular (WhatsApp)</label>
                                 <input type="text" id="regTelefono" required placeholder="3816543210">
                             </div>
                             <div class="form-group">
-                                <label for="regPassword">Contraseña</label>
+                                <label for="regPassword">4. Contraseña</label>
                                 <input type="password" id="regPassword" required placeholder="Mínimo 6 caracteres">
                             </div>
                             <!-- Datos de envío opcionales -->
                             <p class="form-section-label">Datos de envío <span class="label-opcional">(opcional — se autocompletan en tu próximo pedido)</span></p>
                             <div class="form-group">
-                                <label for="regDireccion">Dirección</label>
-                                <input type="text" id="regDireccion" placeholder="Ej: San Martín 1234">
+                                <label for="regDireccion">5. Dirección (calle del domicilio)</label>
+                                <input type="text" id="regDireccion" placeholder="Ej: San Martín">
                             </div>
                             <div class="form-row">
                                 <div class="form-group">
-                                    <label for="regProvincia">Provincia</label>
-                                    <input type="text" id="regProvincia" placeholder="Tucumán">
+                                    <label for="regNumero">6. Número (altura / dpto)</label>
+                                    <input type="text" id="regNumero" placeholder="Ej: 1234 2°B">
                                 </div>
                                 <div class="form-group">
-                                    <label for="regCodigoPostal">Código Postal</label>
-                                    <input type="text" id="regCodigoPostal" placeholder="4000">
+                                    <label for="regBarrio">7. Barrio</label>
+                                    <input type="text" id="regBarrio" placeholder="Ej: Centro">
                                 </div>
                             </div>
                             <div class="form-group">
-                                <label for="regLocalidad">Localidad / Barrio</label>
-                                <input type="text" id="regLocalidad" placeholder="San Miguel de Tucumán">
+                                <label for="regLocalidad">8. Localidad</label>
+                                <input type="text" id="regLocalidad" placeholder="Ej: San Miguel de Tucumán">
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="regProvincia">9. Provincia</label>
+                                    <input type="text" id="regProvincia" placeholder="Ej: Tucumán">
+                                </div>
+                                <div class="form-group">
+                                    <label for="regCodigoPostal">10. Código Postal</label>
+                                    <input type="text" id="regCodigoPostal" placeholder="Ej: 4000">
+                                </div>
                             </div>
                             <div class="form-group-checkbox">
                                 <input type="checkbox" id="regMarketing">

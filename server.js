@@ -331,9 +331,9 @@ async function clearLoginAttempts(email, tipo) {
 // POST /api/shop/register
 app.post('/api/shop/register', async (req, res) => {
   try {
-    const { nombre, email, telefono, password, acepta_marketing, direccion, provincia, localidad, codigo_postal } = req.body;
+    const { nombre, email, telefono, password, acepta_marketing, direccion, numero, barrio, provincia, localidad, codigo_postal } = req.body;
     if (!nombre || !email || !telefono || !password) {
-      return res.status(400).json({ error: 'Todos los campos son obligatorios.' });
+      return res.status(400).json({ error: 'Nombre, email, teléfono y contraseña son obligatorios.' });
     }
 
     if (!isAllowedEmailDomain(email)) {
@@ -357,6 +357,8 @@ app.post('/api/shop/register', async (req, res) => {
         password_hash: passwordHash,
         acepta_marketing: !!acepta_marketing,
         direccion: direccion || null,
+        numero: numero || null,
+        barrio: barrio || null,
         provincia: provincia || null,
         localidad: localidad || null,
         codigo_postal: codigo_postal || null,
@@ -661,6 +663,8 @@ app.get('/api/shop/me', async (req, res) => {
         email: user.email,
         telefono: user.telefono,
         direccion: user.direccion || '',
+        numero: user.numero || '',
+        barrio: user.barrio || '',
         provincia: user.provincia || '',
         localidad: user.localidad || '',
         codigo_postal: user.codigo_postal || ''
@@ -679,17 +683,26 @@ app.put('/api/shop/me', async (req, res) => {
   }
   try {
     const decoded = jwt.verify(token, JWT_SECRET);
-    const { nombre, telefono, direccion, provincia, localidad, codigo_postal } = req.body;
+    const { nombre, telefono, password, direccion, numero, barrio, provincia, localidad, codigo_postal } = req.body;
+    
+    const updateData = {
+      ...(nombre && { nombre }),
+      ...(telefono && { telefono }),
+      direccion: direccion !== undefined ? (direccion || null) : undefined,
+      numero: numero !== undefined ? (numero || null) : undefined,
+      barrio: barrio !== undefined ? (barrio || null) : undefined,
+      provincia: provincia !== undefined ? (provincia || null) : undefined,
+      localidad: localidad !== undefined ? (localidad || null) : undefined,
+      codigo_postal: codigo_postal !== undefined ? (codigo_postal || null) : undefined
+    };
+
+    if (password && password.trim().length >= 6) {
+      updateData.password_hash = await bcrypt.hash(password.trim(), 10);
+    }
+
     const updated = await prisma.usuario.update({
       where: { id: decoded.id },
-      data: {
-        ...(nombre && { nombre }),
-        ...(telefono && { telefono }),
-        direccion: direccion !== undefined ? (direccion || null) : undefined,
-        provincia: provincia !== undefined ? (provincia || null) : undefined,
-        localidad: localidad !== undefined ? (localidad || null) : undefined,
-        codigo_postal: codigo_postal !== undefined ? (codigo_postal || null) : undefined
-      }
+      data: updateData
     });
     return res.json({
       ok: true,
@@ -699,6 +712,8 @@ app.put('/api/shop/me', async (req, res) => {
         email: updated.email,
         telefono: updated.telefono,
         direccion: updated.direccion || '',
+        numero: updated.numero || '',
+        barrio: updated.barrio || '',
         provincia: updated.provincia || '',
         localidad: updated.localidad || '',
         codigo_postal: updated.codigo_postal || ''
