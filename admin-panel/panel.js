@@ -639,7 +639,7 @@ function renderClientes(clientes) {
   }).join('');
 
   container.innerHTML = `
-    <div class="table-wrapper" style="overflow-x: auto;">
+    <div class="table-wrapper" style="width: 100%; overflow: visible;">
       <table class="clientes-table">
         <thead>
           <tr>
