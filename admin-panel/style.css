@@ -766,12 +766,24 @@ body.light-theme #clientesStatsBar {
   }
 }
 
-/* ── CUADRÍCULA Y TARJETAS DE SECCIÓN AJUSTES ── */
+/* ── CUADRÍCULA Y TARJETAS DE SECCIÓN AJUSTES (4 TARJETAS SIMÉTRICAS A LA PAR) ── */
 .ajustes-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
-  gap: 20px;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
   margin-top: 15px;
+}
+
+@media (max-width: 1400px) {
+  .ajustes-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  .ajustes-grid {
+    grid-template-columns: 1fr;
+  }
 }
 
 .ajustes-card {
