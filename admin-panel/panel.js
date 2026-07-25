@@ -500,14 +500,14 @@ function switchMainTab(tab) {
   if (tab === 'clientes') {
     seccionClientes.style.display = 'block';
     btnClientes.classList.add('active');
-    loadClientes();
+    loadClientes(1);
   } else if (tab === 'ajustes') {
     seccionAjustes.style.display = 'block';
     btnAjustes.classList.add('active');
     document.getElementById('ajustesErrorMsg').style.display = 'none';
     document.getElementById('ajustesSuccessMsg').style.display = 'none';
     previewNewPath();
-    loadSMTPSettings();
+    loadAdminSettings();
   } else {
     seccionPedidos.style.display  = 'block';
     btnPedidos.classList.add('active');
@@ -515,10 +515,38 @@ function switchMainTab(tab) {
   }
 }
 
-// ── SECCIÓN CLIENTES ──
-let clientesList = [];
+// ── LIMPIAR PEDIDOS DE PRUEBA ──
+async function limpiarPedidosDePrueba() {
+  if (!confirm('⚠️ ATENCIÓN: Se eliminarán de forma permanente todos los pedidos de la base de datos para limpiar el historial de pruebas.\n\n¿Estás seguro de que deseas proceder?')) {
+    return;
+  }
 
-async function loadClientes() {
+  try {
+    const res = await fetch('/api/admin/orders/purge-test', {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' }
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      alert(`❌ Error: ${data.error || 'No se pudieron eliminar los pedidos.'}`);
+      return;
+    }
+
+    alert(`✅ ${data.message || 'Se limpiaron los pedidos de prueba correctamente.'}`);
+    loadOrders();
+    loadStats();
+  } catch (e) {
+    console.error('Error al limpiar pedidos:', e);
+    alert('❌ Error de conexión al limpiar pedidos.');
+  }
+}
+
+// ── SECCIÓN CLIENTES CON PAGINACIÓN Y MARCADOR ACTIVO ──
+let clientesList = [];
+let currentClientesPage = 1;
+
+async function loadClientes(page = 1) {
+  currentClientesPage = page;
   const container = document.getElementById('clientesContainer');
   if (!container) return;
   container.innerHTML = '<div class="loading-state">Cargando clientes...</div>';
@@ -526,6 +554,8 @@ async function loadClientes() {
   const q               = (document.getElementById('clienteSearch')?.value || '').trim();
   const aceptaMarketing = document.getElementById('clienteMarketingFilter')?.value || '';
   const params          = new URLSearchParams();
+  params.set('page', page);
+  params.set('limit', 10);
   if (q)               params.set('q', q);
   if (aceptaMarketing) params.set('acepta_marketing', aceptaMarketing);
 
@@ -542,10 +572,11 @@ async function loadClientes() {
     const statsBar = document.getElementById('clientesStatsBar');
     const conMkt = clientesList.filter(c => c.acepta_marketing).length;
     if (statsBar) {
-      statsBar.textContent = `${data.total} clientes — ${conMkt} aceptan marketing`;
+      statsBar.textContent = `${data.total} clientes totales — Página ${data.page} de ${data.totalPages}`;
     }
 
     renderClientes(clientesList);
+    renderClientesPagination(data.page, data.totalPages, data.total);
   } catch (e) {
     container.innerHTML = '<div class="empty-state">❌ Error al cargar clientes. Verificá tu sesión.</div>';
   }
@@ -553,7 +584,7 @@ async function loadClientes() {
 
 function buscarClientes() {
   clearTimeout(buscarClientes._timer);
-  buscarClientes._timer = setTimeout(loadClientes, 300);
+  buscarClientes._timer = setTimeout(() => loadClientes(1), 300);
 }
 
 function renderClientes(clientes) {
@@ -581,25 +612,25 @@ function renderClientes(clientes) {
       : '';
       
     const waLink = c.telefono
-      ? `<a href="https://wa.me/${c.telefono.replace(/\D/g,'')}" target="_blank" style="color:#4ade80; text-decoration:none;" title="Abrir WhatsApp">💬 ${c.telefono}</a>`
+      ? `<a href="https://wa.me/${c.telefono.replace(/\D/g,'')}" target="_blank" style="color:#4ade80; text-decoration:none; font-weight:600;" title="Abrir WhatsApp">💬 ${c.telefono}</a>`
       : '—';
     return `
       <tr>
         <td style="text-align:center;"><input type="checkbox" class="chk-cliente" value="${c.id}" onchange="onClienteSelectionChange()"></td>
         <td style="font-weight:700; color:#c084fc;">#${c.id}</td>
-        <td>${c.nombre}</td>
-        <td><a href="mailto:${c.email}" style="color:#a855f7;">${c.email}</a></td>
+        <td style="font-weight:700; color:#ffffff;">${c.nombre}</td>
+        <td><a href="mailto:${c.email}" style="color:#a855f7; font-weight:600;">${c.email}</a></td>
         <td>${waLink}</td>
-        <td style="font-size: 0.85rem; color: #ccc;">${c.direccion || '—'}${c.numero ? ' ' + c.numero : ''}</td>
-        <td style="font-size: 0.85rem; color: #ccc;">${c.barrio ? c.barrio + ' — ' : ''}${c.localidad || '—'}</td>
-        <td style="font-size: 0.85rem; color: #ccc;">${c.provincia || '—'}${c.codigo_postal ? ' (CP ' + c.codigo_postal + ')' : ''}</td>
+        <td style="font-size: 0.85rem; color: #e2e8f0;">${c.direccion || '—'}${c.numero ? ' ' + c.numero : ''}</td>
+        <td style="font-size: 0.85rem; color: #e2e8f0;">${c.barrio ? c.barrio + ' — ' : ''}${c.localidad || '—'}</td>
+        <td style="font-size: 0.85rem; color: #e2e8f0;">${c.provincia || '—'}${c.codigo_postal ? ' (CP ' + c.codigo_postal + ')' : ''}</td>
         <td>
           ${mktBadge}
           ${verificadoBadge}
           ${recoveryInfo}
         </td>
         <td style="text-align:center; font-weight:700; color: var(--gold);">${c.pedidos_mes}</td>
-        <td style="color:#666;">${fecha}</td>
+        <td style="color:#888;">${fecha}</td>
         <td style="text-align:center;">
           <button onclick="restablecerClaveCliente(${c.id}, '${c.nombre}')" style="background:transparent; border:none; color:var(--gold); cursor:pointer; margin-right:6px;" title="Restablecer contraseña"><i class="fas fa-key"></i></button>
           <button onclick="eliminarClienteIndividual(${c.id}, '${c.nombre}')" style="background:transparent; border:none; color:#ef4444; cursor:pointer;" title="Eliminar cliente permanentemente"><i class="fas fa-trash-alt"></i></button>
@@ -628,6 +659,40 @@ function renderClientes(clientes) {
         </thead>
         <tbody>${rows}</tbody>
       </table>
+    </div>`;
+}
+
+function renderClientesPagination(currentPage, totalPages, totalCount) {
+  const pagEl = document.getElementById('clientesPagination');
+  if (!pagEl) return;
+
+  if (totalPages <= 1) {
+    pagEl.innerHTML = '';
+    return;
+  }
+
+  let btnsHtml = '';
+  
+  // Botón Anterior
+  btnsHtml += `<button class="page-btn" ${currentPage === 1 ? 'disabled' : ''} onclick="loadClientes(${currentPage - 1})">◀ Anterior</button>`;
+
+  // Números de página con el marcador resplandeciente activo en la página actual
+  for (let i = 1; i <= totalPages; i++) {
+    const isActive = i === currentPage;
+    btnsHtml += `<button class="page-btn ${isActive ? 'active' : ''}" onclick="loadClientes(${i})">${i}</button>`;
+  }
+
+  // Botón Siguiente
+  btnsHtml += `<button class="page-btn" ${currentPage === totalPages ? 'disabled' : ''} onclick="loadClientes(${currentPage + 1})">Siguiente ▶</button>`;
+
+  pagEl.innerHTML = `
+    <div class="pagination-bar">
+      <div style="font-size:13px; color:#aaa;">
+        Página <strong style="color:#c084fc;">${currentPage}</strong> de <strong style="color:#fff;">${totalPages}</strong> (${totalCount} clientes en total)
+      </div>
+      <div class="pagination-buttons" style="display:flex; gap:6px;">
+        ${btnsHtml}
+      </div>
     </div>`;
 }
 
@@ -895,19 +960,135 @@ window.restablecerClaveCliente = async function(id, nombre) {
   }
 };
 
-// ── CONFIGURACIÓN SMTP DINÁMICA ──
-async function loadSMTPSettings() {
+// ── CONFIGURACIÓN DE AJUSTES & CUALQUIER DATO PRE-CARGADO ──
+async function loadAdminSettings() {
   try {
-    const res = await fetch('/api/admin/settings/smtp');
+    const res = await fetch('/api/admin/settings/all');
     if (!res.ok) return;
     const data = await res.json();
-    if (data.host) document.getElementById('smtpHost').value = data.host;
-    if (data.port) document.getElementById('smtpPort').value = data.port;
-    if (data.user) document.getElementById('smtpUser').value = data.user;
+    
+    if (data.smtp_host) document.getElementById('smtpHost').value = data.smtp_host;
+    if (data.smtp_port) document.getElementById('smtpPort').value = data.smtp_port;
+    if (data.smtp_user) document.getElementById('smtpUser').value = data.smtp_user;
+    if (data.nombre_comercial) document.getElementById('ajustesNombre').value = data.nombre_comercial;
+
+    const recText = document.getElementById('currentRecoveryEmailText');
+    if (recText) recText.textContent = data.recovery_email || 'No configurado';
+    if (data.recovery_email) document.getElementById('ajustesRecoveryEmail').value = data.recovery_email;
+
+    if (data.admin_email) document.getElementById('ajustesEmail').value = data.admin_email;
+
+    const badge2FA = document.getElementById('2faStatusBadge');
+    if (badge2FA) {
+      if (data.totp_activado) {
+        badge2FA.style.background = 'rgba(34, 197, 94, 0.15)';
+        badge2FA.style.color = '#4ade80';
+        badge2FA.style.borderColor = 'rgba(34, 197, 94, 0.3)';
+        badge2FA.textContent = '🟢 2FA Activado y Vinculado (Seguridad Máxima Activa)';
+      } else {
+        badge2FA.style.background = 'rgba(239, 68, 68, 0.15)';
+        badge2FA.style.color = '#f87171';
+        badge2FA.style.borderColor = 'rgba(239, 68, 68, 0.3)';
+        badge2FA.textContent = '🔴 2FA Desactivado (Se recomienda activar)';
+      }
+    }
   } catch (err) {
-    console.error('Error al cargar config SMTP de la API:', err);
+    console.error('Error al cargar ajustes generales:', err);
   }
 }
+
+// ── GESTIÓN DE 2FA (DESACTIVAR Y RE-VINCULAR) ──
+window.mostrarModalDesactivar2FA = function() {
+  document.getElementById('panelRevincular2FA').style.display = 'none';
+  document.getElementById('panelDesactivar2FA').style.display = 'block';
+  document.getElementById('otpDisable2FA').value = '';
+};
+
+window.cancelarDesactivar2FA = function() {
+  document.getElementById('panelDesactivar2FA').style.display = 'none';
+};
+
+window.ejecutarDesactivar2FA = async function() {
+  const otp_code = document.getElementById('otpDisable2FA').value.trim();
+  if (!otp_code) {
+    alert('⚠️ Por favor ingresá el código OTP de 6 dígitos.');
+    return;
+  }
+
+  try {
+    const res = await fetch('/api/admin/2fa/disable', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ otp_code })
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      alert(`❌ Error: ${data.error || 'No se pudo desactivar el 2FA.'}`);
+      return;
+    }
+
+    alert(`✅ ${data.message || '2FA desactivado correctamente.'}`);
+    cancelarDesactivar2FA();
+    loadAdminSettings();
+  } catch (e) {
+    console.error('Error al desactivar 2FA:', e);
+    alert('❌ Error de red al desactivar 2FA.');
+  }
+};
+
+window.solicitarRevincular2FA = async function() {
+  document.getElementById('panelDesactivar2FA').style.display = 'none';
+  try {
+    const res = await fetch('/api/admin/2fa/setup-new', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' }
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      alert(`❌ Error: ${data.error || 'No se pudo generar nuevo código QR.'}`);
+      return;
+    }
+
+    document.getElementById('imgNuevoQR2FA').src = data.qr;
+    document.getElementById('otpConfirmNew2FA').value = '';
+    document.getElementById('panelRevincular2FA').style.display = 'block';
+  } catch (e) {
+    console.error('Error al generar QR de re-vinculación:', e);
+    alert('❌ Error de red al solicitar nuevo QR.');
+  }
+};
+
+window.cancelarRevincular2FA = function() {
+  document.getElementById('panelRevincular2FA').style.display = 'none';
+};
+
+window.confirmarRevincular2FA = async function() {
+  const otp_code = document.getElementById('otpConfirmNew2FA').value.trim();
+  if (!otp_code) {
+    alert('⚠️ Por favor ingresá el código de 6 dígitos de tu app de autenticación.');
+    return;
+  }
+
+  try {
+    const res = await fetch('/api/admin/2fa/confirm-new', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ otp_code })
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      alert(`❌ Error: ${data.error || 'Código 2FA incorrecto.'}`);
+      return;
+    }
+
+    alert(`✅ ${data.message || '2FA vinculado y activado con éxito.'}`);
+    cancelarRevincular2FA();
+    loadAdminSettings();
+  } catch (e) {
+    console.error('Error al confirmar 2FA:', e);
+    alert('❌ Error de red al confirmar 2FA.');
+  }
+};
 
 async function updateSMTPSettings(event) {
   event.preventDefault();
@@ -936,7 +1117,8 @@ async function updateSMTPSettings(event) {
     } else {
       successBox.textContent = data.message || 'Configuración SMTP guardada correctamente.';
       successBox.style.display = 'block';
-      document.getElementById('smtpPass').value = ''; // Limpiar contraseña por seguridad
+      document.getElementById('smtpPass').value = '';
+      loadAdminSettings();
     }
   } catch (err) {
     errorBox.textContent = 'Error de red al guardar la configuración SMTP.';
@@ -944,4 +1126,5 @@ async function updateSMTPSettings(event) {
   }
 }
 
+window.loadAdminSettings = loadAdminSettings;
 window.updateSMTPSettings = updateSMTPSettings;

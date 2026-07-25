@@ -1532,10 +1532,13 @@ app.post('/api/admin/orders/:id/complete', verifyAdminToken, async (req, res) =>
 
 // ── ENDPOINTS DE PANEL DE CLIENTES (BLOQUE 10) ──────────────────────────────
 
-// GET /admin/customers — Listar clientes con búsqueda opcional
+// GET /admin/customers — Listar clientes con búsqueda y paginación opcional
 app.get('/admin/customers', verifyAdminToken, async (req, res) => {
   try {
     const { q, acepta_marketing } = req.query;
+    const page = Math.max(1, parseInt(req.query.page) || 1);
+    const limit = Math.max(1, Math.min(100, parseInt(req.query.limit) || 10));
+    const skip = (page - 1) * limit;
 
     const where = {};
     if (q && q.trim() !== '') {
@@ -1552,32 +1555,39 @@ app.get('/admin/customers', verifyAdminToken, async (req, res) => {
     const hace30dias = new Date();
     hace30dias.setDate(hace30dias.getDate() - 30);
 
-    const clientes = await prisma.usuario.findMany({
-      where,
-      orderBy: { creado_en: 'desc' },
-      select: {
-        id:               true,
-        nombre:           true,
-        email:            true,
-        telefono:         true,
-        direccion:        true,
-        numero:           true,
-        barrio:           true,
-        provincia:        true,
-        localidad:        true,
-        codigo_postal:    true,
-        acepta_marketing: true,
-        verificado:       true,
-        codigo_verificacion: true,
-        codigo_recuperacion: true,
-        creado_en:        true,
-        _count:           { select: { pedidos: true } },
-        pedidos: {
-          where: { creado_en: { gte: hace30dias } },
-          select: { id: true }
+    const [total, clientes] = await Promise.all([
+      prisma.usuario.count({ where }),
+      prisma.usuario.findMany({
+        where,
+        orderBy: { creado_en: 'desc' },
+        skip,
+        take: limit,
+        select: {
+          id:               true,
+          nombre:           true,
+          email:            true,
+          telefono:         true,
+          direccion:        true,
+          numero:           true,
+          barrio:           true,
+          provincia:        true,
+          localidad:        true,
+          codigo_postal:    true,
+          acepta_marketing: true,
+          verificado:       true,
+          codigo_verificacion: true,
+          codigo_recuperacion: true,
+          creado_en:        true,
+          _count:           { select: { pedidos: true } },
+          pedidos: {
+            where: { creado_en: { gte: hace30dias } },
+            select: { id: true }
+          }
         }
-      }
-    });
+      })
+    ]);
+
+    const totalPages = Math.ceil(total / limit) || 1;
 
     const clientesMapeados = clientes.map(c => ({
       id: c.id,
@@ -1599,7 +1609,7 @@ app.get('/admin/customers', verifyAdminToken, async (req, res) => {
       pedidos_mes: c.pedidos.length
     }));
 
-    res.json({ ok: true, total: clientesMapeados.length, clientes: clientesMapeados });
+    res.json({ ok: true, total, page, limit, totalPages, clientes: clientesMapeados });
   } catch (e) {
     console.error('Error al listar clientes (admin):', e);
     res.status(500).json({ error: 'Error interno del servidor.' });
@@ -2387,6 +2397,160 @@ app.post('/api/admin/settings/recovery-email', verifyAdminToken, async (req, res
   } catch (e) {
     console.error('Error al cambiar email de recuperación:', e);
     res.status(500).json({ error: 'Error interno del servidor.' });
+  }
+});
+
+// GET /api/admin/settings/all — Cargar todos los datos actuales configurados
+app.get('/api/admin/settings/all', verifyAdminToken, async (req, res) => {
+  try {
+    const host = await prisma.configGlobal.findUnique({ where: { clave: 'smtp_host' } });
+    const port = await prisma.configGlobal.findUnique({ where: { clave: 'smtp_port' } });
+    const user = await prisma.configGlobal.findUnique({ where: { clave: 'smtp_user' } });
+    const pass = await prisma.configGlobal.findUnique({ where: { clave: 'smtp_pass' } });
+    const recEmail = await prisma.configGlobal.findUnique({ where: { clave: 'recovery_email' } });
+    const panelPath = await prisma.configGlobal.findUnique({ where: { clave: 'admin_panel_path' } });
+    
+    const empleado = await prisma.empleadoVentas.findUnique({ where: { id: req.adminUser.id } });
+
+    res.json({
+      ok: true,
+      smtp_host: host ? host.valor : '',
+      smtp_port: port ? port.valor : '',
+      smtp_user: user ? user.valor : '',
+      smtp_configured: !!(pass && pass.valor),
+      nombre_comercial: empleado ? empleado.nombre : 'Vendedor Pixis',
+      recovery_email: recEmail ? recEmail.valor : process.env.ADMIN_RECOVERY_EMAIL || 'vendedorpixis@gmail.com',
+      admin_email: empleado ? empleado.email : req.adminUser.email,
+      totp_activado: empleado ? empleado.totp_activado : false,
+      panel_path: panelPath ? panelPath.valor : 'admin-panel'
+    });
+  } catch (e) {
+    console.error('Error en GET /api/admin/settings/all:', e);
+    res.status(500).json({ error: 'Error interno del servidor.' });
+  }
+});
+
+// POST /api/admin/2fa/disable — Desactivar 2FA verificando el OTP actual
+app.post('/api/admin/2fa/disable', verifyAdminToken, async (req, res) => {
+  try {
+    const { otp_code } = req.body;
+    if (!otp_code) {
+      return res.status(400).json({ error: 'El código OTP es obligatorio para desactivar el 2FA.' });
+    }
+
+    const empleado = await prisma.empleadoVentas.findUnique({ where: { id: req.adminUser.id } });
+    if (!empleado || !empleado.totp_secret || !empleado.totp_activado) {
+      return res.status(400).json({ error: 'El 2FA ya está desactivado.' });
+    }
+
+    const isValid = speakeasy.totp.verify({
+      secret: empleado.totp_secret,
+      encoding: 'base32',
+      token: otp_code.trim()
+    });
+
+    if (!isValid) {
+      return res.status(400).json({ error: 'Código 2FA incorrecto.' });
+    }
+
+    await prisma.empleadoVentas.update({
+      where: { id: empleado.id },
+      data: { totp_activado: false, totp_secret: null }
+    });
+
+    res.json({ ok: true, message: '2FA desactivado correctamente.' });
+  } catch (e) {
+    console.error('Error al desactivar 2FA:', e);
+    res.status(500).json({ error: 'Error interno del servidor.' });
+  }
+});
+
+// POST /api/admin/2fa/setup-new — Generar nuevo QR y secreto 2FA para vincular
+app.post('/api/admin/2fa/setup-new', verifyAdminToken, async (req, res) => {
+  try {
+    const empleado = await prisma.empleadoVentas.findUnique({ where: { id: req.adminUser.id } });
+    if (!empleado) return res.status(404).json({ error: 'Empleado no encontrado.' });
+
+    const newSecret = speakeasy.generateSecret({
+      length: 20,
+      name: `Pixis Informatica (${empleado.email})`,
+      issuer: 'Pixis Informatica'
+    });
+
+    // Guardar secreto temporalmente en la BD sin activar totp_activado hasta confirmar
+    await prisma.empleadoVentas.update({
+      where: { id: empleado.id },
+      data: { totp_secret: newSecret.base32, totp_activado: false }
+    });
+
+    const qrDataUrl = await qrcode.toDataURL(newSecret.otpauth_url);
+
+    res.json({
+      ok: true,
+      qr: qrDataUrl,
+      secret: newSecret.base32,
+      message: 'Escaneá el código QR con tu aplicación de autenticación y confirmá con el código de 6 dígitos.'
+    });
+  } catch (e) {
+    console.error('Error al generar nuevo 2FA:', e);
+    res.status(500).json({ error: 'Error al generar código QR.' });
+  }
+});
+
+// POST /api/admin/2fa/confirm-new — Confirmar y activar la nueva vinculación 2FA
+app.post('/api/admin/2fa/confirm-new', verifyAdminToken, async (req, res) => {
+  try {
+    const { otp_code } = req.body;
+    if (!otp_code) {
+      return res.status(400).json({ error: 'El código de 6 dígitos es obligatorio.' });
+    }
+
+    const empleado = await prisma.empleadoVentas.findUnique({ where: { id: req.adminUser.id } });
+    if (!empleado || !empleado.totp_secret) {
+      return res.status(400).json({ error: 'No hay ninguna configuración de 2FA pendiente.' });
+    }
+
+    const isValid = speakeasy.totp.verify({
+      secret: empleado.totp_secret,
+      encoding: 'base32',
+      token: otp_code.trim()
+    });
+
+    if (!isValid) {
+      return res.status(400).json({ error: 'Código 2FA incorrecto. Verificá tu aplicación de autenticación.' });
+    }
+
+    await prisma.empleadoVentas.update({
+      where: { id: empleado.id },
+      data: { totp_activado: true }
+    });
+
+    res.json({ ok: true, message: '¡2FA vinculado y activado con éxito!' });
+  } catch (e) {
+    console.error('Error al confirmar 2FA:', e);
+    res.status(500).json({ error: 'Error interno del servidor.' });
+  }
+});
+
+// DELETE /api/admin/orders/purge-test — Limpiar todos los pedidos de prueba
+app.delete('/api/admin/orders/purge-test', verifyAdminToken, async (req, res) => {
+  try {
+    const pedidos = await prisma.pedido.findMany({ select: { id: true } });
+    const ids = pedidos.map(p => p.id);
+
+    if (ids.length === 0) {
+      return res.json({ ok: true, count: 0, message: 'No hay pedidos en la base de datos para limpiar.' });
+    }
+
+    await prisma.itemPedido.deleteMany({ where: { pedido_id: { in: ids } } });
+    await prisma.comprobante.deleteMany({ where: { pedido_id: { in: ids } } });
+    const deleted = await prisma.pedido.deleteMany({ where: { id: { in: ids } } });
+
+    console.log(`🧹 [ADMIN] Purga ejecutada: ${deleted.count} pedidos eliminados.`);
+    res.json({ ok: true, count: deleted.count, message: `Se eliminaron ${deleted.count} pedidos con éxito.` });
+  } catch (e) {
+    console.error('Error al purgar pedidos:', e);
+    res.status(500).json({ error: 'Error al purgar pedidos de la base de datos.' });
   }
 });
 
