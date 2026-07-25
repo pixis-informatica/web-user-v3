@@ -477,7 +477,9 @@ async function submitReject(e) {
   }
 }
 
-// ── PESTAÑAS PRINCIPALES (PEDIDOS / CLIENTES / AJUSTES) ──
+// ── BARRERA DE SEGURIDAD 2FA PARA AJUSTES (GATEKEEPER) ──
+let ajustesUnlocked = false;
+
 function switchMainTab(tab) {
   currentMainTab = tab;
   const seccionPedidos  = document.getElementById('seccionPedidos');
@@ -488,7 +490,7 @@ function switchMainTab(tab) {
   const btnClientes     = document.getElementById('mainTab-clientes');
   const btnAjustes      = document.getElementById('mainTab-ajustes');
 
-  // Ocultar todo
+  // Ocultar todo por defecto
   seccionPedidos.style.display  = 'none';
   seccionClientes.style.display = 'none';
   seccionAjustes.style.display  = 'none';
@@ -502,6 +504,15 @@ function switchMainTab(tab) {
     btnClientes.classList.add('active');
     loadClientes(1);
   } else if (tab === 'ajustes') {
+    // Si Ajustes NO está desbloqueado por 2FA, mostrar modal de verificación
+    if (!ajustesUnlocked) {
+      document.getElementById('unlockErrorMsg').style.display = 'none';
+      document.getElementById('otpUnlockInput').value = '';
+      document.getElementById('modal2FAGate').style.display = 'flex';
+      setTimeout(() => document.getElementById('otpUnlockInput')?.focus(), 100);
+      return;
+    }
+
     seccionAjustes.style.display = 'block';
     btnAjustes.classList.add('active');
     document.getElementById('ajustesErrorMsg').style.display = 'none';
@@ -514,6 +525,72 @@ function switchMainTab(tab) {
     loadOrders();
   }
 }
+
+// ── FUNCIONES DE DESBLOQUEO Y BLOQUEO 2FA DE AJUSTES ──
+window.ejecutarDesbloqueoAjustes = async function(event) {
+  event.preventDefault();
+  const otpInput = document.getElementById('otpUnlockInput');
+  const errorBox = document.getElementById('unlockErrorMsg');
+  const btn = document.getElementById('btnSubmitUnlock');
+  
+  const otp_code = (otpInput?.value || '').trim();
+  errorBox.style.display = 'none';
+
+  if (!otp_code) {
+    errorBox.textContent = 'Por favor ingresá el código de 6 dígitos.';
+    errorBox.style.display = 'block';
+    return;
+  }
+
+  btn.disabled = true;
+  btn.textContent = 'Verificando...';
+
+  try {
+    const res = await fetch('/api/admin/2fa/verify-gate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ otp_code })
+    });
+    const data = await res.json();
+
+    if (!res.ok) {
+      errorBox.textContent = data.error || 'Código 2FA incorrecto.';
+      errorBox.style.display = 'block';
+      otpInput.value = '';
+      otpInput.focus();
+      btn.disabled = false;
+      btn.textContent = 'Desbloquear 🔓';
+      return;
+    }
+
+    // Código correcto: marcar ajustesUnlocked = true y abrir pestaña Ajustes
+    ajustesUnlocked = true;
+    document.getElementById('modal2FAGate').style.display = 'none';
+    btn.disabled = false;
+    btn.textContent = 'Desbloquear 🔓';
+
+    // Abrir Ajustes de inmediato
+    switchMainTab('ajustes');
+  } catch (e) {
+    console.error('Error al desbloquear Ajustes:', e);
+    errorBox.textContent = 'Error de conexión al verificar el 2FA.';
+    errorBox.style.display = 'block';
+    btn.disabled = false;
+    btn.textContent = 'Desbloquear 🔓';
+  }
+};
+
+window.cancelarDesbloqueoAjustes = function() {
+  document.getElementById('modal2FAGate').style.display = 'none';
+  // Volver a la pestaña de Pedidos
+  switchMainTab('pedidos');
+};
+
+window.bloquearAjustes = function() {
+  ajustesUnlocked = false;
+  document.getElementById('seccionAjustes').style.display = 'none';
+  switchMainTab('pedidos');
+};
 
 // ── LIMPIAR PEDIDOS DE PRUEBA ──
 async function limpiarPedidosDePrueba() {

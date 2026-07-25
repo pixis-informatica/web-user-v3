@@ -201,7 +201,10 @@
 
     <!-- ── SECCIÓN AJUSTES ── -->
     <div id="seccionAjustes" style="display:none; max-width: 1200px; width: 100%; margin: 16px auto 0 auto; padding: 20px; background: var(--panel); border: 1px solid var(--border); border-radius: 16px;">
-      <h2 style="margin-bottom: 20px; font-family: 'Orbitron'; font-size: 1.4rem; color: var(--gold); display: flex; align-items: center; gap: 10px;">⚙️ Ajustes</h2>
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+        <h2 style="font-family: 'Orbitron'; font-size: 1.4rem; color: var(--gold); display: flex; align-items: center; gap: 10px; margin: 0;">⚙️ Ajustes</h2>
+        <button type="button" onclick="bloquearAjustes()" style="padding: 6px 14px; background: rgba(239, 68, 68, 0.15); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.3); border-radius: 8px; font-size: 12px; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 6px;" title="Cerrar y volver a bloquear la sección de Ajustes">🔒 Bloquear Ajustes</button>
+      </div>
       
       <div id="ajustesErrorMsg" class="auth-error" style="display:none; margin-bottom:15px;"></div>
       <div id="ajustesSuccessMsg" style="display:none; background: rgba(0, 230, 118, 0.1); border: 1px solid var(--success); color: var(--success); padding: 12px; border-radius: 8px; font-size: 0.9rem; margin-bottom: 15px;"></div>
@@ -386,6 +389,28 @@
         <div class="modal-actions">
           <button type="button" class="btn-secondary" onclick="closeRejectModal()">Cancelar</button>
           <button type="submit" class="btn-danger" id="btnConfirmReject">Rechazar Pedido</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ── MODAL 2FA GATEKEEPER DE SEGURIDAD (ACCESO A AJUSTES) ── -->
+  <div id="modal2FAGate" class="modal-container" style="display: none; z-index: 999999;">
+    <div class="modal-overlay" onclick="cancelarDesbloqueoAjustes()"></div>
+    <div class="modal-content" style="max-width: 440px; text-align: center; border: 1px solid var(--gold); background: #0c0214;">
+      <h3 style="color: var(--gold); margin-bottom: 10px; font-family: 'Orbitron'; font-size: 1.2rem;"><i class="fas fa-lock"></i> 🔒 Verificación 2FA Requerida</h3>
+      <p style="font-size: 0.85rem; color: #ccc; margin-bottom: 20px; line-height: 1.4;">
+        Para acceder a la Sección de Ajustes y modificar configuraciones de la tienda, ingresá el código de 6 dígitos de tu aplicación de autenticación (2FA).
+      </p>
+      <form id="formUnlockAjustes" onsubmit="ejecutarDesbloqueoAjustes(event)">
+        <div class="form-group" style="margin-bottom: 20px;">
+          <input type="text" id="otpUnlockInput" placeholder="000000" pattern="\d{6}" maxlength="6" required autocomplete="off"
+                 style="text-align: center; font-size: 1.6rem; letter-spacing: 6px; font-family: 'Orbitron'; padding: 10px; border-color: var(--gold);">
+        </div>
+        <div id="unlockErrorMsg" class="auth-error" style="display:none; margin-bottom:15px;"></div>
+        <div style="display: flex; gap: 10px;">
+          <button type="button" onclick="cancelarDesbloqueoAjustes()" style="flex: 1; padding: 10px; background: #333; color: #fff; border: none; border-radius: 8px; cursor: pointer; font-size: 13px;">Cancelar</button>
+          <button type="submit" class="btn-submit" id="btnSubmitUnlock" style="flex: 1; padding: 10px; font-size: 13px;">Desbloquear 🔓</button>
         </div>
       </form>
     </div>

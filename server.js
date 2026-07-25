@@ -2430,6 +2430,39 @@ app.get('/api/admin/settings/all', verifyAdminToken, async (req, res) => {
   }
 });
 
+// POST /api/admin/2fa/verify-gate — Verificar código 2FA para desbloquear acceso a Ajustes
+app.post('/api/admin/2fa/verify-gate', verifyAdminToken, async (req, res) => {
+  try {
+    const empleado = await prisma.empleadoVentas.findUnique({ where: { id: req.adminUser.id } });
+    if (!empleado) return res.status(404).json({ error: 'Empleado no encontrado.' });
+
+    // Si TOTP no está activado, permitir acceso notificando
+    if (!empleado.totp_activado || !empleado.totp_secret) {
+      return res.json({ ok: true, totp_activado: false, message: '2FA no activado en la cuenta.' });
+    }
+
+    const { otp_code } = req.body;
+    if (!otp_code) {
+      return res.status(400).json({ error: 'Ingresá el código OTP de 6 dígitos.' });
+    }
+
+    const isValid = speakeasy.totp.verify({
+      secret: empleado.totp_secret,
+      encoding: 'base32',
+      token: otp_code.trim()
+    });
+
+    if (!isValid) {
+      return res.status(400).json({ error: 'Código 2FA incorrecto. Verificá tu aplicación Authenticator.' });
+    }
+
+    res.json({ ok: true, totp_activado: true, message: 'Acceso a ajustes desbloqueado con éxito.' });
+  } catch (e) {
+    console.error('Error al verificar gatekeeper 2FA:', e);
+    res.status(500).json({ error: 'Error interno del servidor.' });
+  }
+});
+
 // POST /api/admin/2fa/disable — Desactivar 2FA verificando el OTP actual
 app.post('/api/admin/2fa/disable', verifyAdminToken, async (req, res) => {
   try {
