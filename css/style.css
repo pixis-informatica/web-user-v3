@@ -8496,6 +8496,13 @@ body.light-mode .btn-view-toggle.active {
   color: #fff !important;
 }
 
+#modalUploadComprobante .modal-content {
+  background: #0d0218 !important;
+  color: #ffffff !important;
+  border: 2px solid var(--gold) !important;
+  box-shadow: 0 0 40px rgba(245, 197, 24, 0.4) !important;
+}
+
 .modal-client-auth .modal-close {
   position: absolute;
   top: 15px;
