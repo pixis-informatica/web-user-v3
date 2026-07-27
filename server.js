@@ -266,7 +266,7 @@ const isAllowedEmailDomain = (email) => {
 
 // ── HELPERS DE RATE LIMITING EN BASE DE DATOS ────────────────
 const MAX_FAILED_ATTEMPTS = 5;
-const LOCK_TIME_MS = 15 * 60 * 1000; // 15 minutos
+const LOCK_TIME_MS = 1 * 60 * 1000; // 60 segundos (1 minuto)
 
 async function checkLoginRateLimit(email, tipo) {
   const record = await prisma.intentosLogin.findUnique({
@@ -537,11 +537,6 @@ app.post('/api/shop/login', async (req, res) => {
   }
 });
 
-// POST /api/shop/logout
-app.post('/api/shop/logout', (req, res) => {
-  res.clearCookie('customer_token');
-  res.json({ ok: true, message: 'Sesión cerrada con éxito.' });
-});
 
 // POST /api/shop/password/solicitar-codigo
 app.post('/api/shop/password/solicitar-codigo', async (req, res) => {
@@ -2143,7 +2138,34 @@ app.post('/api/admin/profile/credentials', verifyAdminToken, async (req, res) =>
   }
 });
 
-// POST /api/admin/recovery/request-reset-2fa — Solicitar reset de 2FA
+// Helper flexible para encontrar al empleado administrador (soporta email de login o recovery_email)
+async function findAdminEmpleadoFlexible(inputEmail) {
+  if (!inputEmail) return null;
+  const targetEmail = inputEmail.trim().toLowerCase();
+
+  const allActive = await prisma.empleadoVentas.findMany({ where: { activo: true } });
+  if (!allActive || allActive.length === 0) return null;
+
+  // 1. Coincidencia por email de login (case-insensitive en JS)
+  let empleado = allActive.find(e => e.email && e.email.trim().toLowerCase() === targetEmail);
+
+  // 2. Coincidencia por correo seguro de recuperación guardado en configGlobal
+  if (!empleado) {
+    const cfgRecovery = await prisma.configGlobal.findUnique({ where: { clave: 'recovery_email' } });
+    if (cfgRecovery && cfgRecovery.valor && cfgRecovery.valor.trim().toLowerCase() === targetEmail) {
+      empleado = allActive[0];
+    }
+  }
+
+  // 3. Fallback: Si hay un único administrador en la tienda, asignarlo automáticamente
+  if (!empleado && allActive.length === 1) {
+    empleado = allActive[0];
+  }
+
+  return empleado;
+}
+
+// POST /api/admin/recovery/request-reset-2fa — Solicitar reset de 2FA o código de recuperación
 app.post('/api/admin/recovery/request-reset-2fa', async (req, res) => {
   try {
     const { email } = req.body;
@@ -2159,10 +2181,7 @@ app.post('/api/admin/recovery/request-reset-2fa', async (req, res) => {
       });
     }
 
-    const empleado = await prisma.empleadoVentas.findUnique({
-      where: { email: targetEmail }
-    });
-
+    const empleado = await findAdminEmpleadoFlexible(targetEmail);
     const genericMsg = 'Si el correo está registrado, se enviará un código de seguridad al email de recuperación.';
 
     if (empleado && empleado.activo) {
@@ -2183,7 +2202,7 @@ app.post('/api/admin/recovery/request-reset-2fa', async (req, res) => {
       });
       const recoveryEmail = cfgRecovery?.valor || 'pixisinformatica.contacto@gmail.com';
 
-      console.log(`📧 [RESET 2FA EMPLEADO] Código de recuperación enviado a ${recoveryEmail}: ${code}`);
+      console.log(`📧 [RESET CODE EMPLEADO] Código de recuperación enviado a ${recoveryEmail}: ${code}`);
       mail.enviarCodigoReset2FA(recoveryEmail, code).catch(console.error);
     } else {
       await recordFailedLoginAttempt(targetEmail, 'recovery_2fa');
@@ -2205,9 +2224,7 @@ app.post('/api/admin/recovery/confirm-reset-2fa', async (req, res) => {
     }
 
     const targetEmail = email.trim();
-    const empleado = await prisma.empleadoVentas.findUnique({
-      where: { email: targetEmail }
-    });
+    const empleado = await findAdminEmpleadoFlexible(targetEmail);
 
     if (!empleado || !empleado.codigo_recuperacion || !empleado.codigo_recuperacion_expira) {
       return res.status(400).json({ error: 'Código de recuperación inválido o vencido.' });
@@ -2240,6 +2257,56 @@ app.post('/api/admin/recovery/confirm-reset-2fa', async (req, res) => {
     res.json({ ok: true, message: 'La verificación en dos pasos (2FA) ha sido restablecida. Podrás volver a configurarla en el próximo inicio de sesión.' });
   } catch (e) {
     console.error('Error al confirmar reset 2fa:', e);
+    res.status(500).json({ error: 'Error interno del servidor.' });
+  }
+});
+
+// POST /api/admin/recovery/reset-password-with-code — Restablecer contraseña usando código de recuperación de email
+app.post('/api/admin/recovery/reset-password-with-code', async (req, res) => {
+  try {
+    const { email, codigo, new_password } = req.body;
+    if (!email || !codigo || !new_password) {
+      return res.status(400).json({ error: 'Email, código y nueva contraseña son obligatorios.' });
+    }
+
+    if (new_password.trim().length < 8) {
+      return res.status(400).json({ error: 'La nueva contraseña debe tener al menos 8 caracteres.' });
+    }
+
+    const targetEmail = email.trim();
+    const empleado = await findAdminEmpleadoFlexible(targetEmail);
+
+    if (!empleado || !empleado.codigo_recuperacion || !empleado.codigo_recuperacion_expira) {
+      return res.status(400).json({ error: 'Código de recuperación inválido o vencido.' });
+    }
+
+    const now = new Date();
+    if (empleado.codigo_recuperacion_expira < now) {
+      return res.status(400).json({ error: 'Código de recuperación inválido o vencido.' });
+    }
+
+    const match = await bcrypt.compare(codigo.trim(), empleado.codigo_recuperacion);
+    if (!match) {
+      return res.status(400).json({ error: 'Código de recuperación inválido o vencido.' });
+    }
+
+    const newHash = await bcrypt.hash(new_password.trim(), 10);
+
+    await prisma.empleadoVentas.update({
+      where: { id: empleado.id },
+      data: {
+        password_hash: newHash,
+        codigo_recuperacion: null,
+        codigo_recuperacion_expira: null
+      }
+    });
+
+    await clearLoginAttempts(targetEmail, 'recovery_2fa');
+    await clearLoginAttempts(targetEmail, 'empleado');
+
+    res.json({ ok: true, message: '¡Contraseña restablecida con éxito! Ya podés iniciar sesión con tu nueva clave.' });
+  } catch (e) {
+    console.error('Error al restablecer clave con código:', e);
     res.status(500).json({ error: 'Error interno del servidor.' });
   }
 });
@@ -2430,7 +2497,43 @@ app.get('/api/admin/settings/all', verifyAdminToken, async (req, res) => {
   }
 });
 
+// POST /api/admin/recovery/request-gate-pin — Enviar PIN de emergencia al recovery_email para desbloquear Ajustes
+app.post('/api/admin/recovery/request-gate-pin', verifyAdminToken, async (req, res) => {
+  try {
+    const empleado = await prisma.empleadoVentas.findUnique({ where: { id: req.adminUser.id } });
+    if (!empleado) return res.status(404).json({ error: 'Empleado no encontrado.' });
+
+    // Generar PIN de 6 dígitos
+    const pin = Math.floor(100000 + Math.random() * 900000).toString();
+    const pinHash = await bcrypt.hash(pin, 10);
+    const expira = new Date(Date.now() + 10 * 60 * 1000); // 10 minutos
+
+    await prisma.empleadoVentas.update({
+      where: { id: empleado.id },
+      data: {
+        codigo_recuperacion: pinHash,
+        codigo_recuperacion_expira: expira
+      }
+    });
+
+    // Obtener recovery_email
+    const cfgRecovery = await prisma.configGlobal.findUnique({ where: { clave: 'recovery_email' } });
+    const recoveryEmail = cfgRecovery?.valor || 'pixisinformatica.contacto@gmail.com';
+
+    console.log(`📧 [GATE PIN] Código de emergencia para Ajustes enviado a ${recoveryEmail}: ${pin}`);
+    mail.enviarCodigoReset2FA(recoveryEmail, pin).catch(console.error);
+
+    // Respuesta genérica por seguridad
+    const emailMask = recoveryEmail.replace(/(.{2})(.*)(@.*)/, '$1***$3');
+    res.json({ ok: true, message: `Código de emergencia enviado a ${emailMask}. Válido por 10 minutos.` });
+  } catch (e) {
+    console.error('Error en request-gate-pin:', e);
+    res.status(500).json({ error: 'Error interno del servidor.' });
+  }
+});
+
 // POST /api/admin/2fa/verify-gate — Verificar código 2FA para desbloquear acceso a Ajustes
+// Acepta: OTP de Authenticator O PIN de emergencia enviado por email
 app.post('/api/admin/2fa/verify-gate', verifyAdminToken, async (req, res) => {
   try {
     const empleado = await prisma.empleadoVentas.findUnique({ where: { id: req.adminUser.id } });
@@ -2443,20 +2546,40 @@ app.post('/api/admin/2fa/verify-gate', verifyAdminToken, async (req, res) => {
 
     const { otp_code } = req.body;
     if (!otp_code) {
-      return res.status(400).json({ error: 'Ingresá el código OTP de 6 dígitos.' });
+      return res.status(400).json({ error: 'Ingresá el código de 6 dígitos.' });
     }
 
-    const isValid = speakeasy.totp.verify({
+    const code = otp_code.trim();
+
+    // Intento 1: Verificar como OTP de Authenticator
+    const isValidOTP = speakeasy.totp.verify({
       secret: empleado.totp_secret,
       encoding: 'base32',
-      token: otp_code.trim()
+      token: code
     });
 
-    if (!isValid) {
-      return res.status(400).json({ error: 'Código 2FA incorrecto. Verificá tu aplicación Authenticator.' });
+    if (isValidOTP) {
+      return res.json({ ok: true, totp_activado: true, message: 'Acceso a ajustes desbloqueado con éxito.' });
     }
 
-    res.json({ ok: true, totp_activado: true, message: 'Acceso a ajustes desbloqueado con éxito.' });
+    // Intento 2: Verificar como PIN de emergencia enviado por email
+    if (empleado.codigo_recuperacion && empleado.codigo_recuperacion_expira) {
+      const now = new Date();
+      if (empleado.codigo_recuperacion_expira > now) {
+        const pinMatch = await bcrypt.compare(code, empleado.codigo_recuperacion);
+        if (pinMatch) {
+          // PIN válido: limpiar el código usado
+          await prisma.empleadoVentas.update({
+            where: { id: empleado.id },
+            data: { codigo_recuperacion: null, codigo_recuperacion_expira: null }
+          });
+          return res.json({ ok: true, totp_activado: true, message: 'Acceso desbloqueado con código de emergencia.' });
+        }
+      }
+    }
+
+    // Ambos fallaron
+    return res.status(400).json({ error: 'Código incorrecto. Verificá tu app Authenticator o usá un código de emergencia válido.' });
   } catch (e) {
     console.error('Error al verificar gatekeeper 2FA:', e);
     res.status(500).json({ error: 'Error interno del servidor.' });

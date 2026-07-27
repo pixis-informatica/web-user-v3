@@ -147,8 +147,35 @@ async function handleLogout() {
   location.reload();
 }
 
-// ── RECUPERACIÓN DE 2FA (MODAL) ──
-function open2FARecoveryModal() {
+// ── RECUPERACIÓN DE CLAVE / 2FA (MODAL) ──
+function open2FARecoveryModal(mode) {
+  const modalMode = mode || 'pass';
+  const modeInput = document.getElementById('recoveryMode');
+  if (modeInput) modeInput.value = modalMode;
+
+  const titleEl = document.getElementById('recoveryModalTitle');
+  const descEl = document.getElementById('recoveryModalDesc');
+  const passGroup = document.getElementById('groupRecoveryNewPass');
+  const submitBtn = document.getElementById('btnSubmitConfirmRecovery');
+
+  if (modalMode === 'pass') {
+    if (titleEl) titleEl.textContent = '🔑 Recuperar Contraseña / Acceso';
+    if (descEl) descEl.textContent = 'Ingresá tu correo de administración. Se enviará un código de seguridad de 6 dígitos a tu correo seguro de recuperación para definir una nueva contraseña.';
+    if (passGroup) passGroup.style.display = 'block';
+    if (submitBtn) submitBtn.textContent = 'Guardar y Restablecer Clave';
+  } else {
+    if (titleEl) titleEl.textContent = '🛡️ Restablecer Seguridad 2FA';
+    if (descEl) descEl.textContent = 'Ingresá tu correo de administración. Se enviará un código de restablecimiento al correo seguro de recuperación para re-vincular tu 2FA.';
+    if (passGroup) passGroup.style.display = 'none';
+    if (submitBtn) submitBtn.textContent = 'Restablecer 2FA';
+  }
+
+  // Pre-poblar email de login si fue escrito
+  const adminEmailVal = document.getElementById('adminEmail')?.value.trim();
+  if (adminEmailVal && document.getElementById('recoveryEmail')) {
+    document.getElementById('recoveryEmail').value = adminEmailVal;
+  }
+
   document.getElementById('modalRecovery').style.display = 'flex';
   document.getElementById('recoveryErrorMsg').style.display = 'none';
   document.getElementById('recoverySuccessMsg').style.display = 'none';
@@ -178,7 +205,7 @@ async function requestRecovery2FA(e) {
     const data = await res.json();
 
     if (!res.ok) {
-      errorBox.textContent = data.error;
+      errorBox.textContent = data.error || 'Error al solicitar código.';
       errorBox.style.display = 'block';
       return;
     }
@@ -199,32 +226,49 @@ async function confirmRecovery2FA(e) {
   e.preventDefault();
   const email = document.getElementById('recoveryEmail').value.trim();
   const codigo = document.getElementById('recoveryCode').value.trim();
+  const mode = document.getElementById('recoveryMode')?.value || 'pass';
+  const newPassword = document.getElementById('recoveryNewPassword')?.value || '';
+
   const errorBox = document.getElementById('recoveryErrorMsg');
   const successBox = document.getElementById('recoverySuccessMsg');
 
   errorBox.style.display = 'none';
   successBox.style.display = 'none';
 
+  if (mode === 'pass' && (!newPassword || newPassword.trim().length < 8)) {
+    errorBox.textContent = 'La nueva contraseña debe tener al menos 8 caracteres.';
+    errorBox.style.display = 'block';
+    return;
+  }
+
   try {
-    const res = await fetch('/api/admin/recovery/confirm-reset-2fa', {
+    const endpoint = mode === 'pass' 
+      ? '/api/admin/recovery/reset-password-with-code' 
+      : '/api/admin/recovery/confirm-reset-2fa';
+
+    const payload = mode === 'pass'
+      ? { email, codigo, new_password: newPassword }
+      : { email, codigo };
+
+    const res = await fetch(endpoint, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, codigo })
+      body: JSON.stringify(payload)
     });
     const data = await res.json();
 
-    if (!res.ok) {
-      errorBox.textContent = data.error;
+    if (!res.ok || !data.ok) {
+      errorBox.textContent = data.error || 'Código de recuperación inválido o vencido.';
       errorBox.style.display = 'block';
       return;
     }
 
-    alert(data.message);
+    alert(data.message || '¡Operación realizada con éxito!');
     close2FARecoveryModal();
-    // Volver a paso 1 para loguear de nuevo (ahora pedirá re-configurar QR)
     backToStep1();
   } catch (err) {
-    errorBox.textContent = 'Error al confirmar el código de restablecimiento.';
+    console.error('Error al confirmar recuperación:', err);
+    errorBox.textContent = err.message || 'Error al comunicarse con el servidor. Inténtalo de nuevo.';
     errorBox.style.display = 'block';
   }
 }
@@ -599,6 +643,53 @@ window.bloquearAjustes = function() {
   ajustesUnlocked = false;
   document.getElementById('seccionAjustes').style.display = 'none';
   switchMainTab('pedidos');
+};
+
+// ── SOLICITAR PIN DE EMERGENCIA POR EMAIL PARA DESBLOQUEAR AJUSTES ──
+window.solicitarPinEmergenciaGatekeeper = async function() {
+  const btn = document.getElementById('btnRequestGatePin');
+  const msgBox = document.getElementById('gateEmergencyMsg');
+  
+  if (!btn || !msgBox) return;
+
+  btn.disabled = true;
+  btn.textContent = '⏳ Enviando...';
+  msgBox.style.display = 'none';
+
+  try {
+    const res = await fetch('/api/admin/recovery/request-gate-pin', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' }
+    });
+    const data = await res.json();
+
+    if (res.ok && data.ok) {
+      msgBox.style.display = 'block';
+      msgBox.style.background = 'rgba(0, 230, 118, 0.1)';
+      msgBox.style.border = '1px solid #00e676';
+      msgBox.style.color = '#00e676';
+      msgBox.innerHTML = '✅ ' + data.message + '<br><span style="font-size:0.75rem; color:#ccc; margin-top:4px; display:block;">Ingresá el código recibido en la casilla de arriba y presioná Desbloquear 🔓</span>';
+      // Focus en la casilla OTP para que ingrese el PIN recibido
+      const otpInput = document.getElementById('otpUnlockInput');
+      if (otpInput) { otpInput.value = ''; otpInput.focus(); }
+    } else {
+      msgBox.style.display = 'block';
+      msgBox.style.background = 'rgba(248, 113, 113, 0.1)';
+      msgBox.style.border = '1px solid #f87171';
+      msgBox.style.color = '#f87171';
+      msgBox.textContent = '❌ ' + (data.error || 'Error al solicitar el código.');
+    }
+  } catch (e) {
+    console.error('Error al solicitar PIN de emergencia:', e);
+    msgBox.style.display = 'block';
+    msgBox.style.background = 'rgba(248, 113, 113, 0.1)';
+    msgBox.style.border = '1px solid #f87171';
+    msgBox.style.color = '#f87171';
+    msgBox.textContent = '❌ Error de conexión. Intentá de nuevo.';
+  }
+
+  btn.disabled = false;
+  btn.textContent = '📧 ¿Perdiste tu 2FA? Enviar código de emergencia a mi email';
 };
 
 // ── LIMPIAR PEDIDOS DE PRUEBA ──
@@ -1214,3 +1305,15 @@ async function updateSMTPSettings(event) {
 
 window.loadAdminSettings = loadAdminSettings;
 window.updateSMTPSettings = updateSMTPSettings;
+
+// ── ALTERNAR VISIBILIDAD DE CONTRASEÑAS (OJITO 👁️) ──
+window.toggleAdminPasswordVisibility = function(inputId, btn) {
+  const input = document.getElementById(inputId);
+  if (!input) return;
+  const isPassword = input.type === 'password';
+  input.type = isPassword ? 'text' : 'password';
+  const icon = btn ? btn.querySelector('i') : null;
+  if (icon) {
+    icon.className = isPassword ? 'far fa-eye-slash' : 'far fa-eye';
+  }
+};
