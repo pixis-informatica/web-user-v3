@@ -6510,6 +6510,13 @@ onPixisDOMReady(() => {
     modal.classList.remove('active');
     modal.style.display = 'none';
     pedidosSeleccionados.clear();
+    // Resetear vistas internas para que al reabrir no se amontonen
+    const vistaEditar = document.getElementById('vistaEditarDatos');
+    if (vistaEditar) vistaEditar.style.display = 'none';
+    const vistaDetalle = document.getElementById('vistaDetallePedido');
+    if (vistaDetalle) vistaDetalle.style.display = 'none';
+    const vistaLista = document.getElementById('vistaListaPedidos');
+    if (vistaLista) vistaLista.style.display = 'block';
   };
 
   // ── Cerrar sesión del cliente ──
@@ -6742,8 +6749,10 @@ onPixisDOMReady(() => {
   window.volverAListaPedidos = function () {
     const vistaLista   = document.getElementById('vistaListaPedidos');
     const vistaDetalle = document.getElementById('vistaDetallePedido');
+    const vistaEditar  = document.getElementById('vistaEditarDatos');
     if (vistaLista)   vistaLista.style.display   = 'block';
     if (vistaDetalle) vistaDetalle.style.display = 'none';
+    if (vistaEditar)  vistaEditar.style.display  = 'none';
   };
 
   // ── Eliminar historial de pedidos ──
