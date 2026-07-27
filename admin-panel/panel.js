@@ -312,19 +312,28 @@ function renderOrders() {
     let comprobantesHtml = '';
     if (order.comprobantes && order.comprobantes.length > 0) {
       comprobantesHtml = `
-        <div class="comprobante-preview" style="margin-top: 10px;">
-          <h4>Comprobantes de Pago:</h4>
-          <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-top: 5px;">
-            ${order.comprobantes.map(c => `
-              <a href="${c.archivo_url}" target="_blank" class="comprobante-link">
-                📄 Ver Comprobante (${c.archivo_url.split('.').pop().toUpperCase()})
-              </a>
-            `).join('')}
+        <div class="comprobante-preview">
+          <h4>💳 Comprobantes de Pago Subidos por el Cliente:</h4>
+          <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-top: 6px;">
+            ${order.comprobantes.map(c => {
+              const ext = (c.archivo_url || '').split('.').pop().toUpperCase();
+              const isPdf = ext === 'PDF';
+              const icon = isPdf ? '📄' : '🖼️';
+              return `
+                <a href="${c.archivo_url}" target="_blank" class="comprobante-link" title="Abrir comprobante de pago en pestaña nueva">
+                  ${icon} VER COMPROBANTE DE PAGO (${ext})
+                </a>
+              `;
+            }).join('')}
           </div>
         </div>
       `;
     } else {
-      comprobantesHtml = `<p style="font-size: 0.85rem; color: var(--error); margin-top: 8px;">⚠️ Sin comprobante de pago subido aún.</p>`;
+      comprobantesHtml = `
+        <div style="margin-top: 10px; padding: 8px 12px; background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.25); border-radius: 8px;">
+          <p style="font-size: 0.82rem; color: #f87171; font-weight: 700; margin: 0;">⚠️ Sin comprobante de pago subido aún por el cliente.</p>
+        </div>
+      `;
     }
 
     let actionsHtml = '';
