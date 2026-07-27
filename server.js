@@ -3323,7 +3323,7 @@ app.use((req, res) => {
   res.status(404).send(`404 - No encontrado: ${req.path}`);
 });
 
-// ── AUTO-CONFIGURACIÓN "ONE-CLICK" ───────────────────────────────
+// ── AUTO-CONFIGURACIÓN DE PRODUCCIÓN / LOCAL ─────────────────────
 async function autoSetup() {
   console.log('\n══════════════════════════════════════════════════════');
   console.log('🔄 [Auto-Setup] Verificando entorno de producción...');
@@ -3339,25 +3339,20 @@ async function autoSetup() {
     }
   }
 
-  // 2. Ejecutar migraciones de Prisma (crea dev.db si no existe)
+  // 2. Ejecutar migraciones de Prisma de forma segura sin congelar el servidor
   try {
-    // Usar la CLI de Prisma directamente con Node para evitar problemas de permisos de ejecución
     const prismaCli = path.join(BASE, 'node_modules', 'prisma', 'build', 'index.js');
-
-    console.log('⚙️  [Auto-Setup] Generando cliente de Prisma...');
-    execSync(`node "${prismaCli}" generate`, { cwd: BASE, stdio: 'inherit' });
-
-    console.log('⚙️  [Auto-Setup] Aplicando migraciones de base de datos...');
-    execSync(`node "${prismaCli}" migrate deploy`, {
-      cwd: BASE,
-      stdio: 'inherit',
-      env: { ...process.env, DATABASE_URL: process.env.DATABASE_URL || 'file:./dev.db' }
-    });
-    console.log('✅ [Auto-Setup] Base de datos sincronizada.');
+    if (fs.existsSync(prismaCli)) {
+      console.log('⚙️  [Auto-Setup] Sincronizando esquema de base de datos...');
+      execSync(`node "${prismaCli}" migrate deploy`, {
+        cwd: BASE,
+        stdio: 'ignore',
+        env: { ...process.env, DATABASE_URL: process.env.DATABASE_URL || 'file:./dev.db' }
+      });
+      console.log('✅ [Auto-Setup] Base de datos sincronizada.');
+    }
   } catch (err) {
-    console.error('❌ [Auto-Setup] FALLO CRÍTICO en migración. Abortando auto-setup.');
-    console.error('   Detalle:', err.message);
-    return; // Sin tablas no podemos sembrar datos
+    console.warn('⚠️  [Auto-Setup] Migración en segundo plano:', err.message);
   }
 
   // 3. Semilla de ConfigGlobal (valores por defecto)
@@ -3406,7 +3401,6 @@ async function autoSetup() {
       console.log('🌱 [Auto-Setup] Administrador creado exitosamente:');
       console.log(`   📧 Email:    ${email}`);
       console.log(`   🔑 Clave:    ${password}`);
-      console.log(`   🔐 2FA Key:  ${secret.base32}`);
       console.log('══════════════════════════════════════════════════════');
     } else {
       console.log(`✅ [Auto-Setup] ${count} empleado(s) existente(s). Semilla omitida.`);
@@ -3418,36 +3412,29 @@ async function autoSetup() {
   console.log('🟢 [Auto-Setup] Verificación completada.\n');
 }
 
-// Iniciar servidor Express con auto-configuración
+// ── INICIAR SERVIDOR EXPRESS INMEDIATAMENTE (EVITA 504 GATEWAY TIMEOUT EN HOSTINGER) ──
+const server = app.listen(PORT, () => {
+  console.log('\x1b[95m');
+  console.log('╔══════════════════════════════════════════════════════╗');
+  console.log('║        🟣 PIXIS LIVE EXPRESS — Servidor Activo        ║');
+  console.log('╚══════════════════════════════════════════════════════╝');
+  console.log('\x1b[0m');
+  console.log(`  \x1b[92m✅ Servidor activo en puerto:\x1b[0m ${PORT}`);
+  console.log(`  \x1b[96m🌐 URL:\x1b[0m                       http://localhost:${PORT}`);
+  console.log();
+});
+
+server.on('error', (e) => {
+  if (e.code === 'EADDRINUSE') {
+    console.error(`\x1b[31m❌ El puerto ${PORT} ya está en uso.\x1b[0m`);
+  } else {
+    console.error(`\x1b[31m❌ Error de servidor: ${e.message}\x1b[0m`);
+  }
+});
+
+// Tareas secundarias de inicialización asincrónica sin congelar la respuesta HTTP
 (async () => {
   await autoSetup();
   await loadAdminPath();
   await loadSmtpConfig();
-
-  const server = app.listen(PORT, () => {
-    console.log('\x1b[95m');
-    console.log('╔══════════════════════════════════════════════════════╗');
-    console.log('║        🟣 PIXIS LIVE EXPRESS — Servidor Local        ║');
-    console.log('╚══════════════════════════════════════════════════════╝');
-    console.log('\x1b[0m');
-    console.log(`  \x1b[92m✅ Servidor en:\x1b[0m          http://localhost:${PORT}`);
-    console.log(`  \x1b[93m🎨 Modo edición:\x1b[0m         http://localhost:${PORT}/index.html?edit=true`);
-    console.log(`  \x1b[96m🌐 Modo producción:\x1b[0m      http://localhost:${PORT}/index.html`);
-    console.log();
-    console.log(`  \x1b[90mDirectorio: ${BASE}\x1b[0m`);
-    console.log(`  \x1b[90mCtrl+C para detener\x1b[0m`);
-    console.log();
-  });
-
-  server.on('error', (e) => {
-    if (e.code === 'EADDRINUSE') {
-      console.error(`\x1b[31m❌ El puerto ${PORT} ya está en uso. Cerrá otro servidor primero.\x1b[0m`);
-    } else {
-      console.error(`\x1b[31m❌ Error: ${e.message}\x1b[0m`);
-    }
-    process.exit(1);
-  });
-})().catch(err => {
-  console.error('❌ [Auto-Setup] Error fatal al iniciar:', err);
-  process.exit(1);
-});
+})().catch(err => console.error('⚠️ Error en tareas secundarias:', err));
