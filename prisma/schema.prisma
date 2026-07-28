@@ -49,22 +49,27 @@ model EmpleadoVentas {
 }
 
 model Pedido {
-  id              Int           @id @default(autoincrement())
-  usuario_id      Int
-  usuario         Usuario       @relation(fields: [usuario_id], references: [id])
-  estado          String        @default("pendiente_revision") // pendiente_revision, reservado, completado, rechazado, vencido
-  motivo_rechazo  String?
-  stock_descontado Boolean      @default(false)
-  entrega         String        // retiro, envio
-  direccion       String?
-  forma_pago      String        // efectivo, transferencia, tarjeta
-  cuotas          Int?
-  total           Float
-  reservado_hasta DateTime?
-  creado_en       DateTime      @default(now())
-  actualizado_en  DateTime      @updatedAt
-  items           ItemPedido[]
-  comprobantes    Comprobante[]
+  id                     Int           @id @default(autoincrement())
+  usuario_id             Int
+  usuario                Usuario       @relation(fields: [usuario_id], references: [id])
+  estado                 String        @default("pendiente_revision") // pendiente_revision, reservado, completado, rechazado, vencido
+  motivo_rechazo         String?
+  stock_descontado       Boolean       @default(false)
+  entrega                String        // retiro, envio
+  direccion              String?
+  forma_pago             String        // efectivo, transferencia, tarjeta
+  cuotas                 Int?
+  total                  Float
+  subtotal_sin_descuento Float?        // Subtotal antes del descuento
+  cupon_codigo           String?       // Código del cupón aplicado
+  cupon_tipo             String?       // PERCENTAGE o FIXED
+  descuento_porcentaje   Float?        // Porcentaje de descuento aplicado
+  monto_descuento        Float?        // Monto en $ descontado
+  reservado_hasta        DateTime?
+  creado_en              DateTime      @default(now())
+  actualizado_en         DateTime      @updatedAt
+  items                  ItemPedido[]
+  comprobantes           Comprobante[]
 
   @@map("pedidos")
 }
@@ -122,5 +127,21 @@ model ConfigGlobal {
   valor  String
 
   @@map("config_global")
+}
+
+// ── SISTEMA DE CUPONES DE DESCUENTO ──────────────────────────────────────────
+model Cupon {
+  id                   Int       @id @default(autoincrement())
+  codigo               String    @unique
+  tipo                 String    @default("PERCENTAGE") // PERCENTAGE o FIXED
+  descuento_porcentaje Float     @default(0)            // Usado si tipo = PERCENTAGE
+  descuento_monto      Float     @default(0)            // Usado si tipo = FIXED
+  monto_minimo         Float     @default(0)            // Compra mínima para activar el cupón
+  activo               Boolean   @default(true)
+  usos_count           Int       @default(0)
+  expira_en            DateTime?                        // Null = sin vencimiento
+  creado_en            DateTime  @default(now())
+
+  @@map("cupones")
 }
 

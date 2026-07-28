@@ -775,7 +775,55 @@ function renderCart() {
     }
 
   }
-  cartTotal.textContent = `$${totalFinal.toLocaleString()}`;
+
+  // ── APLICACIÓN Y DESGLOSE DE CUPÓN DE DESCUENTO EN CARRITO ──
+  const rowSub = document.getElementById('rowSubtotalCheckout');
+  const rowDesc = document.getElementById('rowDescuentoCheckout');
+  const valSub = document.getElementById('valSubtotalCheckout');
+  const valDesc = document.getElementById('valDescuentoCheckout');
+  const lblDesc = document.getElementById('lblDescuentoCheckout');
+  const msgBox = document.getElementById('msgCuponCheckout');
+
+  if (window.cuponAplicadoCheckout && totalFinal > 0) {
+    const c = window.cuponAplicadoCheckout;
+    const subtotalBruto = totalFinal;
+
+    if (c.monto_minimo > 0 && subtotalBruto < c.monto_minimo) {
+      if (msgBox) {
+        msgBox.style.display = 'block';
+        msgBox.style.background = 'rgba(234, 179, 8, 0.15)';
+        msgBox.style.color = '#facc15';
+        msgBox.style.border = '1px solid rgba(234, 179, 8, 0.3)';
+        msgBox.textContent = `⚠️ Este cupón requiere una compra mínima de $${c.monto_minimo.toLocaleString('es-AR')}.`;
+      }
+      if (rowSub) rowSub.style.display = 'none';
+      if (rowDesc) rowDesc.style.display = 'none';
+      cartTotal.textContent = `$${totalFinal.toLocaleString('es-AR')}`;
+    } else {
+      let montoDescuento = 0;
+      if (c.tipo === 'PERCENTAGE') {
+        montoDescuento = Math.round((subtotalBruto * c.porcentaje) / 100);
+        if (lblDesc) lblDesc.textContent = `Descuento Cupón (${c.porcentaje}% OFF):`;
+      } else {
+        montoDescuento = c.monto_fijo || 0;
+        if (lblDesc) lblDesc.textContent = `Descuento Cupón (${c.codigo}):`;
+      }
+
+      if (montoDescuento > subtotalBruto) montoDescuento = subtotalBruto;
+      const totalConDescuento = subtotalBruto - montoDescuento;
+
+      if (rowSub) { rowSub.style.display = 'flex'; }
+      if (rowDesc) { rowDesc.style.display = 'flex'; }
+      if (valSub) { valSub.textContent = `$${subtotalBruto.toLocaleString('es-AR')}`; }
+      if (valDesc) { valDesc.textContent = `-$${montoDescuento.toLocaleString('es-AR')}`; }
+
+      cartTotal.textContent = `$${totalConDescuento.toLocaleString('es-AR')}`;
+    }
+  } else {
+    if (rowSub) rowSub.style.display = 'none';
+    if (rowDesc) rowDesc.style.display = 'none';
+    cartTotal.textContent = `$${totalFinal.toLocaleString('es-AR')}`;
+  }
 
   mostrarAdvertenciaCantidad();
   saveCart();
@@ -6253,10 +6301,11 @@ onPixisDOMReady(() => {
     const cuotas = forma_pago === 'tarjeta' ? parseInt(selectCuotas.value, 10) : null;
     
     try {
+      const cupon_codigo = window.cuponAplicadoCheckout ? window.cuponAplicadoCheckout.codigo : null;
       const res = await fetch('/api/shop/orders', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ entrega, direccion, forma_pago, cuotas, items })
+        body: JSON.stringify({ entrega, direccion, forma_pago, cuotas, items, cupon_codigo })
       });
       const data = await res.json();
       
@@ -6297,6 +6346,8 @@ onPixisDOMReady(() => {
       
       cart = [];
       saveCart();
+      window.cuponAplicadoCheckout = null;
+      try { localStorage.removeItem('cuponAplicado'); } catch(_) {}
       if (typeof renderCart === 'function') renderCart();
       
       if (forma_pago === 'transferencia') {
@@ -6804,7 +6855,73 @@ onPixisDOMReady(() => {
     }
   };
 
-  // ── Editar datos del perfil ──
+  // ── SISTEMA DE CUPONES DE DESCUENTO — CHECKOUT CLIENTE ──
+  window.cuponAplicadoCheckout = null;
+
+  // Restaurar cupón aplicado desde localStorage (persiste si el usuario recarga la página)
+  (function() {
+    try {
+      const saved = localStorage.getItem('cuponAplicado');
+      if (saved) window.cuponAplicadoCheckout = JSON.parse(saved);
+    } catch(_) {}
+  })();
+
+  window.validarAplicarCuponCheckout = async function () {
+    const input = document.getElementById('inputCuponCheckout');
+    const msgBox = document.getElementById('msgCuponCheckout');
+    if (!input || !msgBox) return;
+
+    const code = (input.value || '').trim().toUpperCase();
+    if (!code) {
+      msgBox.style.display = 'block';
+      msgBox.style.background = 'rgba(239, 68, 68, 0.15)';
+      msgBox.style.color = '#f87171';
+      msgBox.style.border = '1px solid rgba(239, 68, 68, 0.3)';
+      msgBox.textContent = '⚠️ Ingresá un código de cupón.';
+      return;
+    }
+
+    // ── 1. FETCH (try/catch independiente del DOM) ──
+    let data;
+    try {
+      const res = await fetch('/api/shop/coupons/validate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ code, codigo: code })
+      });
+      data = await res.json();
+    } catch (fetchErr) {
+      console.error('[CuponCheckout] Error de red al validar:', fetchErr);
+      msgBox.style.display = 'block';
+      msgBox.style.background = 'rgba(239, 68, 68, 0.15)';
+      msgBox.style.color = '#f87171';
+      msgBox.style.border = '1px solid rgba(239, 68, 68, 0.3)';
+      msgBox.textContent = '❌ Error de conexión al validar el cupón.';
+      return;
+    }
+
+    // ── 2. PROCESAR RESPUESTA ──
+    msgBox.style.display = 'block';
+    if (!data.ok) {
+      msgBox.style.background = 'rgba(239, 68, 68, 0.15)';
+      msgBox.style.color = '#f87171';
+      msgBox.style.border = '1px solid rgba(239, 68, 68, 0.3)';
+      msgBox.textContent = data.error || '⚠️ Código de cupón no válido o expirado.';
+      window.cuponAplicadoCheckout = null;
+      try { localStorage.removeItem('cuponAplicado'); } catch(_) {}
+      renderCart();
+      return;
+    }
+
+    // ── 3. ÉXITO — guardar y refrescar ──
+    window.cuponAplicadoCheckout = data;
+    try { localStorage.setItem('cuponAplicado', JSON.stringify(data)); } catch(_) {}
+    msgBox.style.background = 'rgba(34, 197, 94, 0.15)';
+    msgBox.style.color = '#4ade80';
+    msgBox.style.border = '1px solid rgba(34, 197, 94, 0.3)';
+    msgBox.textContent = data.mensaje || '🎉 ¡Felicitaciones! Cupón aplicado correctamente.';
+    renderCart();
+  };
 
   window.togglePasswordVisibility = function (inputId, btn) {
     const input = document.getElementById(inputId);

@@ -679,6 +679,7 @@ body.light-theme .metric-card,
 body.light-theme .order-card,
 body.light-theme .modal-content,
 body.light-theme #seccionAjustes,
+body.light-theme #seccionCupones,
 body.light-theme .table-wrapper {
   background: #ffffff !important;
   border: 1px solid rgba(168, 85, 247, 0.22) !important;
@@ -995,4 +996,26 @@ body.light-theme .ajustes-card input {
   border: 1.5px solid #94a3b8 !important;
   color: #020617 !important;
   font-weight: 700 !important;
+}
+
+/* ── MODO CLARO: Tabla de Cupones en #seccionCupones ──────────────────────── */
+body.light-theme #seccionCupones h2,
+body.light-theme #seccionCupones h3 {
+  color: #1a1a2e !important;
+}
+body.light-theme #seccionCupones p,
+body.light-theme #seccionCupones label {
+  color: #475569 !important;
+}
+body.light-theme #seccionCupones table thead tr {
+  background: rgba(168, 85, 247, 0.08) !important;
+}
+body.light-theme #seccionCupones table thead th {
+  color: #475569 !important;
+}
+body.light-theme #seccionCupones table tbody tr {
+  border-bottom: 1px solid rgba(168, 85, 247, 0.12) !important;
+}
+body.light-theme #seccionCupones table tbody td {
+  color: #1a1a2e !important;
 }

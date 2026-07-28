@@ -169,6 +169,7 @@
         <button class="main-tab-btn active" id="mainTab-pedidos" onclick="switchMainTab('pedidos')">📦 Pedidos</button>
         <button class="main-tab-btn" id="mainTab-clientes" onclick="switchMainTab('clientes')">👥 Clientes</button>
         <button class="main-tab-btn" id="mainTab-ajustes" onclick="switchMainTab('ajustes')">⚙️ Ajustes</button>
+        <button class="main-tab-btn" id="mainTab-cupones" onclick="switchMainTab('cupones')" style="display: none; background: rgba(168, 85, 247, 0.15); color: #c084fc; border: 1px solid rgba(168, 85, 247, 0.4);">🎟️ Cupones</button>
       </div>
     </div>
 
@@ -386,7 +387,7 @@
           </form>
         </div>
 
-        <!-- TARJETA 4: Cambiar URL del Panel (INDEPENDIENTE A LA PAR) -->
+        <!-- TARJETA 6: Cambiar URL del Panel -->
         <div class="ajustes-card">
           <form id="formAjustesPath" onsubmit="updatePanelPath(event)">
             <h3 style="font-size: 1.05rem; color: #ef4444; margin-bottom: 6px;"><i class="fas fa-link"></i> 6. Cambiar URL del Panel</h3>
@@ -405,6 +406,126 @@
             <button type="submit" class="btn-submit" style="width: 100%; padding: 10px; font-size: 13px; background: linear-gradient(135deg, var(--error), #ff4d4d); border-color: transparent;">Actualizar Ruta de Acceso</button>
           </form>
         </div>
+
+        <!-- TARJETA 7: Mensaje de Garantía en Mails Automáticos -->
+        <div class="ajustes-card" style="border: 1px solid rgba(168, 85, 247, 0.4); background: linear-gradient(135deg, rgba(168, 85, 247, 0.08), rgba(99, 102, 241, 0.05)); grid-column: 1 / -1;">
+          <form id="formAjustesGarantia" onsubmit="guardarGarantiaEmail(event)">
+            <h3 style="font-size: 1.05rem; color: #c084fc; margin-bottom: 6px;"><i class="fas fa-shield-alt"></i> 7. Garantía y Términos en Correos Automáticos</h3>
+            <p class="ajustes-desc">Editá el mensaje de garantía, políticas de cambio y términos que se adjunta automáticamente en todos los correos de pedidos enviados a tus clientes.</p>
+
+            <div class="form-group">
+              <label for="ajustesGarantiaTexto">Texto de Garantía y Políticas</label>
+              <textarea id="ajustesGarantiaTexto" rows="10" required placeholder="Cargando texto actual..." style="width: 100%; padding: 12px; background: rgba(0,0,0,0.4); color: #e0e0e0; border: 1px solid rgba(255,255,255,0.2); border-radius: 8px; font-family: inherit; font-size: 0.84rem; line-height: 1.65; resize: vertical; box-sizing: border-box;"></textarea>
+              <span class="helper-text">💡 <strong>¿Dónde aparece?</strong> Al pie de los correos de Reserva, Confirmación, Retiro y Entrega de cada pedido.</span>
+            </div>
+
+            <div style="display: flex; gap: 10px; align-items: center; margin-top: 4px;">
+              <button type="submit" id="btnGuardarGarantia" class="btn-submit" style="flex: 1; padding: 11px; font-size: 13px; background: linear-gradient(135deg, #a855f7, #6366f1); border: none; font-weight: 700;">💾 Guardar Texto de Garantía</button>
+              <span id="garantiaSaveMsg" style="display:none; font-size:0.8rem; font-weight:600;"></span>
+            </div>
+          </form>
+        </div>
+
+      </div>
+    </div>
+    <!-- ── SECCIÓN EXCLUSIVA CUPONES (VISTA DEDICADA 1:1 MAESTRO POS) ── -->
+    <div id="seccionCupones" style="display:none; max-width: 1200px; width: 100%; margin: 16px auto 0 auto; padding: 24px; background: var(--panel); border: 1px solid rgba(168, 85, 247, 0.4); border-radius: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
+      <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px; padding-bottom: 15px; border-bottom: 1px solid rgba(255,255,255,0.1);">
+        <div>
+          <h2 style="font-family: 'Orbitron'; font-size: 1.4rem; color: #c084fc; display: flex; align-items: center; gap: 10px; margin: 0;">🎟️ Administración de Cupones de Descuento</h2>
+          <p style="font-size: 0.85rem; color: #aaa; margin: 4px 0 0 0;">Cree y gestione cupones promocionales válidos en caja, tienda web y venta presencial.</p>
+        </div>
+        <div style="display: flex; gap: 10px;">
+          <button type="button" onclick="triggerImportarCuponesWeb()" style="padding: 8px 14px; background: linear-gradient(135deg, #a855f7, #6366f1); color: #fff; border: none; border-radius: 8px; font-weight: 700; font-size: 12px; cursor: pointer; display: flex; align-items: center; gap: 6px; box-shadow: 0 4px 12px rgba(168,85,247,0.3);" title="Importar cupones exportados desde Maestro POS">📥 Importar (.pxgcupon)</button>
+          <button type="button" onclick="exportarCuponesPxgcuponWeb()" style="padding: 8px 14px; background: rgba(168, 85, 247, 0.15); color: #e0b8ff; border: 1px solid rgba(168, 85, 247, 0.4); border-radius: 8px; font-weight: 700; font-size: 12px; cursor: pointer; display: flex; align-items: center; gap: 6px;" title="Exportar cupones activos para Maestro POS">📤 Exportar (.pxgcupon)</button>
+          <input type="file" id="fileInputPxgcupon" accept=".pxgcupon,.json" style="display: none;" onchange="importarCuponesPxgcuponWeb(event)">
+        </div>
+      </div>
+
+      <!-- GRID DE 2 COLUMNAS 1:1 MAESTRO POS -->
+      <div style="display: grid; grid-template-columns: 380px 1fr; gap: 24px;">
+        
+        <!-- COLUMNA IZQUIERDA: Formulario Nuevo Cupón -->
+        <div style="background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; padding: 20px;">
+          <h3 style="font-size: 1.05rem; color: #fff; margin-bottom: 15px; display: flex; align-items: center; gap: 8px;">➕ Nuevo Cupón</h3>
+          <form id="formCrearCuponSeccion" onsubmit="crearCuponAdminSeccion(event)">
+            <div class="form-group" style="margin-bottom: 14px;">
+              <label for="cuponCodigoSec">Código del Cupón *</label>
+              <input type="text" id="cuponCodigoSec" required placeholder="EJ: DESCUENTO15" style="text-transform: uppercase; font-family: 'Orbitron'; font-weight: 700; letter-spacing: 1px;" oninput="this.value = this.value.toUpperCase().replace(/[^A-Z0-9_\-]/g, '')">
+            </div>
+
+            <div class="form-group" style="margin-bottom: 14px;">
+              <label for="cuponTipoSec">Tipo de Descuento</label>
+              <select id="cuponTipoSec" onchange="toggleTipoCuponInputsSec()" style="width: 100%; padding: 9px; background: rgba(0,0,0,0.4); color: #fff; border: 1px solid rgba(255,255,255,0.2); border-radius: 8px;">
+                <option value="PERCENTAGE">Porcentaje (%)</option>
+                <option value="FIXED">Monto Fijo ($ ARS)</option>
+              </select>
+            </div>
+
+            <div class="form-group" style="margin-bottom: 14px;">
+              <label id="lblCuponValorSec" for="cuponValorSec">Porcentaje de Descuento (%) *</label>
+              <input type="number" id="cuponValorSec" required min="1" max="100" placeholder="Ej: 15" style="width: 100%;">
+            </div>
+
+            <div class="form-group" style="margin-bottom: 14px;">
+              <label for="cuponMinimoSec">Compra Mínima ($ ARS) (Opcional)</label>
+              <input type="number" id="cuponMinimoSec" min="0" step="100" placeholder="Ej: 10000 (0 = sin mínimo)">
+            </div>
+
+            <div class="form-group" style="margin-bottom: 16px;">
+              <label for="cuponUnidadExpiracionSec">Vencimiento del Cupón</label>
+              <select id="cuponUnidadExpiracionSec" onchange="toggleExpiracionCuponInputsSec()" style="width: 100%; padding: 9px; background: rgba(0,0,0,0.4); color: #fff; border: 1px solid rgba(255,255,255,0.2); border-radius: 8px;">
+                <option value="SIN_EXPIRACION">Sin Vencimiento (Indefinido)</option>
+                <option value="24H">⏱️ Duración Rápida (24 Horas)</option>
+                <option value="HORAS">⏱️ Duración Rápida (Horas Personalizadas)</option>
+                <option value="DIAS">⏱️ Duración Rápida (Días Personalizados)</option>
+                <option value="SEMANAS">⏱️ Duración Rápida (Semanas Personalizadas)</option>
+                <option value="MESES">⏱️ Duración Rápida (Meses Personalizados)</option>
+                <option value="EXACTO">📅 Fecha y Hora Calendario Exacta</option>
+              </select>
+            </div>
+
+            <div id="wrapperValorExpiracionSec" class="form-group" style="display: none; margin-bottom: 14px;">
+              <label id="lblValorExpiracionSec" for="cuponValorExpiracionSec">Cantidad</label>
+              <input type="number" id="cuponValorExpiracionSec" min="1" placeholder="Ej: 6">
+            </div>
+
+            <div id="wrapperFechaExactaSec" class="form-group" style="display: none; margin-bottom: 14px;">
+              <label for="cuponFechaExactaSec">Fecha y Hora Exacta</label>
+              <input type="datetime-local" id="cuponFechaExactaSec" style="color-scheme: dark;">
+            </div>
+
+            <button type="submit" id="btnCrearCuponSec" class="btn-submit" style="width: 100%; padding: 12px; font-size: 14px; background: linear-gradient(135deg, #2563eb, #3b82f6); border: none; font-weight: 700; border-radius: 8px; cursor: pointer;">Crear Cupón</button>
+          </form>
+        </div>
+
+        <!-- COLUMNA DERECHA: Tabla Cupones Registrados -->
+        <div>
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+            <h3 style="font-size: 1.05rem; color: #fff; margin: 0;">Cupones Registrados <span id="cantCuponesBadge" style="font-size: 0.85rem; color: #aaa; font-weight: normal;">(0)</span></h3>
+            <button type="button" onclick="cargarCuponesAdmin()" style="background: transparent; color: #c084fc; border: 1px solid rgba(192,132,252,0.3); padding: 5px 12px; border-radius: 6px; font-size: 0.78rem; cursor: pointer;">🔄 Actualizar Lista</button>
+          </div>
+
+          <div style="background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; overflow: hidden;">
+            <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 0.85rem;">
+              <thead>
+                <tr style="background: rgba(255,255,255,0.05); color: #aaa; border-bottom: 1px solid rgba(255,255,255,0.1);">
+                  <th style="padding: 10px 12px;">Código</th>
+                  <th style="padding: 10px 12px;">Descuento</th>
+                  <th style="padding: 10px 12px;">Mínimo</th>
+                  <th style="padding: 10px 12px;">Vencimiento</th>
+                  <th style="padding: 10px 12px;">Estado</th>
+                  <th style="padding: 10px 12px; text-align: center;">Usos</th>
+                  <th style="padding: 10px 12px; text-align: right;">Acciones</th>
+                </tr>
+              </thead>
+              <tbody id="tablaCuponesAdminBody">
+                <tr><td colspan="7" style="text-align: center; color: #888; padding: 20px;">Cargando cupones...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
       </div>
     </div>
   </div>

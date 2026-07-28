@@ -380,9 +380,12 @@ function renderOrders() {
       `;
     }
 
+    const btnExportarPxGres = `<button class="btn-action" onclick="exportarReservaPxGres(${order.id})" style="background: linear-gradient(135deg, #a855f7, #6366f1); color: #fff; border: 1px solid rgba(168,85,247,0.5); font-weight: 700; box-shadow: 0 0 10px rgba(168,85,247,0.3);" title="Exportar archivo .pxgres para Maestro POS">📥 Exportar Reserva (.pxgres)</button>`;
+
     let actionsHtml = '';
     if (order.estado === 'pendiente_revision') {
       actionsHtml = `
+        ${btnExportarPxGres}
         <button class="btn-action btn-action-confirm" onclick="confirmOrder(${order.id})">Confirmar y Reservar Stock</button>
         <button class="btn-action btn-action-reject" onclick="openRejectModal(${order.id})">Rechazar</button>
       `;
@@ -393,10 +396,13 @@ function renderOrders() {
         ? `<button class="btn-action btn-action-confirm" onclick="confirmOrder(${order.id})">✅ Confirmar Pago Transferencia</button>`
         : '';
       actionsHtml = `
+        ${btnExportarPxGres}
         ${btnConfirmarPago}
         <button class="btn-action btn-action-complete" onclick="completeOrder(${order.id})">Entregar / Completar</button>
         <button class="btn-action btn-action-reject" onclick="openRejectModal(${order.id})">Rechazar</button>
       `;
+    } else {
+      actionsHtml = `${btnExportarPxGres}`;
     }
 
     const itemsRows = order.items.map(item => `
@@ -431,7 +437,14 @@ function renderOrders() {
           <div class="info-item"><span>Localidad:</span> ${order.usuario?.localidad || '—'}</div>
           <div class="info-item"><span>Código Postal:</span> ${order.usuario?.codigo_postal || '—'}</div>
           <div class="info-item"><span>Medio de Pago:</span> ${order.forma_pago.toUpperCase()} ${order.cuotas ? `(${order.cuotas} cuotas)` : ''}</div>
-          <div class="info-item" style="font-size: 1rem; margin-top: 8px;"><strong>Total:</strong> <span style="color: var(--gold); font-weight: bold;">$${order.total.toLocaleString('es-AR')}</span></div>
+          ${order.cupon_codigo ? `
+            <div class="info-item" style="background: rgba(168, 85, 247, 0.15); border: 1px solid rgba(168, 85, 247, 0.3); padding: 6px 10px; border-radius: 6px; margin-top: 6px; color: #e0b8ff;">
+              🎟️ <strong>Cupón Aplicado:</strong> <span style="color:#fff; font-weight:700;">${order.cupon_codigo}</span> 
+              ${order.monto_descuento ? `<span style="color:#4ade80; font-weight:700; margin-left:4px;">(-$${order.monto_descuento.toLocaleString('es-AR')})</span>` : ''}
+              ${order.subtotal_sin_descuento ? `<div style="font-size:0.75rem; color:#aaa; margin-top:2px;">Subtotal original: $${order.subtotal_sin_descuento.toLocaleString('es-AR')}</div>` : ''}
+            </div>
+          ` : ''}
+          <div class="info-item" style="font-size: 1rem; margin-top: 8px;"><strong>Total Final:</strong> <span style="color: var(--gold); font-weight: bold;">$${order.total.toLocaleString('es-AR')}</span></div>
         </div>
       </div>
 
@@ -538,26 +551,38 @@ function switchMainTab(tab) {
   const seccionPedidos  = document.getElementById('seccionPedidos');
   const seccionClientes = document.getElementById('seccionClientes');
   const seccionAjustes  = document.getElementById('seccionAjustes');
+  const seccionCupones  = document.getElementById('seccionCupones');
   
-  const btnPedidos      = document.getElementById('mainTab-pedidos');
-  const btnClientes     = document.getElementById('mainTab-clientes');
-  const btnAjustes      = document.getElementById('mainTab-ajustes');
+  const btnPedidos  = document.getElementById('mainTab-pedidos');
+  const btnClientes = document.getElementById('mainTab-clientes');
+  const btnAjustes  = document.getElementById('mainTab-ajustes');
+  const btnCupones  = document.getElementById('mainTab-cupones');
+
+  // Control de visibilidad inteligente del botón Cupones (Solo visible si Ajustes está desbloqueado por 2FA)
+  if (btnCupones) {
+    if (ajustesUnlocked) {
+      btnCupones.style.display = 'inline-flex';
+    } else {
+      btnCupones.style.display = 'none';
+    }
+  }
 
   // Ocultar todo por defecto
   seccionPedidos.style.display  = 'none';
   seccionClientes.style.display = 'none';
   seccionAjustes.style.display  = 'none';
+  if (seccionCupones) seccionCupones.style.display = 'none';
   
   btnPedidos.classList.remove('active');
   btnClientes.classList.remove('active');
   btnAjustes.classList.remove('active');
+  if (btnCupones) btnCupones.classList.remove('active');
 
   if (tab === 'clientes') {
     seccionClientes.style.display = 'block';
     btnClientes.classList.add('active');
     loadClientes(1);
   } else if (tab === 'ajustes') {
-    // Si Ajustes NO está desbloqueado por 2FA, mostrar modal de verificación
     if (!ajustesUnlocked) {
       document.getElementById('unlockErrorMsg').style.display = 'none';
       document.getElementById('otpUnlockInput').value = '';
@@ -565,15 +590,22 @@ function switchMainTab(tab) {
       setTimeout(() => document.getElementById('otpUnlockInput')?.focus(), 100);
       return;
     }
-
     seccionAjustes.style.display = 'block';
     btnAjustes.classList.add('active');
     document.getElementById('ajustesErrorMsg').style.display = 'none';
     document.getElementById('ajustesSuccessMsg').style.display = 'none';
     previewNewPath();
     loadAdminSettings();
+  } else if (tab === 'cupones') {
+    if (!ajustesUnlocked) {
+      switchMainTab('ajustes');
+      return;
+    }
+    if (seccionCupones) seccionCupones.style.display = 'block';
+    if (btnCupones) btnCupones.classList.add('active');
+    cargarCuponesAdmin();
   } else {
-    seccionPedidos.style.display  = 'block';
+    seccionPedidos.style.display = 'block';
     btnPedidos.classList.add('active');
     loadOrders();
   }
@@ -642,6 +674,10 @@ window.cancelarDesbloqueoAjustes = function() {
 window.bloquearAjustes = function() {
   ajustesUnlocked = false;
   document.getElementById('seccionAjustes').style.display = 'none';
+  const seccionCupones = document.getElementById('seccionCupones');
+  if (seccionCupones) seccionCupones.style.display = 'none';
+  const btnCupones = document.getElementById('mainTab-cupones');
+  if (btnCupones) btnCupones.style.display = 'none';
   switchMainTab('pedidos');
 };
 
@@ -1169,8 +1205,15 @@ async function loadAdminSettings() {
         badge2FA.textContent = '🔴 2FA Desactivado (Se recomienda activar)';
       }
     }
+
+    // Cargar texto de garantía en la Tarjeta 7
+    const garantiaTextarea = document.getElementById('ajustesGarantiaTexto');
+    if (garantiaTextarea && data.garantia_email_texto) {
+      garantiaTextarea.value = data.garantia_email_texto;
+    }
+
   } catch (err) {
-    console.error('Error al cargar ajustes generales:', err);
+    console.error('Error al cargar ajustes:', err);
   }
 }
 
@@ -1315,5 +1358,294 @@ window.toggleAdminPasswordVisibility = function(inputId, btn) {
   const icon = btn ? btn.querySelector('i') : null;
   if (icon) {
     icon.className = isPassword ? 'far fa-eye-slash' : 'far fa-eye';
+  }
+};
+
+// ── EXPORTACIÓN DE RESERVA WEB (.pxgres) PARA MAESTRO POS ──
+window.exportarReservaPxGres = function(orderId) {
+  if (!orderId) return;
+  const link = document.createElement('a');
+  link.href = `/api/admin/orders/${orderId}/export-pxgres`;
+  link.download = `reserva_${orderId}.pxgres`;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+};
+
+// ── SISTEMA DE CUPONES DE DESCUENTO — LÓGICA DE INTERFAZ ──
+
+window.cargarCuponesAdmin = async function() {
+  const container = document.getElementById('listaCuponesAdmin');
+  const tableBody = document.getElementById('tablaCuponesAdminBody');
+  const cantBadge = document.getElementById('cantCuponesBadge');
+
+  try {
+    const res = await fetch('/api/admin/coupons');
+    if (!res.ok) {
+      if (container) container.innerHTML = '<div style="color:#f87171; font-size:0.82rem;">Error al cargar cupones.</div>';
+      if (tableBody) tableBody.innerHTML = '<tr><td colspan="7" style="color:#f87171; text-align:center; padding:15px;">Error al cargar cupones.</td></tr>';
+      return;
+    }
+    const data = await res.json();
+    const cupones = data.cupones || [];
+
+    if (cantBadge) cantBadge.textContent = `(${cupones.length})`;
+
+    if (cupones.length === 0) {
+      if (container) container.innerHTML = '<div style="color:#888; font-size:0.82rem; text-align:center; padding:10px;">No hay cupones creados aún.</div>';
+      if (tableBody) tableBody.innerHTML = '<tr><td colspan="7" style="color:#888; text-align:center; padding:20px;">No hay cupones registrados aún.</td></tr>';
+      return;
+    }
+
+    // RENDERIZADO: Tabla 1:1 en Sección Exclusiva Cupones (#seccionCupones)
+    if (tableBody) {
+      tableBody.innerHTML = cupones.map(c => {
+        let estadoBadge = c.activo ? (c.expirado ? '<span style="background:rgba(234,179,8,0.2); color:#facc15; padding:3px 10px; border-radius:12px; font-size:0.75rem; font-weight:700;">EXPIRADO</span>' : '<span style="background:rgba(34,197,94,0.2); color:#4ade80; padding:3px 10px; border-radius:12px; font-size:0.75rem; font-weight:700;">🟢 ACTIVO</span>') : '<span style="background:rgba(239,68,68,0.2); color:#f87171; padding:3px 10px; border-radius:12px; font-size:0.75rem; font-weight:700;">INACTIVO</span>';
+        const valorStr = c.tipo === 'PERCENTAGE' ? `${c.descuento_porcentaje}% OFF` : `$${c.descuento_monto.toLocaleString('es-AR')} OFF`;
+        const minStr = c.monto_minimo > 0 ? `$${c.monto_minimo.toLocaleString('es-AR')}` : 'Sin mínimo';
+        const expStr = c.expira_en ? new Date(c.expira_en).toLocaleString('es-AR') : 'Sin Vencimiento';
+        const usosCount = typeof c.usos_count === 'number' ? c.usos_count : 0;
+
+        return `
+          <tr style="border-bottom: 1px solid rgba(255,255,255,0.08);">
+            <td style="padding: 12px; font-family: 'Orbitron'; font-weight: 700; color: var(--gold);">${c.codigo}</td>
+            <td style="padding: 12px; font-weight: 700; color: #c084fc;">${valorStr}</td>
+            <td style="padding: 12px; color: #ccc;">${minStr}</td>
+            <td style="padding: 12px; color: #aaa; font-size: 0.8rem;">📅 ${expStr}</td>
+            <td style="padding: 12px;">${estadoBadge}</td>
+            <td style="padding: 12px; text-align: center;">
+              <span style="background: rgba(168,85,247,0.15); color: #c084fc; border: 1px solid rgba(168,85,247,0.3); padding: 3px 10px; border-radius: 12px; font-size: 0.8rem; font-weight: 700;">${usosCount}</span>
+            </td>
+            <td style="padding: 12px; text-align: right;">
+              ${c.activo ? `<button type="button" onclick="eliminarCuponAdmin(${c.id})" style="background: rgba(234,179,8,0.15); color: #facc15; border: 1px solid rgba(234,179,8,0.3); padding: 5px 10px; border-radius: 6px; font-size: 0.75rem; font-weight: 700; cursor: pointer;">Desactivar</button>` : `<button type="button" onclick="eliminarDefinitivoCuponAdmin(${c.id}, '${c.codigo}')" style="background: rgba(239,68,68,0.15); color: #f87171; border: 1px solid rgba(239,68,68,0.3); padding: 5px 10px; border-radius: 6px; font-size: 0.75rem; font-weight: 700; cursor: pointer;">🗑️ Eliminar</button>`}
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+  } catch (err) {
+    if (container) container.innerHTML = '<div style="color:#f87171; font-size:0.82rem;">Error de conexión.</div>';
+  }
+};
+
+window.eliminarCuponAdmin = async function(id) {
+  if (!confirm('¿Seguro que querés desactivar este cupón?')) return;
+
+  try {
+    const res = await fetch(`/api/admin/coupons/${id}`, { method: 'DELETE' });
+    const data = await res.json();
+    if (!res.ok) {
+      alert('⚠️ ' + (data.error || 'Error al desactivar cupón.'));
+      return;
+    }
+    window.cargarCuponesAdmin();
+  } catch (err) {
+    alert('❌ Error de conexión al desactivar el cupón.');
+  }
+};
+
+window.eliminarDefinitivoCuponAdmin = async function(id, codigo) {
+  if (!confirm(`⚠️ ¿Eliminar DEFINITIVAMENTE el cupón "${codigo}"? Esta acción no se puede deshacer.`)) return;
+
+  try {
+    const res = await fetch(`/api/admin/coupons/${id}/destroy`, { method: 'DELETE' });
+    const data = await res.json();
+    if (!res.ok) {
+      alert('⚠️ ' + (data.error || 'Error al eliminar el cupón.'));
+      return;
+    }
+    window.cargarCuponesAdmin();
+  } catch (err) {
+    alert('❌ Error de conexión al eliminar el cupón.');
+  }
+};
+
+// ── FUNCIONES DE LA SECCIÓN DEDICADA DE CUPONES (VISTA EXCLUSIVA 1:1 MAESTRO POS) ──
+window.toggleTipoCuponInputsSec = function() {
+  const tipo = document.getElementById('cuponTipoSec').value;
+  const lbl = document.getElementById('lblCuponValorSec');
+  const input = document.getElementById('cuponValorSec');
+  
+  if (tipo === 'PERCENTAGE') {
+    lbl.textContent = 'Porcentaje de Descuento (%) *';
+    input.max = '100';
+    input.placeholder = 'Ej: 15';
+  } else {
+    lbl.textContent = 'Monto Fijo de Descuento ($ ARS) *';
+    input.removeAttribute('max');
+    input.placeholder = 'Ej: 5000';
+  }
+};
+
+window.toggleExpiracionCuponInputsSec = function() {
+  const unidad = document.getElementById('cuponUnidadExpiracionSec').value;
+  const wrapperValor = document.getElementById('wrapperValorExpiracionSec');
+  const wrapperFecha = document.getElementById('wrapperFechaExactaSec');
+  const lblValor = document.getElementById('lblValorExpiracionSec');
+
+  if (unidad === 'SIN_EXPIRACION' || unidad === '24H') {
+    wrapperValor.style.display = 'none';
+    wrapperFecha.style.display = 'none';
+  } else if (unidad === 'EXACTO') {
+    wrapperValor.style.display = 'none';
+    wrapperFecha.style.display = 'block';
+  } else {
+    wrapperValor.style.display = 'block';
+    wrapperFecha.style.display = 'none';
+    const nombres = { HORAS: 'Horas', DIAS: 'Días', SEMANAS: 'Semanas', MESES: 'Meses' };
+    lblValor.textContent = `Cantidad de ${nombres[unidad] || 'Tiempo'}`;
+  }
+};
+
+window.crearCuponAdminSeccion = async function(e) {
+  e.preventDefault();
+  const codigo = document.getElementById('cuponCodigoSec').value.trim();
+  const tipo = document.getElementById('cuponTipoSec').value;
+  const valor = document.getElementById('cuponValorSec').value;
+  const minimo = document.getElementById('cuponMinimoSec').value;
+  const unidad = document.getElementById('cuponUnidadExpiracionSec').value;
+  const valorExp = document.getElementById('cuponValorExpiracionSec').value;
+  const fechaExacta = document.getElementById('cuponFechaExactaSec').value;
+  const btn = document.getElementById('btnCrearCuponSec');
+
+  btn.disabled = true;
+  btn.textContent = 'Creando cupón...';
+
+  try {
+    const payload = {
+      codigo,
+      tipo,
+      descuento_porcentaje: tipo === 'PERCENTAGE' ? parseFloat(valor) : 0,
+      descuento_monto: tipo === 'FIXED' ? parseFloat(valor) : 0,
+      monto_minimo: parseFloat(minimo) || 0,
+      unidad_expiracion: unidad === '24H' ? 'HORAS' : unidad,
+      valor_expiracion: unidad === '24H' ? 24 : (valorExp ? parseInt(valorExp, 10) : null),
+      fecha_exacta: unidad === 'EXACTO' ? fechaExacta : null
+    };
+
+    const res = await fetch('/api/admin/coupons', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    const data = await res.json();
+
+    btn.disabled = false;
+    btn.textContent = 'Crear Cupón';
+
+    if (!res.ok) {
+      alert('⚠️ ' + (data.error || 'Error al crear el cupón.'));
+      return;
+    }
+
+    alert(`✅ Cupón ${data.cupon.codigo} creado con éxito.`);
+    document.getElementById('formCrearCuponSeccion').reset();
+    window.toggleTipoCuponInputsSec();
+    window.toggleExpiracionCuponInputsSec();
+    window.cargarCuponesAdmin();
+  } catch (err) {
+    btn.disabled = false;
+    btn.textContent = 'Crear Cupón';
+    alert('❌ Error de conexión al crear el cupón.');
+  }
+};
+
+// ── IMPORTACIÓN Y EXPORTACIÓN BIDIRECCIONAL .pxgcupon (WEB ↔ MAESTRO POS) ──
+window.triggerImportarCuponesWeb = function() {
+  const input = document.getElementById('fileInputPxgcupon');
+  if (input) input.click();
+};
+
+window.importarCuponesPxgcuponWeb = async function(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.onload = async function(e) {
+    try {
+      const content = e.target.result;
+      const payload = JSON.parse(content);
+
+      if (payload.tipo !== 'COUPONS_SYNC_PACKAGE' || !Array.isArray(payload.cupones)) {
+        alert("⚠️ El archivo seleccionado no es un paquete válido de cupones .pxgcupon.");
+        return;
+      }
+
+      const res = await fetch('/api/admin/coupons/import-pxgcupon', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      const data = await res.json();
+
+      if (!res.ok) {
+        alert('⚠️ ' + (data.error || 'Error al importar los cupones.'));
+        return;
+      }
+
+      alert(`✅ ${data.message || 'Cupones sincronizados correctamente.'}`);
+      window.cargarCuponesAdmin();
+    } catch (err) {
+      alert("❌ Error al procesar el archivo .pxgcupon: " + err.message);
+    } finally {
+      event.target.value = '';
+    }
+  };
+
+  reader.readAsText(file);
+};
+
+window.exportarCuponesPxgcuponWeb = function() {
+  const link = document.createElement('a');
+  link.href = '/api/admin/coupons/export-pxgcupon';
+  link.download = 'cupones_pixis.pxgcupon';
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+};
+
+// ── SISTEMA DE GARANTÍA EN CORREOS AUTOMÁTICOS ──
+window.guardarGarantiaEmail = async function(event) {
+  event.preventDefault();
+  const textarea = document.getElementById('ajustesGarantiaTexto');
+  const btn = document.getElementById('btnGuardarGarantia');
+  const msg = document.getElementById('garantiaSaveMsg');
+  const texto = textarea ? textarea.value.trim() : '';
+
+  if (!texto) {
+    if (msg) { msg.style.display = 'inline'; msg.style.color = '#f87171'; msg.textContent = '⚠️ El texto no puede estar vacío.'; }
+    return;
+  }
+
+  btn.disabled = true;
+  btn.textContent = 'Guardando...';
+  if (msg) msg.style.display = 'none';
+
+  try {
+    const res = await fetch('/api/admin/settings/garantia-email', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ texto })
+    });
+    const data = await res.json();
+
+    btn.disabled = false;
+    btn.textContent = '💾 Guardar Texto de Garantía';
+
+    if (!res.ok) {
+      if (msg) { msg.style.display = 'inline'; msg.style.color = '#f87171'; msg.textContent = '❌ ' + (data.error || 'Error al guardar.'); }
+      return;
+    }
+
+    if (msg) {
+      msg.style.display = 'inline';
+      msg.style.color = '#4ade80';
+      msg.textContent = '✅ Guardado con éxito.';
+      setTimeout(() => { msg.style.display = 'none'; }, 3000);
+    }
+  } catch (err) {
+    btn.disabled = false;
+    btn.textContent = '💾 Guardar Texto de Garantía';
+    if (msg) { msg.style.display = 'inline'; msg.style.color = '#f87171'; msg.textContent = '❌ Error de conexión.'; }
   }
 };

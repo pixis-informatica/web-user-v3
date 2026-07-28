@@ -8675,10 +8675,167 @@ body.light-mode .btn-view-toggle.active {
   box-shadow: 0 8px 30px rgba(168, 85, 247, 0.7);
 }
 
-/* Modal Mis Pedidos: overrides de tamaño (más ancho que el de auth) */
-#modalMisPedidos .modal-content {
-  max-width: 650px;
-  width: 95%;
+/* Modal Mis Pedidos: overrides de tamaño (expansión a 900px de ancho) */
+#modalMisPedidos.modal-client-auth .modal-content {
+  max-width: 900px !important;
+  width: 92% !important;
+  padding: 30px 36px !important;
+  background: rgba(13, 9, 26, 0.97) !important;
+  backdrop-filter: blur(24px) !important;
+  border: 1px solid rgba(168, 85, 247, 0.45) !important;
+  box-shadow: 0 0 45px rgba(168, 85, 247, 0.35), 0 25px 60px rgba(0, 0, 0, 0.85) !important;
+  border-radius: 20px !important;
+  color: #f3f4f6 !important;
+}
+
+/* Formulario "Editar Mis Datos" — Grilla de 2 columnas y alto contraste */
+.perfil-form-container {
+  margin-top: 15px;
+  text-align: left;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.perfil-section-block {
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(168, 85, 247, 0.2);
+  border-radius: 14px;
+  padding: 18px 20px;
+}
+
+.perfil-section-title {
+  margin: 0 0 14px 0;
+  font-size: 13px;
+  color: #c084fc;
+  font-family: 'Orbitron', sans-serif;
+  letter-spacing: 0.5px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border-bottom: 1px solid rgba(168, 85, 247, 0.2);
+  padding-bottom: 8px;
+}
+
+.perfil-grid-2col {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px 18px;
+}
+
+.form-group-custom {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.form-group-custom label {
+  font-size: 12px;
+  color: #cbd5e1;
+  font-weight: 600;
+}
+
+.form-group-custom input {
+  width: 100%;
+  padding: 10px 14px;
+  border-radius: 8px;
+  border: 1px solid rgba(168, 85, 247, 0.35);
+  background: rgba(255, 255, 255, 0.05);
+  color: #f8fafc;
+  font-size: 13px;
+  font-family: inherit;
+  box-sizing: border-box;
+  transition: all 0.2s ease;
+}
+
+.form-group-custom input:focus {
+  outline: none;
+  border-color: #c084fc;
+  background: rgba(255, 255, 255, 0.09);
+  box-shadow: 0 0 12px rgba(192, 132, 252, 0.35);
+}
+
+.form-group-custom input:disabled,
+.form-group-custom input[readonly] {
+  background: rgba(255, 255, 255, 0.02);
+  border-color: rgba(255, 255, 255, 0.1);
+  color: #94a3b8;
+  cursor: not-allowed;
+}
+
+/* Wrapper para input de contraseña con ojito */
+.password-input-wrapper {
+  position: relative;
+  width: 100%;
+}
+
+.password-input-wrapper input {
+  padding-right: 40px;
+}
+
+.password-input-wrapper button {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  color: #c084fc;
+  cursor: pointer;
+  font-size: 15px;
+  padding: 4px;
+  transition: color 0.2s;
+}
+
+.password-input-wrapper button:hover {
+  color: #e9d5ff;
+}
+
+/* Botón Guardar Cambios Perfil */
+.perfil-submit-wrapper {
+  margin-top: 10px;
+}
+
+.btn-guardar-perfil {
+  width: 100%;
+  padding: 13px;
+  background: linear-gradient(135deg, #f5c518, #e6a805);
+  border: none;
+  border-radius: 10px;
+  font-weight: 700;
+  font-size: 13px;
+  color: #000;
+  letter-spacing: 1px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: 'Orbitron', sans-serif;
+  box-shadow: 0 4px 20px rgba(245, 197, 24, 0.35);
+}
+
+.btn-guardar-perfil:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(245, 197, 24, 0.55);
+}
+
+/* Caja de alerta */
+.perfil-alert-box {
+  font-size: 12px;
+  padding: 10px 14px;
+  border-radius: 8px;
+  text-align: center;
+  font-weight: 600;
+}
+
+/* Responsive mobile: pasar la grilla a 1 columna en pantallas pequeñas */
+@media (max-width: 640px) {
+  #modalMisPedidos.modal-client-auth .modal-content {
+    padding: 20px 16px !important;
+    width: 95% !important;
+  }
+  .perfil-grid-2col {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
 }
 
 /* Lista de pedidos */
@@ -8962,6 +9119,85 @@ body.light-mode .btn-view-toggle.active {
 }
 
 /* ── BLOQUE 1: Legibilidad en Detalle de Pedido (Modo Oficina / Light) ── */
+body.light-mode #modalMisPedidos.modal-client-auth .modal-content {
+  background: rgba(255, 255, 255, 0.98) !important;
+  border: 1px solid rgba(168, 85, 247, 0.35) !important;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2) !important;
+  color: #1e1b4b !important;
+}
+
+body.light-mode #misPedidosTitle,
+body.light-mode #modalMisPedidos .modal-close {
+  color: #6b21a8 !important;
+}
+
+/* Tarjetas de Pedidos en Modo Claro */
+body.light-mode .pedido-card {
+  background: #f8fafc !important;
+  border: 1px solid rgba(168, 85, 247, 0.25) !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04) !important;
+}
+
+body.light-mode .pedido-card:hover {
+  background: #f1f5f9 !important;
+  border-color: #a855f7 !important;
+}
+
+body.light-mode .pedido-card-num {
+  color: #7c3aed !important;
+}
+
+body.light-mode .pedido-card-date {
+  color: #64748b !important;
+  font-weight: 600 !important;
+}
+
+body.light-mode .pedido-card-total {
+  color: #334155 !important;
+}
+
+body.light-mode .pedido-card-total strong {
+  color: #d97706 !important;
+}
+
+/* Formulario Editar Perfil en Modo Claro */
+body.light-mode .perfil-section-block {
+  background: #f8fafc !important;
+  border: 1px solid rgba(168, 85, 247, 0.2) !important;
+}
+
+body.light-mode .perfil-section-title {
+  color: #6b21a8 !important;
+  border-bottom-color: rgba(168, 85, 247, 0.2) !important;
+}
+
+body.light-mode .form-group-custom label {
+  color: #334155 !important;
+}
+
+body.light-mode .form-group-custom input {
+  background: #ffffff !important;
+  border: 1px solid rgba(168, 85, 247, 0.35) !important;
+  color: #0f172a !important;
+}
+
+body.light-mode .form-group-custom input:focus {
+  border-color: #7c3aed !important;
+  background: #ffffff !important;
+  box-shadow: 0 0 10px rgba(124, 58, 237, 0.25) !important;
+}
+
+body.light-mode .form-group-custom input:disabled,
+body.light-mode .form-group-custom input[readonly] {
+  background: #f1f5f9 !important;
+  border-color: #cbd5e1 !important;
+  color: #64748b !important;
+}
+
+body.light-mode .password-input-wrapper button {
+  color: #7c3aed !important;
+}
+
 body.light-mode .pedido-items-table td {
   color: #111827 !important;
   border-bottom: 1px solid rgba(0, 0, 0, 0.1) !important;
@@ -8988,4 +9224,5 @@ body.light-mode .pedido-detalle-info span {
 body.light-mode .pedido-detalle-header h3 {
   color: #6b21a8 !important;
 }
+
 

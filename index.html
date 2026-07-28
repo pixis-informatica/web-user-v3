@@ -42,8 +42,8 @@
         content="Tienda de computación online en Santiago del Estero. Venta de accesorios gamer, hardware de alto rendimiento y servicio técnico especializado.">
     <meta name="google-site-verification" content="LRXHYYrAKTCHW292rR5zcKtXTbwqrrrdTsuEQtSS0_c" />
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700&family=Inter:wght@400;700&family=Montserrat:wght@400;700&family=Roboto:wght@400;700&family=Outfit:wght@400;700&family=Poppins:wght@400;700&family=Lato:wght@400;700&family=Open+Sans:wght@400;700&family=Oswald:wght@400;700&family=Raleway:wght@400;700&family=Nunito:wght@400;700&family=Ubuntu:wght@400;700&family=Playfair+Display:wght@400;700&family=Cinzel:wght@400;700&family=Kanit:wght@400;700&family=Bebas+Neue&family=Fira+Sans:wght@400;700&family=Quicksand:wght@400;700&family=Syne:wght@400;700&family=Teko:wght@400;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="css/style.css?v=1.10819">
-    <link rel="stylesheet" href="css/lightmode.css?v=1.10819" id="lightmode" disabled>
+    <link rel="stylesheet" href="css/style.css?v=1.10820">
+    <link rel="stylesheet" href="css/lightmode.css?v=1.10820" id="lightmode" disabled>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <style>
         /* 🔥 Desactivar transiciones CSS durante la edición/arrastre para lograr fluidez instantánea */
@@ -1082,6 +1082,29 @@
 
                 <div id="cuotasPreviewCarrito"></div>
             </div>
+
+            <!-- CASILLERO DE CUPÓN DE DESCUENTO EN CHECKOUT -->
+            <div id="wrapperCuponCheckout" style="margin: 15px 0; padding: 12px; background: rgba(168, 85, 247, 0.08); border: 1px dashed rgba(168, 85, 247, 0.4); border-radius: 10px;">
+                <label for="inputCuponCheckout" style="display: block; font-size: 0.82rem; font-weight: 700; color: #e0b8ff; margin-bottom: 6px;">🎟️ ¿Tenés un Cupón de Descuento?</label>
+                <div style="display: flex; gap: 8px;">
+                    <input type="text" id="inputCuponCheckout" placeholder="EJ: CYBER15" style="flex: 1; padding: 8px 10px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.2); background: rgba(0,0,0,0.4); color: #fff; text-transform: uppercase; font-family: 'Orbitron'; letter-spacing: 1px; font-weight: 700;" oninput="this.value = this.value.toUpperCase().replace(/[^A-Z0-9_\-]/g, '')">
+                    <button type="button" onclick="validarAplicarCuponCheckout()" style="padding: 8px 14px; background: linear-gradient(135deg, #a855f7, #6366f1); color: #fff; border: none; border-radius: 6px; font-weight: 700; cursor: pointer; font-size: 0.8rem;">Aplicar</button>
+                </div>
+                <div id="msgCuponCheckout" style="display: none; margin-top: 8px; font-size: 0.8rem; font-weight: 700; border-radius: 6px; padding: 6px 10px;"></div>
+            </div>
+
+            <!-- DESGLOSE DE TOTALES EN CARRITO -->
+            <div id="wrapperDesgloseTotales" style="margin-bottom: 10px;">
+                <div id="rowSubtotalCheckout" style="display: none; justify-content: space-between; font-size: 0.9rem; color: #aaa; margin-bottom: 4px;">
+                    <span>Subtotal original:</span>
+                    <strong id="valSubtotalCheckout">$0</strong>
+                </div>
+                <div id="rowDescuentoCheckout" style="display: none; justify-content: space-between; font-size: 0.9rem; color: #4ade80; margin-bottom: 4px;">
+                    <span id="lblDescuentoCheckout">Descuento Cupón:</span>
+                    <strong id="valDescuentoCheckout">-$0</strong>
+                </div>
+            </div>
+
             <div class="cart-total">
                 <span>Total</span>
                 <strong>$0</strong>
@@ -1460,7 +1483,7 @@
             </script>
             </div> <!-- Cierre de .modal-content de modalProduct -->
         </div> <!-- Cierre de #modalProduct -->
-        <script src="js/versionalizador.js?v=1.10819"></script>
+        <script src="js/versionalizador.js?v=1.10820"></script>
 
 
             <!-- ========================= LIGHTBOX IMAGEN COMPLETA ========================= -->
@@ -1579,54 +1602,76 @@
                                 <i class="fas fa-user-edit"></i> Editar Mis Datos
                             </h3>
                         </div>
-                        <form id="formEditarPerfil" onsubmit="guardarPerfilCliente(event)" style="margin-top: 15px; text-align: left; display: flex; flex-direction: column; gap: 10px;">
-                            <div>
-                                <label style="display:block; font-size:12px; color:#c084fc; margin-bottom:4px;">1. Nombre completo:</label>
-                                <input type="text" id="editClienteNombre" required style="width:100%; padding:8px; border-radius:6px; border:1px solid #c084fc; background:#120024; color:#fff; box-sizing:border-box;">
-                            </div>
-                            <div>
-                                <label style="display:block; font-size:12px; color:#c084fc; margin-bottom:4px;">2. Correo electrónico (cuenta):</label>
-                                <input type="email" id="editClienteEmail" disabled readonly style="width:100%; padding:8px; border-radius:6px; border:1px solid rgba(192,132,252,0.4); background:rgba(255,255,255,0.05); color:#aaa; box-sizing:border-box; cursor:not-allowed;">
-                            </div>
-                            <div>
-                                <label style="display:block; font-size:12px; color:#c084fc; margin-bottom:4px;">3. Celular (WhatsApp):</label>
-                                <input type="text" id="editClienteTelefono" required style="width:100%; padding:8px; border-radius:6px; border:1px solid #c084fc; background:#120024; color:#fff; box-sizing:border-box;">
-                            </div>
-                            <div>
-                                <label style="display:block; font-size:12px; color:#c084fc; margin-bottom:4px;">4. Contraseña (dejar en blanco si no deseás cambiarla):</label>
-                                <div style="position:relative; width:100%;">
-                                    <input type="password" id="editClientePassword" placeholder="Ingresá nueva clave si deseás actualizarla" style="width:100%; padding:8px 36px 8px 8px; border-radius:6px; border:1px solid #c084fc; background:#120024; color:#fff; box-sizing:border-box;">
-                                    <button type="button" onclick="togglePasswordVisibility('editClientePassword', this)" style="position:absolute; right:8px; top:50%; transform:translateY(-50%); background:none; border:none; color:#c084fc; cursor:pointer; font-size:14px;" title="Ver/Ocultar contraseña">
-                                        <i class="far fa-eye"></i>
-                                    </button>
+                        <form id="formEditarPerfil" onsubmit="guardarPerfilCliente(event)" class="perfil-form-container">
+                            
+                            <!-- Sección 1: Cuenta y Datos Personales -->
+                            <div class="perfil-section-block">
+                                <h4 class="perfil-section-title"><i class="fas fa-id-card"></i> Datos de Cuenta y Contacto</h4>
+                                <div class="perfil-grid-2col">
+                                    <div class="form-group-custom">
+                                        <label for="editClienteNombre">1. Nombre completo *</label>
+                                        <input type="text" id="editClienteNombre" required placeholder="Tu nombre y apellido">
+                                    </div>
+                                    <div class="form-group-custom">
+                                        <label for="editClienteEmail">2. Correo electrónico (Cuenta)</label>
+                                        <input type="email" id="editClienteEmail" disabled readonly placeholder="email@ejemplo.com">
+                                    </div>
+                                </div>
+                                <div class="perfil-grid-2col" style="margin-top: 12px;">
+                                    <div class="form-group-custom">
+                                        <label for="editClienteTelefono">3. Celular (WhatsApp) *</label>
+                                        <input type="text" id="editClienteTelefono" required placeholder="Ej: 3851234567">
+                                    </div>
+                                    <div class="form-group-custom">
+                                        <label for="editClientePassword">4. Contraseña (Opcional)</label>
+                                        <div class="password-input-wrapper">
+                                            <input type="password" id="editClientePassword" placeholder="Ingresá nueva clave para cambiarla">
+                                            <button type="button" onclick="togglePasswordVisibility('editClientePassword', this)" title="Ver/Ocultar contraseña">
+                                                <i class="far fa-eye"></i>
+                                            </button>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
-                            <div>
-                                <label style="display:block; font-size:12px; color:#c084fc; margin-bottom:4px;">5. Dirección (calle del domicilio):</label>
-                                <input type="text" id="editClienteDireccion" placeholder="Ej: San Martín" style="width:100%; padding:8px; border-radius:6px; border:1px solid #c084fc; background:#120024; color:#fff; box-sizing:border-box;">
+
+                            <!-- Sección 2: Dirección y Envío (Grilla de 2 columnas) -->
+                            <div class="perfil-section-block" style="margin-top: 18px;">
+                                <h4 class="perfil-section-title"><i class="fas fa-map-marked-alt"></i> Datos de Domicilio y Envío</h4>
+                                <div class="perfil-grid-2col">
+                                    <div class="form-group-custom">
+                                        <label for="editClienteDireccion">5. Calle / Av. del domicilio</label>
+                                        <input type="text" id="editClienteDireccion" placeholder="Ej: San Martín">
+                                    </div>
+                                    <div class="form-group-custom">
+                                        <label for="editClienteNumero">6. Número / Altura / Depto</label>
+                                        <input type="text" id="editClienteNumero" placeholder="Ej: 1234 2°B">
+                                    </div>
+                                    <div class="form-group-custom">
+                                        <label for="editClienteBarrio">7. Barrio</label>
+                                        <input type="text" id="editClienteBarrio" placeholder="Ej: Centro / San José">
+                                    </div>
+                                    <div class="form-group-custom">
+                                        <label for="editClienteLocalidad">8. Localidad / Ciudad</label>
+                                        <input type="text" id="editClienteLocalidad" placeholder="Ej: Frías / San Miguel">
+                                    </div>
+                                    <div class="form-group-custom">
+                                        <label for="editClienteProvincia">9. Provincia</label>
+                                        <input type="text" id="editClienteProvincia" placeholder="Ej: Santiago del Estero">
+                                    </div>
+                                    <div class="form-group-custom">
+                                        <label for="editClienteCodigoPostal">10. Código Postal</label>
+                                        <input type="text" id="editClienteCodigoPostal" placeholder="Ej: 4200">
+                                    </div>
+                                </div>
                             </div>
-                            <div>
-                                <label style="display:block; font-size:12px; color:#c084fc; margin-bottom:4px;">6. Número (altura / dpto / datos adicionales):</label>
-                                <input type="text" id="editClienteNumero" placeholder="Ej: 1234 2°B" style="width:100%; padding:8px; border-radius:6px; border:1px solid #c084fc; background:#120024; color:#fff; box-sizing:border-box;">
+
+                            <div id="editarPerfilAlert" class="perfil-alert-box" style="display:none;"></div>
+                            
+                            <div class="perfil-submit-wrapper">
+                                <button type="submit" class="btn-guardar-perfil">
+                                    💾 GUARDAR CAMBIOS DE MI PERFIL
+                                </button>
                             </div>
-                            <div>
-                                <label style="display:block; font-size:12px; color:#c084fc; margin-bottom:4px;">7. Barrio:</label>
-                                <input type="text" id="editClienteBarrio" placeholder="Ej: Centro / San José" style="width:100%; padding:8px; border-radius:6px; border:1px solid #c084fc; background:#120024; color:#fff; box-sizing:border-box;">
-                            </div>
-                            <div>
-                                <label style="display:block; font-size:12px; color:#c084fc; margin-bottom:4px;">8. Localidad:</label>
-                                <input type="text" id="editClienteLocalidad" placeholder="Ej: Frías / San Miguel" style="width:100%; padding:8px; border-radius:6px; border:1px solid #c084fc; background:#120024; color:#fff; box-sizing:border-box;">
-                            </div>
-                            <div>
-                                <label style="display:block; font-size:12px; color:#c084fc; margin-bottom:4px;">9. Provincia:</label>
-                                <input type="text" id="editClienteProvincia" placeholder="Ej: Santiago del Estero" style="width:100%; padding:8px; border-radius:6px; border:1px solid #c084fc; background:#120024; color:#fff; box-sizing:border-box;">
-                            </div>
-                            <div>
-                                <label style="display:block; font-size:12px; color:#c084fc; margin-bottom:4px;">10. Código Postal:</label>
-                                <input type="text" id="editClienteCodigoPostal" placeholder="Ej: 4200" style="width:100%; padding:8px; border-radius:6px; border:1px solid #c084fc; background:#120024; color:#fff; box-sizing:border-box;">
-                            </div>
-                            <div id="editarPerfilAlert" style="display:none; font-size:12px; padding:8px; border-radius:6px; text-align:center;"></div>
-                            <button type="submit" style="width:100%; padding:10px; margin-top:5px; background:var(--gold); border:none; border-radius:8px; font-weight:bold; cursor:pointer; color:#000; text-transform:uppercase; font-family:'Orbitron', sans-serif;">Guardar Cambios</button>
                         </form>
                     </div>
                 </div>

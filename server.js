@@ -23,9 +23,25 @@ const mail = require('./server/mail');
 const { execSync } = require('child_process');
 const speakeasy = require('speakeasy');
 
+// ── CARGADOR NATIVO DE VARIABLES DE ENTORNO (.env) ──
+if (fs.existsSync(path.join(__dirname, '.env'))) {
+  const envContent = fs.readFileSync(path.join(__dirname, '.env'), 'utf-8');
+  envContent.split(/\r?\n/).forEach(line => {
+    const match = line.match(/^\s*([\w.-]+)\s*=\s*(.*)?\s*$/);
+    if (match) {
+      const key = match[1];
+      let val = (match[2] || '').trim();
+      if ((val.startsWith('"') && val.endsWith('"')) || (val.startsWith("'") && val.endsWith("'"))) {
+        val = val.slice(1, -1);
+      }
+      if (!process.env[key]) process.env[key] = val;
+    }
+  });
+}
+
 const PORT = process.env.PORT || 8080;
 const BASE = __dirname;
-const JWT_SECRET = process.env.JWT_SECRET || 'PIXIS_SUPER_SECRET_JWT_KEY';
+const JWT_SECRET = process.env.JWT_SECRET || 'PIXIS_SECURE_DYNAMIC_SECRET_KEY';
 
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
@@ -35,14 +51,14 @@ function registerActiveClient(userId) {
   if (userId) activeClients.set(userId, Date.now());
 }
 
-// CONFIGURACIÓN DE SEGURIDAD (Mantenida parcialmente para servicios SMTP legacy)
+// CONFIGURACIÓN DE SEGURIDAD (Cargada aisladamente desde entorno o DB)
 const ADMIN_CONFIG = {
-  recoveryEmail: 'pixisinformatica.contacto@gmail.com',
+  recoveryEmail: process.env.SMTP_USER || 'pixisinformatica.contacto@gmail.com',
   smtp: {
     service: 'gmail',
     auth: {
-      user: 'pixisinformatica.contacto@gmail.com',
-      pass: 'yqvmurocfzytezvg'
+      user: process.env.SMTP_USER || 'pixisinformatica.contacto@gmail.com',
+      pass: process.env.SMTP_PASS || ''
     }
   }
 };
@@ -785,7 +801,7 @@ async function getRealProductDetailsAndTotal(items, formaPago, cuotas) {
 // POST /api/shop/orders (Checkout/Reservas)
 app.post('/api/shop/orders', verifyCustomerToken, async (req, res) => {
   try {
-    const { entrega, direccion, forma_pago, cuotas, items } = req.body;
+    const { entrega, direccion, forma_pago, cuotas, items, cupon_codigo } = req.body;
     if (!entrega || !forma_pago || !items || !Array.isArray(items) || items.length === 0) {
       return res.status(400).json({ error: 'Faltan campos obligatorios o formato de items inválido.' });
     }
@@ -813,6 +829,49 @@ app.post('/api/shop/orders', verifyCustomerToken, async (req, res) => {
       return res.status(400).json({ error: err.message });
     }
 
+    // ── VALIDACIÓN Y APLICACIÓN DE CUPÓN SERVER-SIDE (Anti-Manipulación) ──
+    let subtotal_sin_descuento = validated.total;
+    let monto_descuento = 0;
+    let cupon_tipo = null;
+    let descuento_porcentaje = null;
+    let cuponCodigoFinal = null;
+
+    if (cupon_codigo && typeof cupon_codigo === 'string' && cupon_codigo.trim().length > 0) {
+      const code = cupon_codigo.trim().toUpperCase();
+      const cupon = await prisma.cupon.findUnique({ where: { codigo: code } });
+
+      if (cupon && cupon.activo) {
+        // Verificar expiración al milisegundo
+        const ahora = new Date();
+        if (cupon.expira_en && new Date(cupon.expira_en) < ahora) {
+          return res.status(400).json({ error: 'El cupón ha expirado.' });
+        }
+        // Verificar compra mínima
+        if (cupon.monto_minimo > 0 && subtotal_sin_descuento < cupon.monto_minimo) {
+          return res.status(400).json({
+            error: `Este cupón requiere una compra mínima de $${cupon.monto_minimo.toLocaleString('es-AR')}.`
+          });
+        }
+        // Calcular descuento según tipo (PERCENTAGE o FIXED)
+        if (cupon.tipo === 'PERCENTAGE') {
+          monto_descuento = Math.round((subtotal_sin_descuento * cupon.descuento_porcentaje) / 100);
+          descuento_porcentaje = cupon.descuento_porcentaje;
+        } else {
+          monto_descuento = cupon.descuento_monto;
+        }
+        // Bloqueo de seguridad: el descuento no puede superar el subtotal
+        if (monto_descuento > subtotal_sin_descuento) monto_descuento = subtotal_sin_descuento;
+        cupon_tipo = cupon.tipo;
+        cuponCodigoFinal = code;
+      } else if (cupon && !cupon.activo) {
+        return res.status(400).json({ error: 'El cupón no está activo.' });
+      } else {
+        return res.status(400).json({ error: 'Código de cupón no válido.' });
+      }
+    }
+
+    const totalFinal = subtotal_sin_descuento - monto_descuento;
+
     // Crear el pedido en estado 'pendiente_revision'
     const order = await prisma.pedido.create({
       data: {
@@ -822,7 +881,12 @@ app.post('/api/shop/orders', verifyCustomerToken, async (req, res) => {
         direccion: entrega === 'envio' ? direccion : null,
         forma_pago,
         cuotas: forma_pago === 'tarjeta' ? parseInt(cuotas, 10) : null,
-        total: validated.total,
+        total: totalFinal,
+        subtotal_sin_descuento: cuponCodigoFinal ? subtotal_sin_descuento : null,
+        cupon_codigo: cuponCodigoFinal,
+        cupon_tipo,
+        descuento_porcentaje,
+        monto_descuento: monto_descuento > 0 ? monto_descuento : null,
         items: {
           create: validated.items.map(item => ({
             producto_id: item.producto_id,
@@ -832,10 +896,16 @@ app.post('/api/shop/orders', verifyCustomerToken, async (req, res) => {
           }))
         }
       },
-      include: {
-        items: true
-      }
+      include: { items: true }
     });
+
+    // Incrementar uso del cupón (si se aplicó uno)
+    if (cuponCodigoFinal) {
+      await prisma.cupon.updateMany({
+        where: { codigo: cuponCodigoFinal },
+        data: { usos_count: { increment: 1 } }
+      });
+    }
 
     // Incrementar contador histórico de forma atómica (sin race condition)
     await prisma.$executeRaw`
@@ -843,15 +913,286 @@ app.post('/api/shop/orders', verifyCustomerToken, async (req, res) => {
       ON CONFLICT(clave) DO UPDATE SET valor = CAST(valor AS INTEGER) + 1
     `;
 
+    // Disparar correo de recepción/reserva del pedido al cliente en segundo plano
+    if (req.user && req.user.email) {
+      mail.enviarPedidoRegistrado(req.user.email, order).catch(console.error);
+    }
+
     res.status(201).json({
       ok: true,
       message: 'Reserva registrada con éxito, pendiente de comprobante.',
       orderId: order.id,
-      total: order.total
+      total: order.total,
+      subtotal_sin_descuento: order.subtotal_sin_descuento,
+      monto_descuento: order.monto_descuento,
+      cupon_codigo: order.cupon_codigo
     });
   } catch (e) {
     console.error('Error al registrar pedido:', e);
     res.status(500).json({ error: 'Error interno del servidor.' });
+  }
+});
+
+// ══════════════════════════════════════════════════════════════════════════════
+// 🎟️  SISTEMA DE CUPONES DE DESCUENTO — Rutas API
+// ══════════════════════════════════════════════════════════════════════════════
+
+// POST /api/shop/coupons/validate — Validación pública asincrónica para checkout
+app.post('/api/shop/coupons/validate', async (req, res) => {
+  try {
+    const rawCode = req.body.code || req.body.codigo;
+    if (!rawCode || typeof rawCode !== 'string' || rawCode.trim().length === 0) {
+      return res.status(400).json({ ok: false, error: 'Código de cupón requerido.' });
+    }
+    const code = rawCode.trim().toUpperCase();
+    const cupon = await prisma.cupon.findUnique({ where: { codigo: code } });
+
+    if (!cupon) {
+      return res.json({ ok: false, error: '⚠️ Código de cupón no válido o expirado.' });
+    }
+    if (!cupon.activo) {
+      return res.json({ ok: false, error: '⚠️ Este cupón ya no está activo.' });
+    }
+    if (cupon.expira_en && new Date(cupon.expira_en) < new Date()) {
+      return res.json({ ok: false, error: '⚠️ Este cupón ha expirado.' });
+    }
+
+    // Respuesta exitosa — NO devuelve el monto calculado (lo calcula el backend al crear el pedido)
+    return res.json({
+      ok: true,
+      codigo: cupon.codigo,
+      tipo: cupon.tipo,
+      porcentaje: cupon.tipo === 'PERCENTAGE' ? cupon.descuento_porcentaje : null,
+      monto_fijo: cupon.tipo === 'FIXED' ? cupon.descuento_monto : null,
+      monto_minimo: cupon.monto_minimo || 0,
+      mensaje: cupon.tipo === 'PERCENTAGE'
+        ? `🎉 ¡Felicitaciones! Cupón de ${cupon.descuento_porcentaje}% de descuento aplicado.`
+        : `🎉 ¡Felicitaciones! Cupón de descuento de $${cupon.descuento_monto.toLocaleString('es-AR')} aplicado.`
+    });
+  } catch (e) {
+    console.error('Error al validar cupón:', e);
+    res.status(500).json({ ok: false, error: 'Error interno al validar el cupón.' });
+  }
+});
+
+// GET /api/admin/coupons — Listar todos los cupones (admin)
+app.get('/api/admin/coupons', async (req, res) => {
+  try {
+    const token = req.cookies.admin_token;
+    if (!token) return res.status(401).json({ error: 'No autenticado.' });
+    jwt.verify(token, JWT_SECRET);
+
+    const cupones = await prisma.cupon.findMany({
+      orderBy: { creado_en: 'desc' }
+    });
+    const ahora = new Date();
+    const cuponesConEstado = cupones.map(c => ({
+      ...c,
+      expirado: c.expira_en ? new Date(c.expira_en) < ahora : false,
+      tiempo_restante_ms: c.expira_en ? Math.max(0, new Date(c.expira_en).getTime() - ahora.getTime()) : null
+    }));
+    res.json({ ok: true, cupones: cuponesConEstado });
+  } catch (e) {
+    console.error('Error al listar cupones:', e);
+    res.status(500).json({ error: 'Error interno del servidor.' });
+  }
+});
+
+// POST /api/admin/coupons — Crear nuevo cupón (admin)
+app.post('/api/admin/coupons', async (req, res) => {
+  try {
+    const token = req.cookies.admin_token;
+    if (!token) return res.status(401).json({ error: 'No autenticado.' });
+    jwt.verify(token, JWT_SECRET);
+
+    const { codigo, tipo, descuento_porcentaje, descuento_monto, monto_minimo, unidad_expiracion, valor_expiracion, fecha_exacta } = req.body;
+
+    if (!codigo || typeof codigo !== 'string' || codigo.trim().length === 0) {
+      return res.status(400).json({ error: 'El código del cupón es requerido.' });
+    }
+    const codigoNormalizado = codigo.trim().toUpperCase();
+    if (!/^[A-Z0-9_\-]{3,30}$/.test(codigoNormalizado)) {
+      return res.status(400).json({ error: 'El código solo puede contener letras, números, guiones y guiones bajos (3-30 caracteres).' });
+    }
+    if (!['PERCENTAGE', 'FIXED'].includes(tipo)) {
+      return res.status(400).json({ error: 'Tipo de cupón inválido.' });
+    }
+    if (tipo === 'PERCENTAGE' && (descuento_porcentaje === undefined || descuento_porcentaje <= 0 || descuento_porcentaje > 100)) {
+      return res.status(400).json({ error: 'El porcentaje de descuento debe estar entre 1 y 100.' });
+    }
+    if (tipo === 'FIXED' && (descuento_monto === undefined || descuento_monto <= 0)) {
+      return res.status(400).json({ error: 'El monto de descuento fijo debe ser mayor a 0.' });
+    }
+
+    // Calcular fecha de expiración según unidad
+    let expira_en = null;
+    const ahora = new Date();
+    if (unidad_expiracion === 'EXACTO' && fecha_exacta) {
+      expira_en = new Date(fecha_exacta);
+      if (isNaN(expira_en.getTime()) || expira_en <= ahora) {
+        return res.status(400).json({ error: 'La fecha exacta debe ser futura.' });
+      }
+    } else if (unidad_expiracion && valor_expiracion && parseInt(valor_expiracion, 10) > 0) {
+      const val = parseInt(valor_expiracion, 10);
+      const ms = { HORAS: 3600000, DIAS: 86400000, SEMANAS: 604800000 }[unidad_expiracion];
+      if (ms) {
+        expira_en = new Date(ahora.getTime() + val * ms);
+      } else if (unidad_expiracion === 'MESES') {
+        expira_en = new Date(ahora);
+        expira_en.setMonth(expira_en.getMonth() + val);
+      }
+    }
+
+    const nuevoCupon = await prisma.cupon.create({
+      data: {
+        codigo: codigoNormalizado,
+        tipo,
+        descuento_porcentaje: tipo === 'PERCENTAGE' ? parseFloat(descuento_porcentaje) : 0,
+        descuento_monto: tipo === 'FIXED' ? parseFloat(descuento_monto) : 0,
+        monto_minimo: parseFloat(monto_minimo) || 0,
+        activo: true,
+        expira_en
+      }
+    });
+    res.status(201).json({ ok: true, cupon: nuevoCupon });
+  } catch (e) {
+    if (e.code === 'P2002') {
+      return res.status(409).json({ error: 'Ya existe un cupón con ese código.' });
+    }
+    console.error('Error al crear cupón:', e);
+    res.status(500).json({ error: 'Error interno del servidor.' });
+  }
+});
+
+// DELETE /api/admin/coupons/:id — Desactivar/Eliminar cupón (admin)
+app.delete('/api/admin/coupons/:id', async (req, res) => {
+  try {
+    const token = req.cookies.admin_token;
+    if (!token) return res.status(401).json({ error: 'No autenticado.' });
+    jwt.verify(token, JWT_SECRET);
+
+    const id = parseInt(req.params.id, 10);
+    if (isNaN(id)) return res.status(400).json({ error: 'ID inválido.' });
+
+    await prisma.cupon.update({ where: { id }, data: { activo: false } });
+    res.json({ ok: true, message: 'Cupón desactivado correctamente.' });
+  } catch (e) {
+    if (e.code === 'P2025') return res.status(404).json({ error: 'Cupón no encontrado.' });
+    console.error('Error al desactivar cupón:', e);
+    res.status(500).json({ error: 'Error interno del servidor.' });
+  }
+});
+
+// DELETE /api/admin/coupons/:id/destroy — Eliminar FÍSICAMENTE el cupón (admin)
+app.delete('/api/admin/coupons/:id/destroy', async (req, res) => {
+  try {
+    const token = req.cookies.admin_token;
+    if (!token) return res.status(401).json({ error: 'No autenticado.' });
+    try { jwt.verify(token, JWT_SECRET); }
+    catch { return res.status(401).json({ error: 'Sesión inválida.' }); }
+
+    const id = parseInt(req.params.id, 10);
+    if (isNaN(id)) return res.status(400).json({ error: 'ID inválido.' });
+
+    await prisma.cupon.delete({ where: { id } });
+    res.json({ ok: true, message: 'Cupón eliminado definitivamente.' });
+  } catch (e) {
+    if (e.code === 'P2025') return res.status(404).json({ error: 'Cupón no encontrado.' });
+    console.error('Error al eliminar cupón:', e);
+    res.status(500).json({ error: 'Error interno del servidor.' });
+  }
+});
+
+// ── SINCRONIZACIÓN BIDIRECCIONAL DE CUPONES (.pxgcupon) CON MAESTRO POS ──
+
+// POST /api/admin/coupons/import-pxgcupon — Importar paquete de cupones desde Maestro POS (UPSERT)
+app.post('/api/admin/coupons/import-pxgcupon', async (req, res) => {
+  try {
+    const token = req.cookies.admin_token;
+    if (!token) return res.status(401).json({ error: 'No autenticado.' });
+    jwt.verify(token, JWT_SECRET);
+
+    const payload = req.body;
+    if (!payload || payload.tipo !== 'COUPONS_SYNC_PACKAGE' || !Array.isArray(payload.cupones)) {
+      return res.status(400).json({ error: 'Formato de paquete .pxgcupon inválido.' });
+    }
+
+    let procesados = 0;
+    for (const c of payload.cupones) {
+      if (!c.codigo || typeof c.codigo !== 'string' || c.codigo.trim().length === 0) continue;
+      const code = c.codigo.trim().toUpperCase();
+
+      const expiraEnDate = c.expira_en ? new Date(c.expira_en) : null;
+
+      await prisma.cupon.upsert({
+        where: { codigo: code },
+        update: {
+          tipo: c.tipo === 'PERCENTAGE' ? 'PERCENTAGE' : 'FIXED',
+          descuento_porcentaje: parseFloat(c.descuento_porcentaje) || 0,
+          descuento_monto: parseFloat(c.descuento_monto) || 0,
+          monto_minimo: parseFloat(c.monto_minimo) || 0,
+          activo: c.activo !== undefined ? Boolean(c.activo) : true,
+          expira_en: expiraEnDate && !isNaN(expiraEnDate.getTime()) ? expiraEnDate : null
+        },
+        create: {
+          codigo: code,
+          tipo: c.tipo === 'PERCENTAGE' ? 'PERCENTAGE' : 'FIXED',
+          descuento_porcentaje: parseFloat(c.descuento_porcentaje) || 0,
+          descuento_monto: parseFloat(c.descuento_monto) || 0,
+          monto_minimo: parseFloat(c.monto_minimo) || 0,
+          activo: c.activo !== undefined ? Boolean(c.activo) : true,
+          expira_en: expiraEnDate && !isNaN(expiraEnDate.getTime()) ? expiraEnDate : null
+        }
+      });
+      procesados++;
+    }
+
+    res.json({
+      ok: true,
+      message: `Sincronización exitosa: ${procesados} cupón(es) importado(s)/actualizado(s).`,
+      procesados
+    });
+  } catch (e) {
+    console.error('Error al importar paquete .pxgcupon:', e);
+    res.status(500).json({ error: 'Error interno del servidor al sincronizar cupones.' });
+  }
+});
+
+// GET /api/admin/coupons/export-pxgcupon — Exportar paquete de cupones para Maestro POS
+app.get('/api/admin/coupons/export-pxgcupon', async (req, res) => {
+  try {
+    const token = req.cookies.admin_token;
+    if (!token) return res.status(401).json({ error: 'No autenticado.' });
+    jwt.verify(token, JWT_SECRET);
+
+    const cupones = await prisma.cupon.findMany({
+      where: { activo: true },
+      orderBy: { creado_en: 'desc' }
+    });
+
+    const exportPayload = {
+      tipo: 'COUPONS_SYNC_PACKAGE',
+      version: '1.0',
+      origen: 'Pixis Live Web',
+      fecha_exportacion: new Date().toISOString(),
+      total_cupones: cupones.length,
+      cupones: cupones.map(c => ({
+        codigo: c.codigo,
+        tipo: c.tipo,
+        descuento_porcentaje: c.descuento_porcentaje || 0,
+        descuento_monto: c.descuento_monto || 0,
+        monto_minimo: c.monto_minimo || 0,
+        activo: c.activo,
+        expira_en: c.expira_en ? c.expira_en.toISOString() : null
+      }))
+    };
+
+    res.setHeader('Content-Type', 'application/json');
+    res.setHeader('Content-Disposition', 'attachment; filename="cupones_pixis.pxgcupon"');
+    return res.send(JSON.stringify(exportPayload, null, 2));
+  } catch (e) {
+    console.error('Error al exportar paquete .pxgcupon:', e);
+    res.status(500).json({ error: 'Error interno del servidor al exportar cupones.' });
   }
 });
 
@@ -955,6 +1296,120 @@ app.delete('/api/shop/orders', verifyCustomerToken, async (req, res) => {
   } catch (e) {
     console.error('Error al eliminar pedidos del historial:', e);
     res.status(500).json({ error: 'Error interno del servidor.' });
+  }
+});
+
+// GET /api/admin/orders/:id/export-pxgres — Exportar Reserva Web (.pxgres) para Maestro POS
+app.get('/api/admin/orders/:id/export-pxgres', async (req, res) => {
+  if (!isAuthorized(req)) return res.status(401).json({ error: 'No autorizado.' });
+  try {
+    const id = parseInt(req.params.id, 10);
+    if (isNaN(id)) return res.status(400).json({ error: 'ID de pedido inválido.' });
+
+    const order = await prisma.pedido.findUnique({
+      where: { id },
+      include: {
+        usuario: true,
+        items: true
+      }
+    });
+
+    if (!order) return res.status(404).json({ error: 'Pedido no encontrado.' });
+
+    const fechaObj = new Date(order.creado_en);
+    const dateFormatted = fechaObj.toLocaleString('es-AR', {
+      day: 'numeric',
+      month: 'numeric',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit'
+    });
+
+    const isEfectivo = (order.forma_pago || '').toLowerCase() === 'efectivo';
+    const montoEfectivo = isEfectivo ? order.total : 0;
+    const montoTransfTarjeta = !isEfectivo ? order.total : 0;
+    const rawPhone = order.usuario?.telefono || '';
+    const cleanPhone = rawPhone.replace(/\D/g, '');
+
+    const subtotalBruto = order.subtotal_sin_descuento || (order.total + (order.monto_descuento || 0));
+    const montoDescuento = order.monto_descuento || 0;
+
+    const pxgresPayload = {
+      tipo: 'RESERVA_WEB',
+      version: '1.0',
+      origen: 'Pixis Live Web',
+      folio: `#${order.id}`,
+      pedido_id: order.id,
+      fecha: order.creado_en,
+      fecha_formateada: dateFormatted,
+      vendedor: 'Web / Admin',
+      cliente: {
+        id_cliente_web: order.usuario_id,
+        usuario_id: order.usuario_id,
+        nombre: order.usuario?.nombre || 'Consumidor Final',
+        email: order.usuario?.email || '',
+        telefono: rawPhone,
+        whatsapp: rawPhone,
+        tel: rawPhone,
+        telefono_limpio: cleanPhone,
+        telefono_normalizado: cleanPhone,
+        direccion: order.usuario?.direccion || order.direccion || '',
+        barrio: order.usuario?.barrio || '',
+        localidad: order.usuario?.localidad || '',
+        provincia: order.usuario?.provincia || '',
+        codigo_postal: order.usuario?.codigo_postal || ''
+      },
+      descuento_aplicado: {
+        codigo: order.cupon_codigo || '',
+        tipo: order.cupon_tipo || (order.descuento_porcentaje ? 'PORCENTAJE' : 'FIXED'),
+        porcentaje: order.descuento_porcentaje || 0,
+        monto_descuento: montoDescuento,
+        subtotal_sin_descuento: subtotalBruto
+      },
+      pago_detallado: {
+        monto_subtotal: subtotalBruto,
+        monto_descuento: montoDescuento,
+        total_final: order.total,
+        moneda: 'ARS',
+        efectivo: montoEfectivo,
+        transferencia_tarjeta: montoTransfTarjeta,
+        monto_efectivo: montoEfectivo,
+        monto_transferencia: montoTransfTarjeta,
+        cuotas: order.cuotas || 1,
+        medio_pago: (order.forma_pago || 'efectivo').toUpperCase()
+      },
+      subtotal: subtotalBruto,
+      monto_descuento: montoDescuento,
+      monto_efectivo: montoEfectivo,
+      monto_transferencia: montoTransfTarjeta,
+      entrega: order.entrega === 'envio' ? 'Envío a domicilio' : 'Retiro por sucursal',
+      forma_pago: (order.forma_pago || 'efectivo').toUpperCase(),
+      cuotas: order.cuotas || 1,
+      total: order.total,
+      items: (order.items || []).map(item => ({
+        product_id: item.producto_id,
+        codigo: item.producto_id,
+        sku: item.producto_id,
+        producto: item.nombre_snapshot,
+        nombre: item.nombre_snapshot,
+        cantidad: item.cantidad,
+        precio_unitario: item.precio_unitario_snapshot,
+        precio: item.precio_unitario_snapshot,
+        subtotal: item.precio_unitario_snapshot * item.cantidad,
+        total: item.precio_unitario_snapshot * item.cantidad,
+        currency: 'ARS',
+        iva: 21.0
+      }))
+    };
+
+    const fileName = `reserva_${order.id}.pxgres`;
+    res.setHeader('Content-Type', 'application/json');
+    res.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);
+    return res.send(JSON.stringify(pxgresPayload, null, 2));
+  } catch (err) {
+    console.error('Error al exportar reserva .pxgres:', err);
+    res.status(500).json({ error: 'Error interno al exportar reserva.' });
   }
 });
 
@@ -1107,11 +1562,11 @@ app.post('/api/shop/orders/:id/comprobante', verifyCustomerToken, (req, res) => 
       // Enviar correos en segundo plano
       const usuario = await prisma.usuario.findUnique({ where: { id: req.user.id } });
       if (usuario) {
-        mail.enviarComprobanteRecibido(usuario.email, orderId).catch(console.error);
+        mail.enviarComprobanteRecibido(usuario.email, order).catch(console.error);
         
         if (stockDescontadoCorrectamente && limiteReserva) {
-          const fechaFormateada = limiteReserva.toLocaleString('es-AR');
-          mail.enviarPedidoReservado(usuario.email, orderId, fechaFormateada).catch(console.error);
+          order.reservado_hasta = limiteReserva;
+          mail.enviarPedidoReservado(usuario.email, order, limiteReserva).catch(console.error);
         }
       }
       mail.notificarAdminComprobanteNuevo(orderId).catch(console.error);
@@ -1388,8 +1843,8 @@ app.post('/api/admin/orders/:id/confirm', verifyAdminToken, async (req, res) => 
     ]);
 
     // 4. Enviar mail en segundo plano
-    const fechaFormateada = limiteReserva.toLocaleString('es-AR');
-    mail.enviarPedidoReservado(order.usuario.email, orderId, fechaFormateada).catch(console.error);
+    order.reservado_hasta = limiteReserva;
+    mail.enviarPedidoReservado(order.usuario.email, order, limiteReserva).catch(console.error);
 
     res.json({ ok: true, message: 'Pedido confirmado y stock reservado con éxito.' });
   } catch (e) {
@@ -1451,7 +1906,7 @@ app.post('/api/admin/orders/:id/reject', verifyAdminToken, async (req, res) => {
     ]);
 
     // Enviar mail
-    mail.enviarPedidoRechazado(order.usuario.email, orderId, motivo).catch(console.error);
+    mail.enviarPedidoRechazado(order.usuario.email, order, motivo).catch(console.error);
 
     res.json({ ok: true, message: 'Pedido rechazado con éxito.' });
   } catch (e) {
@@ -1516,7 +1971,7 @@ app.post('/api/admin/orders/:id/complete', verifyAdminToken, async (req, res) =>
     ]);
 
     // Enviar mail
-    mail.enviarPedidoEntregado(order.usuario.email, orderId).catch(console.error);
+    mail.enviarPedidoEntregado(order.usuario.email, order).catch(console.error);
 
     res.json({ ok: true, message: 'Pedido marcado como completado/entregado con éxito.' });
   } catch (e) {
@@ -2467,6 +2922,43 @@ app.post('/api/admin/settings/recovery-email', verifyAdminToken, async (req, res
   }
 });
 
+// GET /api/admin/settings/garantia-email — Obtener el texto actual de garantía para mails
+app.get('/api/admin/settings/garantia-email', verifyAdminToken, async (req, res) => {
+  try {
+    const cfg = await prisma.configGlobal.findUnique({ where: { clave: 'garantia_email_texto' } });
+    res.json({
+      ok: true,
+      texto: cfg ? cfg.valor : mail.getTextoGarantia()
+    });
+  } catch (e) {
+    res.status(500).json({ error: 'Error interno del servidor.' });
+  }
+});
+
+// POST /api/admin/settings/garantia-email — Guardar el nuevo texto de garantía para mails
+app.post('/api/admin/settings/garantia-email', verifyAdminToken, async (req, res) => {
+  try {
+    const { texto } = req.body;
+    if (!texto || typeof texto !== 'string' || texto.trim() === '') {
+      return res.status(400).json({ error: 'El texto de garantía no puede estar vacío.' });
+    }
+
+    const nuevoTexto = texto.trim();
+    await prisma.configGlobal.upsert({
+      where: { clave: 'garantia_email_texto' },
+      update: { valor: nuevoTexto },
+      create: { clave: 'garantia_email_texto', valor: nuevoTexto }
+    });
+
+    mail.setTextoGarantia(nuevoTexto);
+
+    res.json({ ok: true, message: 'Texto de garantía y políticas en correos actualizado con éxito.' });
+  } catch (e) {
+    console.error('Error al guardar texto de garantía:', e);
+    res.status(500).json({ error: 'Error interno del servidor.' });
+  }
+});
+
 // GET /api/admin/settings/all — Cargar todos los datos actuales configurados
 app.get('/api/admin/settings/all', verifyAdminToken, async (req, res) => {
   try {
@@ -2476,6 +2968,7 @@ app.get('/api/admin/settings/all', verifyAdminToken, async (req, res) => {
     const pass = await prisma.configGlobal.findUnique({ where: { clave: 'smtp_pass' } });
     const recEmail = await prisma.configGlobal.findUnique({ where: { clave: 'recovery_email' } });
     const panelPath = await prisma.configGlobal.findUnique({ where: { clave: 'admin_panel_path' } });
+    const garantiaEmail = await prisma.configGlobal.findUnique({ where: { clave: 'garantia_email_texto' } });
     
     const empleado = await prisma.empleadoVentas.findUnique({ where: { id: req.adminUser.id } });
 
@@ -2489,7 +2982,8 @@ app.get('/api/admin/settings/all', verifyAdminToken, async (req, res) => {
       recovery_email: recEmail ? recEmail.valor : process.env.ADMIN_RECOVERY_EMAIL || 'vendedorpixis@gmail.com',
       admin_email: empleado ? empleado.email : req.adminUser.email,
       totp_activado: empleado ? empleado.totp_activado : false,
-      panel_path: panelPath ? panelPath.valor : 'admin-panel'
+      panel_path: panelPath ? panelPath.valor : 'admin-panel',
+      garantia_email_texto: garantiaEmail ? garantiaEmail.valor : mail.getTextoGarantia()
     });
   } catch (e) {
     console.error('Error en GET /api/admin/settings/all:', e);
@@ -3234,7 +3728,7 @@ async function liberarReservasVencidas() {
             // Enviar mail de notificación de vencimiento al cliente
             mail.enviarPedidoRechazado(
               order.usuario.email,
-              order.id,
+              order,
               'El tiempo de reserva de 24 horas ha expirado sin que se complete el retiro o entrega de los productos.'
             ).catch(console.error);
 
@@ -3321,6 +3815,24 @@ async function realizarBackup() {
 // Programar backups automáticos a las 3:00 AM (0 3 * * *)
 cron.schedule('0 3 * * *', realizarBackup);
 
+// ── CRON: Inactivar cupones expirados cada 15 minutos ─────────────────────────
+cron.schedule('*/15 * * * *', async () => {
+  try {
+    const resultado = await prisma.cupon.updateMany({
+      where: {
+        activo: true,
+        expira_en: { lt: new Date() }
+      },
+      data: { activo: false }
+    });
+    if (resultado.count > 0) {
+      console.log(`  \x1b[33m🎟️ [CRON-CUPONES] ${resultado.count} cupón(es) expirado(s) desactivado(s).\x1b[0m`);
+    }
+  } catch (e) {
+    console.error('  \x1b[31m❌ [CRON-CUPONES] Error al desactivar cupones expirados:\x1b[0m', e);
+  }
+});
+
 // Endpoint manual de backup
 app.post('/api/admin/backup/run-manually', async (req, res) => {
   const token = req.cookies.admin_token;
@@ -3403,7 +3915,19 @@ async function loadSmtpConfig() {
   }
 }
 
-// loadAdminPath() y loadSmtpConfig() se ejecutan dentro de la secuencia de auto-setup al final
+async function loadGarantiaEmailConfig() {
+  try {
+    const cfg = await prisma.configGlobal.findUnique({ where: { clave: 'garantia_email_texto' } });
+    if (cfg && cfg.valor) {
+      mail.setTextoGarantia(cfg.valor);
+      console.log('🛡️ [MAIL] Texto de garantía de correos cargado desde la Base de Datos.');
+    }
+  } catch (e) {
+    // Si la DB no está lista o no tiene registros
+  }
+}
+
+// loadAdminPath(), loadSmtpConfig() y loadGarantiaEmailConfig() se ejecutan dentro de la secuencia de auto-setup al final
 
 app.use((req, res, next) => {
   const normPath = req.path.replace(/\/$/, '');
@@ -3560,4 +4084,5 @@ server.on('error', (e) => {
   await autoSetup();
   await loadAdminPath();
   await loadSmtpConfig();
+  await loadGarantiaEmailConfig();
 })().catch(err => console.error('⚠️ Error en tareas secundarias:', err));
