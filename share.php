@@ -556,7 +556,11 @@ if (isset($_GET['producto']) && isset($found_product)) {
         "offers" => $offers
     ];
     if (!empty($found_product['id'])) {
-        $schema["sku"] = $found_product['id'];
+        $prod_sku = (string) $found_product['id'];
+        $schema["sku"] = $prod_sku;
+        $schema["productID"] = $prod_sku;
+        $schema["mpn"] = $prod_sku;
+        $schema["identifier"] = $prod_sku;
     }
 
     $injection .= '<script type="application/ld+json">' . PHP_EOL;

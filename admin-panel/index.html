@@ -426,6 +426,36 @@
           </form>
         </div>
 
+        <!-- TARJETA 8: Configuración SEO Global y Posicionamiento Google e IAs -->
+        <div class="ajustes-card" style="border: 1px solid rgba(59, 130, 246, 0.4); background: linear-gradient(135deg, rgba(59, 130, 246, 0.08), rgba(168, 85, 247, 0.05)); grid-column: 1 / -1;">
+          <form id="formAjustesSEO" onsubmit="guardarAjustesSEO(event)">
+            <h3 style="font-size: 1.05rem; color: #60a5fa; margin-bottom: 6px;"><i class="fas fa-search-location"></i> 8. Configuración SEO Global y Posicionamiento Google e IAs</h3>
+            <p class="ajustes-desc">Controlá la información comercial que leen los motores de búsqueda (Google Search, Google Maps) y asistentes de Inteligencia Artificial (ChatGPT, Gemini, Perplexity).</p>
+
+            <div class="form-group">
+              <label for="ajustesSeoTitle">Título Principal de la Tienda (SEO Title)</label>
+              <input type="text" id="ajustesSeoTitle" required placeholder="Pixis Informática | Especialistas N°1 en Santiago del Estero en Reparaciones y Computadoras Gamer y Oficina" style="width: 100%; padding: 10px; background: rgba(0,0,0,0.4); color: #fff; border: 1px solid rgba(255,255,255,0.2); border-radius: 8px; font-family: inherit; font-size: 0.85rem;">
+              <span class="helper-text">💡 <strong>¿Dónde se muestra?</strong> En la pestaña del navegador y como título violeta en Google Search.</span>
+            </div>
+
+            <div class="form-group" style="margin-top: 10px;">
+              <label for="ajustesSeoDesc">Descripción Comercial para Google e Inteligencias Artificiales</label>
+              <textarea id="ajustesSeoDesc" rows="3" required placeholder="Especialistas N°1 en Santiago del Estero en reparaciones y servicio técnico de computadoras y laptops de oficina y gamer..." style="width: 100%; padding: 10px; background: rgba(0,0,0,0.4); color: #fff; border: 1px solid rgba(255,255,255,0.2); border-radius: 8px; font-family: inherit; font-size: 0.85rem; line-height: 1.5; resize: vertical; box-sizing: border-box;"></textarea>
+              <span class="helper-text">💡 <strong>Impacto:</strong> Determina la sintesis que muestra Google debajo de tu web y lo que responden ChatGPT o Gemini al buscar servicio técnico en Santiago del Estero.</span>
+            </div>
+
+            <div class="form-group" style="margin-top: 10px;">
+              <label for="ajustesSeoKeywords">Palabras Clave de Búsqueda (Keywords separadas por coma)</label>
+              <input type="text" id="ajustesSeoKeywords" placeholder="reparacion de computadoras santiago del estero, servicio tecnico laptops santiago del estero, arreglar pc gamer, insumos informaticos" style="width: 100%; padding: 10px; background: rgba(0,0,0,0.4); color: #fff; border: 1px solid rgba(255,255,255,0.2); border-radius: 8px; font-family: inherit; font-size: 0.85rem;">
+            </div>
+
+            <div style="display: flex; gap: 10px; align-items: center; margin-top: 12px;">
+              <button type="submit" id="btnGuardarSEO" class="btn-submit" style="flex: 1; padding: 11px; font-size: 13px; background: linear-gradient(135deg, #3b82f6, #8b5cf6); border: none; font-weight: 700;">🌐 Guardar Configuración SEO y Posicionamiento</button>
+              <span id="seoSaveMsg" style="display:none; font-size:0.8rem; font-weight:600;"></span>
+            </div>
+          </form>
+        </div>
+
       </div>
     </div>
     <!-- ── SECCIÓN EXCLUSIVA CUPONES (VISTA DEDICADA 1:1 MAESTRO POS) ── -->

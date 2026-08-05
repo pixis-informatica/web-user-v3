@@ -1212,6 +1212,14 @@ async function loadAdminSettings() {
       garantiaTextarea.value = data.garantia_email_texto;
     }
 
+    // Cargar metadatos SEO en la Tarjeta 8
+    const seoTitleInput = document.getElementById('ajustesSeoTitle');
+    const seoDescTextarea = document.getElementById('ajustesSeoDesc');
+    const seoKwInput = document.getElementById('ajustesSeoKeywords');
+    if (seoTitleInput && data.seo_title) seoTitleInput.value = data.seo_title;
+    if (seoDescTextarea && data.seo_description) seoDescTextarea.value = data.seo_description;
+    if (seoKwInput && data.seo_keywords) seoKwInput.value = data.seo_keywords;
+
   } catch (err) {
     console.error('Error al cargar ajustes:', err);
   }
@@ -1649,3 +1657,51 @@ window.guardarGarantiaEmail = async function(event) {
     if (msg) { msg.style.display = 'inline'; msg.style.color = '#f87171'; msg.textContent = '❌ Error de conexión.'; }
   }
 };
+
+// ── CONFIGURACIÓN DE SEO GLOBAL Y POSICIONAMIENTO ──
+window.guardarAjustesSEO = async function(event) {
+  event.preventDefault();
+  const seo_title = document.getElementById('ajustesSeoTitle').value.trim();
+  const seo_description = document.getElementById('ajustesSeoDesc').value.trim();
+  const seo_keywords = document.getElementById('ajustesSeoKeywords').value.trim();
+  const btn = document.getElementById('btnGuardarSEO');
+  const msg = document.getElementById('seoSaveMsg');
+
+  if (!seo_title || !seo_description) {
+    if (msg) { msg.style.display = 'inline'; msg.style.color = '#f87171'; msg.textContent = '⚠️ Título y Descripción son obligatorios.'; }
+    return;
+  }
+
+  btn.disabled = true;
+  btn.textContent = 'Guardando SEO...';
+  if (msg) msg.style.display = 'none';
+
+  try {
+    const res = await fetch('/api/admin/settings/seo', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ seo_title, seo_description, seo_keywords })
+    });
+    const data = await res.json();
+
+    btn.disabled = false;
+    btn.textContent = '🌐 Guardar Configuración SEO y Posicionamiento';
+
+    if (!res.ok) {
+      if (msg) { msg.style.display = 'inline'; msg.style.color = '#f87171'; msg.textContent = '❌ ' + (data.error || 'Error al guardar.'); }
+      return;
+    }
+
+    if (msg) {
+      msg.style.display = 'inline';
+      msg.style.color = '#4ade80';
+      msg.textContent = '✅ Guardado con éxito.';
+      setTimeout(() => { msg.style.display = 'none'; }, 3000);
+    }
+  } catch (err) {
+    btn.disabled = false;
+    btn.textContent = '🌐 Guardar Configuración SEO y Posicionamiento';
+    if (msg) { msg.style.display = 'inline'; msg.style.color = '#f87171'; msg.textContent = '❌ Error de conexión.'; }
+  }
+};
+

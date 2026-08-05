@@ -2959,6 +2959,56 @@ app.post('/api/admin/settings/garantia-email', verifyAdminToken, async (req, res
   }
 });
 
+// GET /api/admin/settings/seo — Obtener metadatos SEO actuales
+app.get('/api/admin/settings/seo', verifyAdminToken, async (req, res) => {
+  try {
+    const title = await prisma.configGlobal.findUnique({ where: { clave: 'seo_title' } });
+    const desc = await prisma.configGlobal.findUnique({ where: { clave: 'seo_description' } });
+    const keywords = await prisma.configGlobal.findUnique({ where: { clave: 'seo_keywords' } });
+    res.json({
+      ok: true,
+      seo_title: title ? title.valor : 'Pixis Informática | Especialistas N°1 en Santiago del Estero en Reparaciones y Computadoras Gamer y Oficina',
+      seo_description: desc ? desc.valor : 'Especialistas N°1 en Santiago del Estero en reparaciones y servicio técnico de computadoras y laptops de oficina y gamer. Venta de insumos informáticos, accesorios y hardware de alto rendimiento.',
+      seo_keywords: keywords ? keywords.valor : 'reparacion de computadoras santiago del estero, servicio tecnico laptops santiago del estero, arreglar pc gamer, insumos informaticos, pixis informatica, componentes de pc santiago del estero'
+    });
+  } catch (e) {
+    res.status(500).json({ error: 'Error interno del servidor.' });
+  }
+});
+
+// POST /api/admin/settings/seo — Guardar los nuevos metadatos SEO
+app.post('/api/admin/settings/seo', verifyAdminToken, async (req, res) => {
+  try {
+    const { seo_title, seo_description, seo_keywords } = req.body;
+    if (!seo_title || !seo_description) {
+      return res.status(400).json({ error: 'El título y la descripción SEO son obligatorios.' });
+    }
+
+    await prisma.configGlobal.upsert({
+      where: { clave: 'seo_title' },
+      update: { valor: seo_title.trim() },
+      create: { clave: 'seo_title', valor: seo_title.trim() }
+    });
+    await prisma.configGlobal.upsert({
+      where: { clave: 'seo_description' },
+      update: { valor: seo_description.trim() },
+      create: { clave: 'seo_description', valor: seo_description.trim() }
+    });
+    if (seo_keywords !== undefined) {
+      await prisma.configGlobal.upsert({
+        where: { clave: 'seo_keywords' },
+        update: { valor: seo_keywords.trim() },
+        create: { clave: 'seo_keywords', valor: seo_keywords.trim() }
+      });
+    }
+
+    res.json({ ok: true, message: 'Configuración de SEO Global y Posicionamiento Google guardada con éxito.' });
+  } catch (e) {
+    console.error('Error al guardar configuración SEO:', e);
+    res.status(500).json({ error: 'Error interno del servidor.' });
+  }
+});
+
 // GET /api/admin/settings/all — Cargar todos los datos actuales configurados
 app.get('/api/admin/settings/all', verifyAdminToken, async (req, res) => {
   try {
@@ -2969,6 +3019,9 @@ app.get('/api/admin/settings/all', verifyAdminToken, async (req, res) => {
     const recEmail = await prisma.configGlobal.findUnique({ where: { clave: 'recovery_email' } });
     const panelPath = await prisma.configGlobal.findUnique({ where: { clave: 'admin_panel_path' } });
     const garantiaEmail = await prisma.configGlobal.findUnique({ where: { clave: 'garantia_email_texto' } });
+    const seoTitle = await prisma.configGlobal.findUnique({ where: { clave: 'seo_title' } });
+    const seoDesc = await prisma.configGlobal.findUnique({ where: { clave: 'seo_description' } });
+    const seoKw = await prisma.configGlobal.findUnique({ where: { clave: 'seo_keywords' } });
     
     const empleado = await prisma.empleadoVentas.findUnique({ where: { id: req.adminUser.id } });
 
@@ -2983,7 +3036,10 @@ app.get('/api/admin/settings/all', verifyAdminToken, async (req, res) => {
       admin_email: empleado ? empleado.email : req.adminUser.email,
       totp_activado: empleado ? empleado.totp_activado : false,
       panel_path: panelPath ? panelPath.valor : 'admin-panel',
-      garantia_email_texto: garantiaEmail ? garantiaEmail.valor : mail.getTextoGarantia()
+      garantia_email_texto: garantiaEmail ? garantiaEmail.valor : mail.getTextoGarantia(),
+      seo_title: seoTitle ? seoTitle.valor : 'Pixis Informática | Especialistas N°1 en Santiago del Estero en Reparaciones y Computadoras Gamer y Oficina',
+      seo_description: seoDesc ? seoDesc.valor : 'Especialistas N°1 en Santiago del Estero en reparaciones y servicio técnico de computadoras y laptops de oficina y gamer. Venta de insumos informáticos, accesorios y hardware de alto rendimiento.',
+      seo_keywords: seoKw ? seoKw.valor : 'reparacion de computadoras santiago del estero, servicio tecnico laptops santiago del estero, arreglar pc gamer, insumos informaticos, pixis informatica, componentes de pc santiago del estero'
     });
   } catch (e) {
     console.error('Error en GET /api/admin/settings/all:', e);

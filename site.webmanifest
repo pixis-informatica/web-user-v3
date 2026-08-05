@@ -1,0 +1,21 @@
+{
+  "name": "Pixis Informática",
+  "short_name": "Pixis",
+  "description": "Especialistas N°1 en Santiago del Estero en Reparaciones y Servicio Técnico de Computadoras y Laptops de Oficina y Gamer. Venta de insumos informáticos.",
+  "icons": [
+    {
+      "src": "/img/logo_pixis.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/img/logo_pixis.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ],
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0a0a14",
+  "theme_color": "#a855f7"
+}
