@@ -170,9 +170,9 @@ function get_slug($text)
 }
 
 // Default/fallback values
-$fallback_title = "Pixis Informática | Especialistas en Computación";
-$fallback_description = "Tienda de computación online en Santiago del Estero. Venta de accesorios gamer, hardware de alto rendimiento y servicio técnico especializado.";
-$fallback_image = build_absolute_url($domain, 'img/TECH24.png');
+$fallback_title = "Pixis Informática | Especialistas N°1 en Santiago del Estero en Reparaciones y Servicio Técnico";
+$fallback_description = "Especialistas N°1 en Santiago del Estero en reparaciones y servicio técnico de computadoras y laptops de oficina y gamer. Venta de insumos informáticos, accesorios y hardware de alto rendimiento.";
+$fallback_image = build_absolute_url($domain, 'img/logo_pixis.png');
 
 $og_title = null;
 $og_description = null;

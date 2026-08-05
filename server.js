@@ -1285,12 +1285,24 @@ app.delete('/api/shop/orders', verifyCustomerToken, async (req, res) => {
       return res.status(404).json({ error: 'No se encontraron pedidos válidos para eliminar.' });
     }
 
+    // Obtener los archivos de comprobantes ANTES de borrar los registros
+    const comprobantesABorrar = await prisma.comprobante.findMany({
+      where: { pedido_id: { in: idsVerificados } },
+      select: { archivo_url: true }
+    });
+
     // Eliminar en cascada manual: comprobantes → items → pedido
     await prisma.$transaction([
       prisma.comprobante.deleteMany({ where: { pedido_id: { in: idsVerificados } } }),
       prisma.itemPedido.deleteMany({ where: { pedido_id: { in: idsVerificados } } }),
       prisma.pedido.deleteMany({ where: { id: { in: idsVerificados } } })
     ]);
+
+    // Eliminar archivos físicos del disco
+    const archivosEliminados = eliminarArchivosComprobantes(comprobantesABorrar);
+    if (archivosEliminados > 0) {
+      console.log(`  🗑️ [LIMPIEZA] ${archivosEliminados} archivo(s) de comprobantes eliminados del disco.`);
+    }
 
     res.json({ ok: true, eliminados: idsVerificados.length });
   } catch (e) {
@@ -1453,9 +1465,60 @@ const upload = multer({
   storage: storage,
   fileFilter: fileFilter,
   limits: {
-    fileSize: 5 * 1024 * 1024 // 5 MB
+    fileSize: 10 * 1024 * 1024 // 10 MB (se comprime después de subir)
   }
 });
+
+// ── COMPRESIÓN AUTOMÁTICA DE IMÁGENES DE COMPROBANTES ──
+// Reduce fotos pesadas de celulares (~4-10MB) a ~150-200KB sin perder nitidez del ticket bancario
+async function comprimirImagenComprobante(filePath) {
+  try {
+    const ext = path.extname(filePath).toLowerCase();
+    // Solo comprimir imágenes, no PDFs
+    if (!['.jpg', '.jpeg', '.png', '.webp'].includes(ext)) return filePath;
+
+    const sharp = require('sharp');
+    const tempPath = filePath + '.tmp';
+
+    await sharp(filePath)
+      .resize({ width: 1200, height: 1600, fit: 'inside', withoutEnlargement: true })
+      .jpeg({ quality: 80, mozjpeg: true })
+      .toFile(tempPath);
+
+    // Reemplazar el archivo original con el comprimido
+    fs.unlinkSync(filePath);
+    const newPath = filePath.replace(ext, '.jpg');
+    fs.renameSync(tempPath, newPath);
+
+    const sizeKB = Math.round(fs.statSync(newPath).size / 1024);
+    console.log(`  📦 [COMPRESIÓN] Comprobante comprimido a ${sizeKB}KB: ${path.basename(newPath)}`);
+    return newPath;
+  } catch (e) {
+    console.error('  ⚠️ [COMPRESIÓN] No se pudo comprimir la imagen, se conserva el original:', e.message);
+    return filePath;
+  }
+}
+
+// Función utilitaria: Eliminar archivos físicos de comprobantes del disco
+function eliminarArchivosComprobantes(comprobantes) {
+  const uploadDir = path.join(__dirname, 'uploads', 'comprobantes');
+  let eliminados = 0;
+  for (const comp of comprobantes) {
+    try {
+      if (comp.archivo_url) {
+        const filename = path.basename(comp.archivo_url);
+        const filePath = path.join(uploadDir, filename);
+        if (fs.existsSync(filePath)) {
+          fs.unlinkSync(filePath);
+          eliminados++;
+        }
+      }
+    } catch (err) {
+      console.error(`  ⚠️ Error al eliminar archivo físico: ${comp.archivo_url}`, err.message);
+    }
+  }
+  return eliminados;
+}
 
 // POST /api/shop/orders/:id/comprobante (Subir comprobante de pago)
 app.post('/api/shop/orders/:id/comprobante', verifyCustomerToken, (req, res) => {
@@ -1537,7 +1600,10 @@ app.post('/api/shop/orders/:id/comprobante', verifyCustomerToken, (req, res) => 
         limiteReserva = new Date(Date.now() + 24 * 60 * 60 * 1000);
       }
 
-      const archivoUrl = `/api/comprobantes/${req.file.filename}`;
+      // Comprimir imagen si es posible (reduce ~8MB a ~180KB)
+      const compressedPath = await comprimirImagenComprobante(req.file.path);
+      const compressedFilename = path.basename(compressedPath);
+      const archivoUrl = `/api/comprobantes/${compressedFilename}`;
 
       // Crear el registro de comprobante en la base de datos
       const comprobante = await prisma.comprobante.create({
@@ -2075,6 +2141,17 @@ app.post('/api/admin/customers/remove', verifyAdminToken, async (req, res) => {
 
     const userIds = ids.map(id => parseInt(id, 10)).filter(id => !isNaN(id));
 
+    // Obtener comprobantes ANTES de la transacción para borrar archivos físicos después
+    const pedidosPrevio = await prisma.pedido.findMany({
+      where: { usuario_id: { in: userIds } },
+      select: { id: true }
+    });
+    const pedidoIdsPrevio = pedidosPrevio.map(p => p.id);
+    const comprobantesABorrar = await prisma.comprobante.findMany({
+      where: { pedido_id: { in: pedidoIdsPrevio } },
+      select: { archivo_url: true }
+    });
+
     await prisma.$transaction(async (tx) => {
       // 1. Buscar los pedidos de estos usuarios
       const pedidos = await tx.pedido.findMany({
@@ -2103,6 +2180,12 @@ app.post('/api/admin/customers/remove', verifyAdminToken, async (req, res) => {
         where: { id: { in: userIds } }
       });
     });
+
+    // Eliminar archivos físicos del disco después de la transacción exitosa
+    const archivosEliminados = eliminarArchivosComprobantes(comprobantesABorrar);
+    if (archivosEliminados > 0) {
+      console.log(`  🗑️ [LIMPIEZA] ${archivosEliminados} archivo(s) de comprobantes eliminados del disco (clientes).`);
+    }
 
     res.json({ ok: true, message: 'Clientes y sus pedidos asociados eliminados con éxito.' });
   } catch (e) {
@@ -3009,6 +3092,105 @@ app.post('/api/admin/settings/seo', verifyAdminToken, async (req, res) => {
   }
 });
 
+// GET /api/admin/settings/storage-stats — Diagnóstico de espacio en disco de comprobantes
+app.get('/api/admin/settings/storage-stats', verifyAdminToken, async (req, res) => {
+  try {
+    const uploadDir = path.join(__dirname, 'uploads', 'comprobantes');
+    let totalBytes = 0;
+    let totalArchivos = 0;
+
+    if (fs.existsSync(uploadDir)) {
+      const archivos = fs.readdirSync(uploadDir);
+      for (const archivo of archivos) {
+        try {
+          const stats = fs.statSync(path.join(uploadDir, archivo));
+          if (stats.isFile()) {
+            totalBytes += stats.size;
+            totalArchivos++;
+          }
+        } catch (e) { /* ignorar archivos inaccesibles */ }
+      }
+    }
+
+    // Contar comprobantes purgables (pedidos finalizados >60 días)
+    const fechaLimite = new Date(Date.now() - 60 * 24 * 60 * 60 * 1000);
+    const purgables = await prisma.comprobante.count({
+      where: {
+        pedido: {
+          estado: { in: ['completado', 'rechazado', 'vencido'] },
+          fecha_creacion: { lt: fechaLimite }
+        }
+      }
+    });
+
+    res.json({
+      ok: true,
+      total_archivos: totalArchivos,
+      total_mb: parseFloat((totalBytes / (1024 * 1024)).toFixed(2)),
+      purgables_60_dias: purgables
+    });
+  } catch (e) {
+    console.error('Error al obtener estadísticas de almacenamiento:', e);
+    res.status(500).json({ error: 'Error interno del servidor.' });
+  }
+});
+
+// POST /api/admin/settings/purge-storage — Purga manual de comprobantes antiguos (>60 días)
+app.post('/api/admin/settings/purge-storage', verifyAdminToken, async (req, res) => {
+  try {
+    const fechaLimite = new Date(Date.now() - 60 * 24 * 60 * 60 * 1000);
+
+    const comprobantesViejos = await prisma.comprobante.findMany({
+      where: {
+        pedido: {
+          estado: { in: ['completado', 'rechazado', 'vencido'] },
+          fecha_creacion: { lt: fechaLimite }
+        }
+      },
+      select: { id: true, archivo_url: true }
+    });
+
+    if (comprobantesViejos.length === 0) {
+      return res.json({ ok: true, eliminados: 0, mb_liberados: 0, message: 'No hay comprobantes antiguos para purgar.' });
+    }
+
+    // Calcular tamaño de archivos a eliminar
+    const uploadDir = path.join(__dirname, 'uploads', 'comprobantes');
+    let bytesLiberados = 0;
+    for (const comp of comprobantesViejos) {
+      try {
+        if (comp.archivo_url) {
+          const filePath = path.join(uploadDir, path.basename(comp.archivo_url));
+          if (fs.existsSync(filePath)) {
+            bytesLiberados += fs.statSync(filePath).size;
+          }
+        }
+      } catch (e) { /* ignorar */ }
+    }
+
+    // Eliminar archivos físicos
+    const archivosEliminados = eliminarArchivosComprobantes(comprobantesViejos);
+
+    // Eliminar registros de la DB
+    const idsABorrar = comprobantesViejos.map(c => c.id);
+    await prisma.comprobante.deleteMany({ where: { id: { in: idsABorrar } } });
+
+    const mbLiberados = parseFloat((bytesLiberados / (1024 * 1024)).toFixed(2));
+    console.log(`🧹 [PURGA MANUAL] ${archivosEliminados} archivos eliminados, ${mbLiberados}MB liberados.`);
+
+    res.json({
+      ok: true,
+      eliminados: comprobantesViejos.length,
+      archivos_borrados: archivosEliminados,
+      mb_liberados: mbLiberados,
+      message: `Se purgaron ${comprobantesViejos.length} comprobantes antiguos. Se liberaron ${mbLiberados}MB de espacio en disco.`
+    });
+  } catch (e) {
+    console.error('Error durante la purga manual de almacenamiento:', e);
+    res.status(500).json({ error: 'Error interno del servidor.' });
+  }
+});
+
 // GET /api/admin/settings/all — Cargar todos los datos actuales configurados
 app.get('/api/admin/settings/all', verifyAdminToken, async (req, res) => {
   try {
@@ -3248,11 +3430,20 @@ app.delete('/api/admin/orders/purge-test', verifyAdminToken, async (req, res) =>
       return res.json({ ok: true, count: 0, message: 'No hay pedidos en la base de datos para limpiar.' });
     }
 
+    // Obtener archivos de comprobantes antes de borrar
+    const comprobantesABorrar = await prisma.comprobante.findMany({
+      where: { pedido_id: { in: ids } },
+      select: { archivo_url: true }
+    });
+
     await prisma.itemPedido.deleteMany({ where: { pedido_id: { in: ids } } });
     await prisma.comprobante.deleteMany({ where: { pedido_id: { in: ids } } });
     const deleted = await prisma.pedido.deleteMany({ where: { id: { in: ids } } });
 
-    console.log(`🧹 [ADMIN] Purga ejecutada: ${deleted.count} pedidos eliminados.`);
+    // Eliminar archivos físicos del disco
+    const archivosEliminados = eliminarArchivosComprobantes(comprobantesABorrar);
+
+    console.log(`🧹 [ADMIN] Purga ejecutada: ${deleted.count} pedidos eliminados, ${archivosEliminados} archivos de comprobantes borrados del disco.`);
     res.json({ ok: true, count: deleted.count, message: `Se eliminaron ${deleted.count} pedidos con éxito.` });
   } catch (e) {
     console.error('Error al purgar pedidos:', e);
@@ -3818,6 +4009,46 @@ async function liberarReservasVencidas() {
 
 // Programar cron para correr cada 1 hora: 0 * * * *
 cron.schedule('0 * * * *', liberarReservasVencidas);
+
+// ── TAREA PROGRAMADA: PURGA DE COMPROBANTES ANTIGUOS (>60 DÍAS) ──
+async function purgarComprobantesAntiguos() {
+  const logTime = new Date().toLocaleTimeString('es-AR');
+  console.log(`  \x1b[36m🧹 [${logTime}] [CRON-PURGA] Iniciando purga de comprobantes antiguos (>60 días)...\x1b[0m`);
+
+  try {
+    const fechaLimite = new Date(Date.now() - 60 * 24 * 60 * 60 * 1000); // 60 días atrás
+
+    // Buscar comprobantes de pedidos finalizados con más de 60 días
+    const comprobantesViejos = await prisma.comprobante.findMany({
+      where: {
+        pedido: {
+          estado: { in: ['completado', 'rechazado', 'vencido'] },
+          fecha_creacion: { lt: fechaLimite }
+        }
+      },
+      select: { id: true, archivo_url: true }
+    });
+
+    if (comprobantesViejos.length === 0) {
+      console.log(`  \x1b[30m🧹 [${logTime}] [CRON-PURGA] No hay comprobantes antiguos para purgar.\x1b[0m`);
+      return;
+    }
+
+    // 1. Eliminar archivos físicos del disco
+    const archivosEliminados = eliminarArchivosComprobantes(comprobantesViejos);
+
+    // 2. Eliminar registros de la base de datos
+    const idsABorrar = comprobantesViejos.map(c => c.id);
+    await prisma.comprobante.deleteMany({ where: { id: { in: idsABorrar } } });
+
+    console.log(`  \x1b[32m🧹 [${logTime}] [CRON-PURGA] Purgados ${comprobantesViejos.length} comprobantes antiguos (${archivosEliminados} archivos eliminados del disco).\x1b[0m`);
+  } catch (e) {
+    console.error(`  \x1b[31m❌ [CRON-PURGA] Error durante la purga de comprobantes:\x1b[0m`, e);
+  }
+}
+
+// Programar purga diaria a las 3:00 AM
+cron.schedule('0 3 * * *', purgarComprobantesAntiguos);
 
 // Función para realizar backup diario
 async function realizarBackup() {

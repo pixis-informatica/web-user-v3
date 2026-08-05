@@ -3139,8 +3139,16 @@ searchInput.addEventListener('input', (e) => {
       );
       const campoTitulo = `${sub} ${titulo}`;
 
-      // Búsqueda combinada: leer también la descripción para lograr 10/10 en resultados profundos
-      const campoTotal = `${campoTitulo} ${desc}`;
+      // Búsqueda enriquecida por SKU, ID y Precio (Bloque 3)
+      const btnAddCart = card.querySelector('.btn-add-cart');
+      const prodId = normalizar(card.dataset.pixisId || card.dataset.id || card.getAttribute('data-id') || '');
+      const prodSku = normalizar(card.dataset.sku || card.getAttribute('data-sku') || btnAddCart?.dataset.sku || btnAddCart?.dataset.code || '');
+      const prodPrecioRaw = (btnAddCart?.dataset.price || card.dataset.price || card.querySelector('.precio')?.textContent || '').toString();
+      const prodPrecioNum = normalizar(prodPrecioRaw.replace(/[^0-9]/g, ''));
+      const prodPrecioTexto = normalizar(prodPrecioRaw);
+
+      // Búsqueda combinada: leer título, subcategoría, descripción, ID, SKU y precio
+      const campoTotal = `${campoTitulo} ${desc} ${prodId} ${prodSku} ${prodPrecioNum} ${prodPrecioTexto}`;
 
       // 1. Match exacto de nombre completo pegado — máxima precisión
       const matchExactoTitulo = titulo.includes(query);
@@ -4944,27 +4952,72 @@ if (btnShareLink) {
 
   const applyDefaultMeta = () => {
     applyMeta({
-      title: 'Pixis Informática | Especialistas en Computadoras Gamer',
-      description: defaultDescription,
+      title: 'Pixis Informática | Especialistas N°1 en Santiago del Estero en Reparaciones y Servicio Técnico',
+      description: 'Especialistas N°1 en Santiago del Estero en reparaciones y servicio técnico de computadoras y laptops de oficina y gamer. Venta de insumos informáticos, accesorios y hardware de alto rendimiento.',
       image: defaultImage,
       url: window.location.origin + window.location.pathname
     });
   };
 
   const getProductMeta = card => {
-    const title = (card?.dataset.title || document.title) + ' - Pixis Informática';
-    const cashPriceNum = card?.dataset.cashPrice || card?.dataset.priceLocal || '0';
+    const title = (card?.dataset.title || document.title) + ' - Pixis Informática | Especialistas N°1 en Santiago del Estero';
+    const cashPriceNum = card?.dataset.cashPrice || card?.dataset.priceLocal || card?.dataset.price || '0';
     const cashPrice = '$' + Number(cashPriceNum).toLocaleString('es-AR');
+    const sku = card?.dataset.sku || card?.getAttribute('data-sku') || card?.querySelector('.btn-add-cart')?.dataset.sku || '';
+    const idProd = card?.dataset.pixisId || card?.dataset.id || '';
     
-    // Descripción estructurada: Solo Precio Especial
-    const description = 'Pixis Informática | Precio Especial: ' + cashPrice;
+    // Descripción estructurada con SKU, ID, Precio y Posicionamiento N°1
+    let description = 'Pixis Informática | Especialistas N°1 en Santiago del Estero. Producto: ' + (card?.dataset.title || '') + ' | Precio: ' + cashPrice;
+    if (sku) description += ' | SKU: ' + sku;
+    if (idProd) description += ' | ID: ' + idProd;
     
     const image = normalizeImage(card?.dataset.img);
     const slugPart = card?.dataset.pixisSlug || getSlug(card?.dataset.title || '');
-    const idPart = card?.dataset.pixisId || '';
+    const idPart = idProd || '';
     const url = idPart
       ? window.location.origin + '/' + slugPart + '--id-' + idPart
       : window.location.origin + '/' + slugPart;
+
+    // Inyección de Schema.org JSON-LD de Producto dinámico para Google Search e IAs
+    try {
+      let schemaScript = document.head.querySelector('#pixis-product-jsonld');
+      if (!schemaScript) {
+        schemaScript = document.createElement('script');
+        schemaScript.id = 'pixis-product-jsonld';
+        schemaScript.type = 'application/ld+json';
+        document.head.appendChild(schemaScript);
+      }
+      const productSchema = {
+        "@context": "https://schema.org",
+        "@type": "Product",
+        "name": card?.dataset.title || '',
+        "image": image,
+        "description": card?.dataset.desc || description,
+        "sku": sku || idPart || getSlug(card?.dataset.title || ''),
+        "mpn": sku || idPart || undefined,
+        "productID": idPart || undefined,
+        "brand": {
+          "@type": "Brand",
+          "name": "Pixis Informática"
+        },
+        "offers": {
+          "@type": "Offer",
+          "url": url,
+          "priceCurrency": "ARS",
+          "price": Number(cashPriceNum) || 0,
+          "itemCondition": "https://schema.org/NewCondition",
+          "availability": "https://schema.org/InStock",
+          "seller": {
+            "@type": "Organization",
+            "name": "Pixis Informática — Especialistas N°1 en Santiago del Estero"
+          }
+        }
+      };
+      schemaScript.textContent = JSON.stringify(productSchema);
+    } catch (e) {
+      console.error('Error al inyectar JSON-LD de producto:', e);
+    }
+
     return { title, description, image, url };
   };
 

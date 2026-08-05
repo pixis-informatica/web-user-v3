@@ -227,190 +227,80 @@
 
     <!-- ── SECCIÓN AJUSTES ── -->
     <div id="seccionAjustes" style="display:none; max-width: 1200px; width: 100%; margin: 16px auto 0 auto; padding: 20px; background: var(--panel); border: 1px solid var(--border); border-radius: 16px;">
-      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
         <h2 style="font-family: 'Orbitron'; font-size: 1.4rem; color: var(--gold); display: flex; align-items: center; gap: 10px; margin: 0;">⚙️ Ajustes</h2>
         <button type="button" onclick="bloquearAjustes()" style="padding: 6px 14px; background: rgba(239, 68, 68, 0.15); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.3); border-radius: 8px; font-size: 12px; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 6px;" title="Cerrar y volver a bloquear la sección de Ajustes">🔒 Bloquear Ajustes</button>
       </div>
-      
+
       <div id="ajustesErrorMsg" class="auth-error" style="display:none; margin-bottom:15px;"></div>
       <div id="ajustesSuccessMsg" style="display:none; background: rgba(0, 230, 118, 0.1); border: 1px solid var(--success); color: var(--success); padding: 12px; border-radius: 8px; font-size: 0.9rem; margin-bottom: 15px;"></div>
 
-      <div class="ajustes-grid">
-        <!-- TARJETA 1: Servidor SMTP -->
-        <div class="ajustes-card">
-          <form id="formAjustesSMTP" onsubmit="updateSMTPSettings(event)">
-            <h3 style="font-size: 1.05rem; color: var(--gold); margin-bottom: 6px;"><i class="fas fa-paper-plane"></i> 1. Servidor de Correo (SMTP)</h3>
-            <p class="ajustes-desc">La oficina de correo virtual que envía los emails automáticos de compras y recuperaciones a tus clientes.</p>
+      <!-- ── BARRA DE PESTAÑAS ── -->
+      <div class="ajustes-tabs-nav">
+        <button type="button" id="tabBtnStorage" class="tab-ajustes-btn tab-ajustes-active" onclick="switchAjustesTab('storage')">
+          <i class="fas fa-database"></i><span>Almacenamiento</span>
+        </button>
+        <button type="button" id="tabBtnGarantia" class="tab-ajustes-btn" onclick="switchAjustesTab('garantia')">
+          <i class="fas fa-shield-alt"></i><span>Garantía en Correos</span>
+        </button>
+        <button type="button" id="tabBtnSeo" class="tab-ajustes-btn" onclick="switchAjustesTab('seo')">
+          <i class="fas fa-search-location"></i><span>SEO & Posicionamiento</span>
+        </button>
+        <button type="button" id="tabBtnSeguridad" class="tab-ajustes-btn" onclick="switchAjustesTab('seguridad')">
+          <i class="fas fa-user-shield"></i><span>Seguridad & Acceso</span>
+        </button>
+      </div>
 
-            <div class="form-group">
-              <label for="smtpHost">Servidor SMTP</label>
-              <span class="helper-text">💡 <strong>¿Qué es?</strong> La dirección del servidor de correo emisor.<br>🎯 <strong>¿Dónde se aplica?</strong> En las comunicaciones automáticas por internet.<br>📋 <strong>¿Para qué sirve?</strong> Para conectar la tienda con Gmail o tu hosting.</span>
-              <input type="text" id="smtpHost" required placeholder="smtp.gmail.com">
-              <span class="example-badge">Ejemplo: smtp.gmail.com (para cuentas Gmail)</span>
+      <!-- ══════════════════════════════════════════════════════════ -->
+      <!-- PESTAÑA 1: ALMACENAMIENTO & COMPROBANTES                  -->
+      <!-- ══════════════════════════════════════════════════════════ -->
+      <div id="tabContentStorage" class="ajustes-tab-content">
+        <div class="ajustes-card" style="border: 1px solid rgba(251, 191, 36, 0.4); background: linear-gradient(135deg, rgba(251, 191, 36, 0.07), rgba(245, 158, 11, 0.04)); grid-column: 1 / -1;">
+          <h3 style="font-size: 1.05rem; color: #fbbf24; margin-bottom: 6px;"><i class="fas fa-database"></i> Optimización de Almacenamiento & Comprobantes</h3>
+          <p class="ajustes-desc">Gestioná el espacio en disco que ocupan los comprobantes de pago subidos por tus clientes. El sistema comprime automáticamente las imágenes al subirlas. Aquí podés ver el estado del disco y ejecutar una purga manual de archivos antiguos.</p>
+
+          <!-- Métricas en vivo -->
+          <div id="storageStatsBox" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin: 16px 0;">
+            <div style="background: rgba(0,0,0,0.35); border: 1px solid rgba(255,255,255,0.1); border-radius: 10px; padding: 14px; text-align: center;">
+              <div style="font-size: 1.6rem; font-weight: 800; color: #fbbf24; font-family: 'Orbitron';" id="statTotalMB">—</div>
+              <div style="font-size: 0.75rem; color: #888; margin-top: 4px;">MB en disco</div>
             </div>
-
-            <div class="form-group">
-              <label for="smtpPort">Puerto SMTP (465 SSL, 587 TLS)</label>
-              <span class="helper-text">💡 <strong>¿Qué es?</strong> El número de puerto o canal de viaje seguro.<br>🎯 <strong>¿Dónde se aplica?</strong> En el cifrado de datos entre el servidor y el correo.<br>📋 <strong>¿Para qué sirve?</strong> Para evitar que tus emails vayan a SPAM o sean bloqueados.</span>
-              <input type="number" id="smtpPort" required placeholder="465">
-              <span class="example-badge">Ejemplo: 465 (para SSL) o 587 (para TLS)</span>
+            <div style="background: rgba(0,0,0,0.35); border: 1px solid rgba(255,255,255,0.1); border-radius: 10px; padding: 14px; text-align: center;">
+              <div style="font-size: 1.6rem; font-weight: 800; color: #60a5fa; font-family: 'Orbitron';" id="statTotalArchivos">—</div>
+              <div style="font-size: 0.75rem; color: #888; margin-top: 4px;">archivos guardados</div>
             </div>
-
-            <div class="form-group">
-              <label for="smtpUser">Correo de Envío (Usuario)</label>
-              <span class="helper-text">💡 <strong>¿Qué es?</strong> La casilla de email oficial de la tienda.<br>🎯 <strong>¿Dónde se aplica?</strong> Es el remitente que verán tus clientes al recibir correos.<br>📋 <strong>¿Para qué sirve?</strong> Para que tus clientes identifiquen quién les manda la factura.</span>
-              <input type="email" id="smtpUser" required placeholder="tu-correo@gmail.com">
-              <span class="example-badge">Ejemplo: pixisedits@gmail.com</span>
-            </div>
-
-            <div class="form-group">
-              <label for="smtpPass">Contraseña de Correo / Password de App</label>
-              <span class="helper-text">💡 <strong>¿Qué es?</strong> Clave secreta de aplicación de 16 letras.<br>🎯 <strong>¿Dónde se aplica?</strong> En la autorización interna de Google/Gmail.<br>📋 <strong>¿Para qué sirve?</strong> Permite enviar mails de la tienda sin revelar tu clave personal.</span>
-              <div style="position: relative;">
-                <input type="password" id="smtpPass" required placeholder="••••••••" style="padding-right: 40px;">
-                <button type="button" onclick="toggleAdminPasswordVisibility('smtpPass', this)" style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); background: none; border: none; color: #a855f7; cursor: pointer; font-size: 16px; padding: 4px;" title="Ver/Ocultar contraseña">
-                  <i class="far fa-eye"></i>
-                </button>
-              </div>
-              <span class="example-badge">Ejemplo: abcd efgh ijkl mnop</span>
-            </div>
-
-            <button type="submit" class="btn-submit" style="width: 100%; padding: 10px; font-size: 13px;">Guardar Servidor SMTP</button>
-          </form>
-        </div>
-
-        <!-- TARJETA 2: Identidad & Recuperación -->
-        <div class="ajustes-card">
-          <form id="formAjustesNombre" onsubmit="updateAdminName(event)" style="margin-bottom: 25px; padding-bottom: 20px; border-bottom: 1px solid rgba(255,255,255,0.15);">
-            <h3 style="font-size: 1.05rem; color: #a855f7; margin-bottom: 6px;"><i class="fas fa-store"></i> 2. Nombre Comercial</h3>
-            <p class="ajustes-desc">El nombre oficial de tu negocio o firma personal que verán tus clientes.</p>
-            <div class="form-group">
-              <label for="ajustesNombre">Nombre Comercial / Personal</label>
-              <span class="helper-text">💡 <strong>¿Qué es?</strong> La marca o firma con la que te identificás.<br>🎯 <strong>¿Dónde se aplica?</strong> En el encabezado del panel y pie de emails.<br>📋 <strong>¿Para qué sirve?</strong> Para dar una imagen profesional y confiable.</span>
-              <input type="text" id="ajustesNombre" required placeholder="Vendedor Pixis">
-              <span class="example-badge">Ejemplo: Pixis Informática</span>
-            </div>
-            <button type="submit" class="btn-submit" style="width: 100%; padding: 10px; font-size: 13px;">Guardar Nombre</button>
-          </form>
-
-          <form id="formAjustesRecovery" onsubmit="updateRecoveryEmail(event)">
-            <h3 style="font-size: 1.05rem; color: #a855f7; margin-bottom: 6px;"><i class="fas fa-shield-alt"></i> 3. Correo Seguro de Recuperación</h3>
-            <p class="ajustes-desc">Tu casilla de email personal de máxima confianza a donde llegarán alertas o códigos de emergencia.</p>
-            
-            <div id="badgeCurrentRecovery" style="font-size:0.78rem; background:rgba(168,85,247,0.15); border:1px solid rgba(168,85,247,0.4); color:#e0b8ff; padding:8px 10px; border-radius:8px; margin-bottom:12px;">
-              📧 <strong>Correo de recuperación actual:</strong> <span id="currentRecoveryEmailText" style="color:#fff; font-weight:800;">Cargando...</span>
-            </div>
-
-            <div class="form-group">
-              <label for="ajustesRecoveryEmail">Nuevo Correo Seguro</label>
-              <span class="helper-text">💡 <strong>¿Qué es?</strong> Tu correo de auxilio personal confidencial.<br>🎯 <strong>¿Dónde se aplica?</strong> Al olvidar la clave o perder la app 2FA.<br>📋 <strong>¿Para qué sirve?</strong> Para rescatar tu cuenta si perdés tu celular.</span>
-              <input type="email" id="ajustesRecoveryEmail" required placeholder="correo-seguro@gmail.com">
-              <span class="example-badge">Ejemplo: mi-correo-privado@gmail.com</span>
-            </div>
-            <div class="form-group">
-              <label for="ajustesRecoveryOTP" style="color:var(--gold);">Código OTP de tu 2FA Actual (Requerido)</label>
-              <input type="text" id="ajustesRecoveryOTP" required placeholder="000000" pattern="\d{6}" maxlength="6" style="text-align: center; font-size: 1.3rem; letter-spacing: 4px; font-family: 'Orbitron';">
-            </div>
-            <button type="submit" class="btn-submit" style="width: 100%; padding: 10px; font-size: 13px;">Guardar Correo Seguro</button>
-          </form>
-        </div>
-
-        <!-- TARJETA 3: Credenciales & Seguridad 2FA -->
-        <div class="ajustes-card">
-          <!-- GESTOR 2FA RE-VINCULACIÓN / DESACTIVACIÓN -->
-          <div style="margin-bottom: 25px; padding-bottom: 20px; border-bottom: 1px solid rgba(255,255,255,0.15);">
-            <h3 style="font-size: 1.05rem; color: #4ade80; margin-bottom: 6px;"><i class="fas fa-mobile-alt"></i> 4. Autenticación de Dos Pasos (2FA)</h3>
-            <p class="ajustes-desc">Administrá la seguridad de tu teléfono. Podés desactivar el 2FA o vincular un teléfono nuevo en cualquier momento.</p>
-            
-            <div id="2faStatusBadge" style="padding: 10px; border-radius: 8px; font-size: 0.85rem; font-weight: 700; text-align: center; margin-bottom: 12px; background: rgba(34, 197, 94, 0.15); color: #4ade80; border: 1px solid rgba(34, 197, 94, 0.3);">
-              🟢 2FA Activado y Vinculado (Seguridad Máxima Activa)
-            </div>
-
-            <div style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:10px;">
-              <button type="button" onclick="solicitarRevincular2FA()" style="flex:1; padding:8px; background:rgba(168,85,247,0.2); color:#e0b8ff; border:1px solid rgba(168,85,247,0.4); border-radius:8px; font-size:12px; font-weight:700; cursor:pointer;" title="Vincular un teléfono nuevo o generar nuevo QR">📱 Re-vincular / Nuevo QR</button>
-              <button type="button" onclick="mostrarModalDesactivar2FA()" style="flex:1; padding:8px; background:rgba(239,68,68,0.15); color:#f87171; border:1px solid rgba(239,68,68,0.3); border-radius:8px; font-size:12px; font-weight:700; cursor:pointer;" title="Desactivar la protección 2FA">🔓 Desactivar 2FA</button>
-            </div>
-
-            <!-- Panel oculto para Re-vincular QR -->
-            <div id="panelRevincular2FA" style="display:none; background:rgba(0,0,0,0.3); padding:15px; border-radius:12px; border:1px solid var(--gold); margin-top:10px; text-align:center;">
-              <p style="font-size:0.8rem; color:var(--gold); margin-bottom:8px; font-weight:700;">Escaneá este nuevo código QR con Google o Microsoft Authenticator:</p>
-              <img id="imgNuevoQR2FA" src="" alt="Nuevo QR 2FA" style="border:4px solid #fff; border-radius:8px; width:160px; height:160px; margin:0 auto 10px auto;">
-              <div class="form-group" style="margin-bottom:10px;">
-                <label style="font-size:0.75rem; color:#ccc;">Ingresá el código de 6 dígitos de tu app para activar:</label>
-                <input type="text" id="otpConfirmNew2FA" placeholder="000000" maxlength="6" style="text-align:center; font-size:1.3rem; letter-spacing:4px; font-family:'Orbitron'; padding:6px;">
-              </div>
-              <div style="display:flex; gap:8px;">
-                <button type="button" onclick="cancelarRevincular2FA()" style="flex:1; padding:6px; background:#444; color:#fff; border:none; border-radius:6px; font-size:12px;">Cancelar</button>
-                <button type="button" onclick="confirmarRevincular2FA()" style="flex:1; padding:6px; background:var(--gold); color:#000; font-weight:700; border:none; border-radius:6px; font-size:12px;">Confirmar y Activar</button>
-              </div>
-            </div>
-
-            <!-- Panel oculto para Desactivar 2FA -->
-            <div id="panelDesactivar2FA" style="display:none; background:rgba(239,68,68,0.1); padding:15px; border-radius:12px; border:1px solid rgba(239,68,68,0.3); margin-top:10px; text-align:center;">
-              <p style="font-size:0.8rem; color:#f87171; margin-bottom:8px; font-weight:700;">⚠️ Confirmar Desactivación de 2FA</p>
-              <div class="form-group" style="margin-bottom:10px;">
-                <label style="font-size:0.75rem; color:#ccc;">Ingresá tu código OTP actual para confirmar:</label>
-                <input type="text" id="otpDisable2FA" placeholder="000000" maxlength="6" style="text-align:center; font-size:1.3rem; letter-spacing:4px; font-family:'Orbitron'; padding:6px;">
-              </div>
-              <div style="display:flex; gap:8px;">
-                <button type="button" onclick="cancelarDesactivar2FA()" style="flex:1; padding:6px; background:#444; color:#fff; border:none; border-radius:6px; font-size:12px;">Cancelar</button>
-                <button type="button" onclick="ejecutarDesactivar2FA()" style="flex:1; padding:6px; background:#ef4444; color:#fff; font-weight:700; border:none; border-radius:6px; font-size:12px;">Confirmar Desactivación</button>
-              </div>
+            <div style="background: rgba(0,0,0,0.35); border: 1px solid rgba(255,255,255,0.1); border-radius: 10px; padding: 14px; text-align: center;">
+              <div style="font-size: 1.6rem; font-weight: 800; color: #f87171; font-family: 'Orbitron';" id="statPurgables">—</div>
+              <div style="font-size: 0.75rem; color: #888; margin-top: 4px;">purgables (+60 días)</div>
             </div>
           </div>
 
-          <form id="formAjustesCredenciales" onsubmit="updateAdminCredentials(event)">
-            <h3 style="font-size: 1.05rem; color: #4ade80; margin-bottom: 6px;"><i class="fas fa-user-lock"></i> 5. Cambiar Email / Contraseña</h3>
-            <p class="ajustes-desc">Modifica el email o la contraseña con la que ingresás al panel de administración.</p>
-            <div class="form-group">
-              <label for="ajustesEmail">Nuevo Correo Electrónico</label>
-              <span class="helper-text">💡 <strong>¿Qué es?</strong> Tu email de usuario administrador.<br>🎯 <strong>¿Dónde se aplica?</strong> En la pantalla de entrada (Login) al panel.<br>📋 <strong>¿Para qué sirve?</strong> Para cambiar tu cuenta de acceso a la tienda.</span>
-              <input type="email" id="ajustesEmail" placeholder="vendedor@pixis.com">
-              <span class="example-badge">Ejemplo: vendedor@pixis.com</span>
-            </div>
-            <div class="form-group">
-              <label for="ajustesPassword">Nueva Contraseña (mínimo 8 caracteres)</label>
-              <span class="helper-text">💡 <strong>¿Qué es?</strong> Tu contraseña privada de inicio.<br>🎯 <strong>¿Dónde se aplica?</strong> Al ingresar en la pantalla de login.<br>📋 <strong>¿Para qué sirve?</strong> Para renovar tu clave por seguridad periódica.</span>
-              <div style="position: relative;">
-                <input type="password" id="ajustesPassword" placeholder="••••••••" style="padding-right: 40px;">
-                <button type="button" onclick="toggleAdminPasswordVisibility('ajustesPassword', this)" style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); background: none; border: none; color: #a855f7; cursor: pointer; font-size: 16px; padding: 4px;" title="Ver/Ocultar contraseña">
-                  <i class="far fa-eye"></i>
-                </button>
-              </div>
-              <span class="example-badge">Ejemplo: MiClaveSuperSegura2026!</span>
-            </div>
-            <div class="form-group">
-              <label for="ajustesCredOTP" style="color:var(--gold);">Código OTP de tu 2FA Actual (Requerido)</label>
-              <input type="text" id="ajustesCredOTP" required placeholder="000000" pattern="\d{6}" maxlength="6" style="text-align: center; font-size: 1.3rem; letter-spacing: 4px; font-family: 'Orbitron';">
-            </div>
-            <button type="submit" class="btn-submit" style="width: 100%; padding: 10px; font-size: 13px;">Actualizar Credenciales</button>
-          </form>
-        </div>
+          <!-- Info compresión automática -->
+          <div style="background: rgba(34,197,94,0.08); border: 1px solid rgba(34,197,94,0.25); border-radius: 8px; padding: 10px 14px; margin-bottom: 14px; font-size: 0.8rem; color: #86efac; line-height: 1.5;">
+            ✅ <strong>Compresión Automática Activa:</strong> Cada foto subida por un cliente se reduce automáticamente de ~4-10MB a ~150-200KB sin perder nitidez del ticket bancario.<br>
+            🕒 <strong>Purga Automática:</strong> Todos los días a las 3:00 AM el servidor elimina automáticamente los comprobantes de pedidos completados, rechazados o vencidos con más de 60 días de antigüedad.
+          </div>
 
-        <!-- TARJETA 6: Cambiar URL del Panel -->
-        <div class="ajustes-card">
-          <form id="formAjustesPath" onsubmit="updatePanelPath(event)">
-            <h3 style="font-size: 1.05rem; color: #ef4444; margin-bottom: 6px;"><i class="fas fa-link"></i> 6. Cambiar URL del Panel</h3>
-            <p class="ajustes-desc">Modifica el enlace web secreto para entrar a tu panel de administración.</p>
-            <div class="form-group">
-              <label for="ajustesPath">Nueva Ruta (min. 3 carac, letras, números y guiones)</label>
-              <span class="helper-text">💡 <strong>¿Qué es?</strong> La dirección web secreta personalizada.<br>🎯 <strong>¿Dónde se aplica?</strong> En la barra del navegador para acceder al panel.<br>📋 <strong>¿Para qué sirve?</strong> Para ocultar la administración de miradas curiosas.</span>
-              <input type="text" id="ajustesPath" required placeholder="mi-panel-secreto" oninput="previewNewPath()">
-              <span class="example-badge">Ejemplo: mi-panel-secreto</span>
-              <span style="font-size:0.75rem; color:#888; display:block; margin-top:6px;">Tu nueva URL será: <strong id="previewUrlSpan" style="color:var(--gold);">pixistech.store/admin-panel</strong></span>
-            </div>
-            <div class="form-group">
-              <label for="ajustesPathOTP" style="color:var(--gold);">Código OTP de tu 2FA Actual (Requerido)</label>
-              <input type="text" id="ajustesPathOTP" required placeholder="000000" pattern="\d{6}" maxlength="6" style="text-align: center; font-size: 1.3rem; letter-spacing: 4px; font-family: 'Orbitron';">
-            </div>
-            <button type="submit" class="btn-submit" style="width: 100%; padding: 10px; font-size: 13px; background: linear-gradient(135deg, var(--error), #ff4d4d); border-color: transparent;">Actualizar Ruta de Acceso</button>
-          </form>
+          <!-- Botón de limpieza manual -->
+          <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+            <button type="button" id="btnLimpiezaDisco" onclick="ejecutarLimpiezaDisco()" style="flex: 1; min-width: 200px; padding: 12px; background: linear-gradient(135deg, #f59e0b, #d97706); color: #000; border: none; border-radius: 10px; font-weight: 800; font-size: 13px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px;">
+              🧹 Escanear y Purgar Almacenamiento Ahora
+            </button>
+            <button type="button" onclick="cargarStorageStats()" style="padding: 12px 16px; background: rgba(255,255,255,0.05); color: #ccc; border: 1px solid rgba(255,255,255,0.15); border-radius: 10px; font-size: 12px; font-weight: 700; cursor: pointer;">
+              🔄 Actualizar Métricas
+            </button>
+          </div>
+          <div id="storagePurgeMsg" style="display:none; margin-top: 10px; font-size: 0.82rem; font-weight: 600;"></div>
         </div>
+      </div>
 
-        <!-- TARJETA 7: Mensaje de Garantía en Mails Automáticos -->
+      <!-- ══════════════════════════════════════════════════════════ -->
+      <!-- PESTAÑA 2: GARANTÍA Y TÉRMINOS EN CORREOS                 -->
+      <!-- ══════════════════════════════════════════════════════════ -->
+      <div id="tabContentGarantia" class="ajustes-tab-content" style="display:none;">
         <div class="ajustes-card" style="border: 1px solid rgba(168, 85, 247, 0.4); background: linear-gradient(135deg, rgba(168, 85, 247, 0.08), rgba(99, 102, 241, 0.05)); grid-column: 1 / -1;">
           <form id="formAjustesGarantia" onsubmit="guardarGarantiaEmail(event)">
-            <h3 style="font-size: 1.05rem; color: #c084fc; margin-bottom: 6px;"><i class="fas fa-shield-alt"></i> 7. Garantía y Términos en Correos Automáticos</h3>
+            <h3 style="font-size: 1.05rem; color: #c084fc; margin-bottom: 6px;"><i class="fas fa-shield-alt"></i> Garantía y Términos en Correos Automáticos</h3>
             <p class="ajustes-desc">Editá el mensaje de garantía, políticas de cambio y términos que se adjunta automáticamente en todos los correos de pedidos enviados a tus clientes.</p>
 
             <div class="form-group">
@@ -425,11 +315,15 @@
             </div>
           </form>
         </div>
+      </div>
 
-        <!-- TARJETA 8: Configuración SEO Global y Posicionamiento Google e IAs -->
+      <!-- ══════════════════════════════════════════════════════════ -->
+      <!-- PESTAÑA 3: SEO & POSICIONAMIENTO GOOGLE / IAs             -->
+      <!-- ══════════════════════════════════════════════════════════ -->
+      <div id="tabContentSeo" class="ajustes-tab-content" style="display:none;">
         <div class="ajustes-card" style="border: 1px solid rgba(59, 130, 246, 0.4); background: linear-gradient(135deg, rgba(59, 130, 246, 0.08), rgba(168, 85, 247, 0.05)); grid-column: 1 / -1;">
           <form id="formAjustesSEO" onsubmit="guardarAjustesSEO(event)">
-            <h3 style="font-size: 1.05rem; color: #60a5fa; margin-bottom: 6px;"><i class="fas fa-search-location"></i> 8. Configuración SEO Global y Posicionamiento Google e IAs</h3>
+            <h3 style="font-size: 1.05rem; color: #60a5fa; margin-bottom: 6px;"><i class="fas fa-search-location"></i> Configuración SEO Global y Posicionamiento Google e IAs</h3>
             <p class="ajustes-desc">Controlá la información comercial que leen los motores de búsqueda (Google Search, Google Maps) y asistentes de Inteligencia Artificial (ChatGPT, Gemini, Perplexity).</p>
 
             <div class="form-group">
@@ -455,9 +349,194 @@
             </div>
           </form>
         </div>
-
       </div>
-    </div>
+
+      <!-- ══════════════════════════════════════════════════════════ -->
+      <!-- PESTAÑA 4: SEGURIDAD, ACCESO Y 2FA (Tarjetas 1-6)        -->
+      <!-- ══════════════════════════════════════════════════════════ -->
+      <div id="tabContentSeguridad" class="ajustes-tab-content" style="display:none;">
+        <div class="ajustes-grid">
+
+          <!-- TARJETA 1: Servidor SMTP -->
+          <div class="ajustes-card">
+            <form id="formAjustesSMTP" onsubmit="updateSMTPSettings(event)">
+              <h3 style="font-size: 1.05rem; color: var(--gold); margin-bottom: 6px;"><i class="fas fa-paper-plane"></i> 1. Servidor de Correo (SMTP)</h3>
+              <p class="ajustes-desc">La oficina de correo virtual que envía los emails automáticos de compras y recuperaciones a tus clientes.</p>
+
+              <div class="form-group">
+                <label for="smtpHost">Servidor SMTP</label>
+                <span class="helper-text">💡 <strong>¿Qué es?</strong> La dirección del servidor de correo emisor.<br>🎯 <strong>¿Dónde se aplica?</strong> En las comunicaciones automáticas por internet.<br>📋 <strong>¿Para qué sirve?</strong> Para conectar la tienda con Gmail o tu hosting.</span>
+                <input type="text" id="smtpHost" required placeholder="smtp.gmail.com">
+                <span class="example-badge">Ejemplo: smtp.gmail.com (para cuentas Gmail)</span>
+              </div>
+
+              <div class="form-group">
+                <label for="smtpPort">Puerto SMTP (465 SSL, 587 TLS)</label>
+                <span class="helper-text">💡 <strong>¿Qué es?</strong> El número de puerto o canal de viaje seguro.<br>🎯 <strong>¿Dónde se aplica?</strong> En el cifrado de datos entre el servidor y el correo.<br>📋 <strong>¿Para qué sirve?</strong> Para evitar que tus emails vayan a SPAM o sean bloqueados.</span>
+                <input type="number" id="smtpPort" required placeholder="465">
+                <span class="example-badge">Ejemplo: 465 (para SSL) o 587 (para TLS)</span>
+              </div>
+
+              <div class="form-group">
+                <label for="smtpUser">Correo de Envío (Usuario)</label>
+                <span class="helper-text">💡 <strong>¿Qué es?</strong> La casilla de email oficial de la tienda.<br>🎯 <strong>¿Dónde se aplica?</strong> Es el remitente que verán tus clientes al recibir correos.<br>📋 <strong>¿Para qué sirve?</strong> Para que tus clientes identifiquen quién les manda la factura.</span>
+                <input type="email" id="smtpUser" required placeholder="tu-correo@gmail.com">
+                <span class="example-badge">Ejemplo: pixisedits@gmail.com</span>
+              </div>
+
+              <div class="form-group">
+                <label for="smtpPass">Contraseña de Correo / Password de App</label>
+                <span class="helper-text">💡 <strong>¿Qué es?</strong> Clave secreta de aplicación de 16 letras.<br>🎯 <strong>¿Dónde se aplica?</strong> En la autorización interna de Google/Gmail.<br>📋 <strong>¿Para qué sirve?</strong> Permite enviar mails de la tienda sin revelar tu clave personal.</span>
+                <div style="position: relative;">
+                  <input type="password" id="smtpPass" required placeholder="••••••••" style="padding-right: 40px;">
+                  <button type="button" onclick="toggleAdminPasswordVisibility('smtpPass', this)" style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); background: none; border: none; color: #a855f7; cursor: pointer; font-size: 16px; padding: 4px;" title="Ver/Ocultar contraseña">
+                    <i class="far fa-eye"></i>
+                  </button>
+                </div>
+                <span class="example-badge">Ejemplo: abcd efgh ijkl mnop</span>
+              </div>
+
+              <button type="submit" class="btn-submit" style="width: 100%; padding: 10px; font-size: 13px;">Guardar Servidor SMTP</button>
+            </form>
+          </div>
+
+          <!-- TARJETA 2: Identidad & Recuperación -->
+          <div class="ajustes-card">
+            <form id="formAjustesNombre" onsubmit="updateAdminName(event)" style="margin-bottom: 25px; padding-bottom: 20px; border-bottom: 1px solid rgba(255,255,255,0.15);">
+              <h3 style="font-size: 1.05rem; color: #a855f7; margin-bottom: 6px;"><i class="fas fa-store"></i> 2. Nombre Comercial</h3>
+              <p class="ajustes-desc">El nombre oficial de tu negocio o firma personal que verán tus clientes.</p>
+              <div class="form-group">
+                <label for="ajustesNombre">Nombre Comercial / Personal</label>
+                <span class="helper-text">💡 <strong>¿Qué es?</strong> La marca o firma con la que te identificás.<br>🎯 <strong>¿Dónde se aplica?</strong> En el encabezado del panel y pie de emails.<br>📋 <strong>¿Para qué sirve?</strong> Para dar una imagen profesional y confiable.</span>
+                <input type="text" id="ajustesNombre" required placeholder="Vendedor Pixis">
+                <span class="example-badge">Ejemplo: Pixis Informática</span>
+              </div>
+              <button type="submit" class="btn-submit" style="width: 100%; padding: 10px; font-size: 13px;">Guardar Nombre</button>
+            </form>
+
+            <form id="formAjustesRecovery" onsubmit="updateRecoveryEmail(event)">
+              <h3 style="font-size: 1.05rem; color: #a855f7; margin-bottom: 6px;"><i class="fas fa-shield-alt"></i> 3. Correo Seguro de Recuperación</h3>
+              <p class="ajustes-desc">Tu casilla de email personal de máxima confianza a donde llegarán alertas o códigos de emergencia.</p>
+
+              <div id="badgeCurrentRecovery" style="font-size:0.78rem; background:rgba(168,85,247,0.15); border:1px solid rgba(168,85,247,0.4); color:#e0b8ff; padding:8px 10px; border-radius:8px; margin-bottom:12px;">
+                📧 <strong>Correo de recuperación actual:</strong> <span id="currentRecoveryEmailText" style="color:#fff; font-weight:800;">Cargando...</span>
+              </div>
+
+              <div class="form-group">
+                <label for="ajustesRecoveryEmail">Nuevo Correo Seguro</label>
+                <span class="helper-text">💡 <strong>¿Qué es?</strong> Tu correo de auxilio personal confidencial.<br>🎯 <strong>¿Dónde se aplica?</strong> Al olvidar la clave o perder la app 2FA.<br>📋 <strong>¿Para qué sirve?</strong> Para rescatar tu cuenta si perdés tu celular.</span>
+                <input type="email" id="ajustesRecoveryEmail" required placeholder="correo-seguro@gmail.com">
+                <span class="example-badge">Ejemplo: mi-correo-privado@gmail.com</span>
+              </div>
+              <div class="form-group">
+                <label for="ajustesRecoveryOTP" style="color:var(--gold);">Código OTP de tu 2FA Actual (Requerido)</label>
+                <input type="text" id="ajustesRecoveryOTP" required placeholder="000000" pattern="\d{6}" maxlength="6" style="text-align: center; font-size: 1.3rem; letter-spacing: 4px; font-family: 'Orbitron';">
+              </div>
+              <button type="submit" class="btn-submit" style="width: 100%; padding: 10px; font-size: 13px;">Guardar Correo Seguro</button>
+            </form>
+          </div>
+
+          <!-- TARJETA 3: Credenciales & Seguridad 2FA -->
+          <div class="ajustes-card">
+            <!-- GESTOR 2FA RE-VINCULACIÓN / DESACTIVACIÓN -->
+            <div style="margin-bottom: 25px; padding-bottom: 20px; border-bottom: 1px solid rgba(255,255,255,0.15);">
+              <h3 style="font-size: 1.05rem; color: #4ade80; margin-bottom: 6px;"><i class="fas fa-mobile-alt"></i> 4. Autenticación de Dos Pasos (2FA)</h3>
+              <p class="ajustes-desc">Administrá la seguridad de tu teléfono. Podés desactivar el 2FA o vincular un teléfono nuevo en cualquier momento.</p>
+
+              <div id="2faStatusBadge" style="padding: 10px; border-radius: 8px; font-size: 0.85rem; font-weight: 700; text-align: center; margin-bottom: 12px; background: rgba(34, 197, 94, 0.15); color: #4ade80; border: 1px solid rgba(34, 197, 94, 0.3);">
+                🟢 2FA Activado y Vinculado (Seguridad Máxima Activa)
+              </div>
+
+              <div style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:10px;">
+                <button type="button" onclick="solicitarRevincular2FA()" style="flex:1; padding:8px; background:rgba(168,85,247,0.2); color:#e0b8ff; border:1px solid rgba(168,85,247,0.4); border-radius:8px; font-size:12px; font-weight:700; cursor:pointer;" title="Vincular un teléfono nuevo o generar nuevo QR">📱 Re-vincular / Nuevo QR</button>
+                <button type="button" onclick="mostrarModalDesactivar2FA()" style="flex:1; padding:8px; background:rgba(239,68,68,0.15); color:#f87171; border:1px solid rgba(239,68,68,0.3); border-radius:8px; font-size:12px; font-weight:700; cursor:pointer;" title="Desactivar la protección 2FA">🔓 Desactivar 2FA</button>
+              </div>
+
+              <!-- Panel oculto para Re-vincular QR -->
+              <div id="panelRevincular2FA" style="display:none; background:rgba(0,0,0,0.3); padding:15px; border-radius:12px; border:1px solid var(--gold); margin-top:10px; text-align:center;">
+                <p style="font-size:0.8rem; color:var(--gold); margin-bottom:8px; font-weight:700;">Escaneá este nuevo código QR con Google o Microsoft Authenticator:</p>
+                <img id="imgNuevoQR2FA" src="" alt="Nuevo QR 2FA" style="border:4px solid #fff; border-radius:8px; width:160px; height:160px; margin:0 auto 10px auto;">
+                <div class="form-group" style="margin-bottom:10px;">
+                  <label style="font-size:0.75rem; color:#ccc;">Ingresá el código de 6 dígitos de tu app para activar:</label>
+                  <input type="text" id="otpConfirmNew2FA" placeholder="000000" maxlength="6" style="text-align:center; font-size:1.3rem; letter-spacing:4px; font-family:'Orbitron'; padding:6px;">
+                </div>
+                <div style="display:flex; gap:8px;">
+                  <button type="button" onclick="cancelarRevincular2FA()" style="flex:1; padding:6px; background:#444; color:#fff; border:none; border-radius:6px; font-size:12px;">Cancelar</button>
+                  <button type="button" onclick="confirmarRevincular2FA()" style="flex:1; padding:6px; background:var(--gold); color:#000; font-weight:700; border:none; border-radius:6px; font-size:12px;">Confirmar y Activar</button>
+                </div>
+              </div>
+
+              <!-- Panel oculto para Desactivar 2FA -->
+              <div id="panelDesactivar2FA" style="display:none; background:rgba(239,68,68,0.1); padding:15px; border-radius:12px; border:1px solid rgba(239,68,68,0.3); margin-top:10px; text-align:center;">
+                <p style="font-size:0.8rem; color:#f87171; margin-bottom:8px; font-weight:700;">⚠️ Confirmar Desactivación de 2FA</p>
+                <div class="form-group" style="margin-bottom:10px;">
+                  <label style="font-size:0.75rem; color:#ccc;">Ingresá tu código OTP actual para confirmar:</label>
+                  <input type="text" id="otpDisable2FA" placeholder="000000" maxlength="6" style="text-align:center; font-size:1.3rem; letter-spacing:4px; font-family:'Orbitron'; padding:6px;">
+                </div>
+                <div style="display:flex; gap:8px;">
+                  <button type="button" onclick="cancelarDesactivar2FA()" style="flex:1; padding:6px; background:#444; color:#fff; border:none; border-radius:6px; font-size:12px;">Cancelar</button>
+                  <button type="button" onclick="ejecutarDesactivar2FA()" style="flex:1; padding:6px; background:#ef4444; color:#fff; font-weight:700; border:none; border-radius:6px; font-size:12px;">Confirmar Desactivación</button>
+                </div>
+              </div>
+            </div>
+
+            <form id="formAjustesCredenciales" onsubmit="updateAdminCredentials(event)">
+              <h3 style="font-size: 1.05rem; color: #4ade80; margin-bottom: 6px;"><i class="fas fa-user-lock"></i> 5. Cambiar Email / Contraseña</h3>
+              <p class="ajustes-desc">Modifica el email o la contraseña con la que ingresás al panel de administración.</p>
+              <div class="form-group">
+                <label for="ajustesEmail">Nuevo Correo Electrónico</label>
+                <span class="helper-text">💡 <strong>¿Qué es?</strong> Tu email de usuario administrador.<br>🎯 <strong>¿Dónde se aplica?</strong> En la pantalla de entrada (Login) al panel.<br>📋 <strong>¿Para qué sirve?</strong> Para cambiar tu cuenta de acceso a la tienda.</span>
+                <input type="email" id="ajustesEmail" placeholder="vendedor@pixis.com">
+                <span class="example-badge">Ejemplo: vendedor@pixis.com</span>
+              </div>
+              <div class="form-group">
+                <label for="ajustesPassword">Nueva Contraseña (mínimo 8 caracteres)</label>
+                <span class="helper-text">💡 <strong>¿Qué es?</strong> Tu contraseña privada de inicio.<br>🎯 <strong>¿Dónde se aplica?</strong> Al ingresar en la pantalla de login.<br>📋 <strong>¿Para qué sirve?</strong> Para renovar tu clave por seguridad periódica.</span>
+                <div style="position: relative;">
+                  <input type="password" id="ajustesPassword" placeholder="••••••••" style="padding-right: 40px;">
+                  <button type="button" onclick="toggleAdminPasswordVisibility('ajustesPassword', this)" style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); background: none; border: none; color: #a855f7; cursor: pointer; font-size: 16px; padding: 4px;" title="Ver/Ocultar contraseña">
+                    <i class="far fa-eye"></i>
+                  </button>
+                </div>
+                <span class="example-badge">Ejemplo: MiClaveSuperSegura2026!</span>
+              </div>
+              <div class="form-group">
+                <label for="ajustesCredOTP" style="color:var(--gold);">Código OTP de tu 2FA Actual (Requerido)</label>
+                <input type="text" id="ajustesCredOTP" required placeholder="000000" pattern="\d{6}" maxlength="6" style="text-align: center; font-size: 1.3rem; letter-spacing: 4px; font-family: 'Orbitron';">
+              </div>
+              <button type="submit" class="btn-submit" style="width: 100%; padding: 10px; font-size: 13px;">Actualizar Credenciales</button>
+            </form>
+          </div>
+
+          <!-- TARJETA 6: Cambiar URL del Panel -->
+          <div class="ajustes-card">
+            <form id="formAjustesPath" onsubmit="updatePanelPath(event)">
+              <h3 style="font-size: 1.05rem; color: #ef4444; margin-bottom: 6px;"><i class="fas fa-link"></i> 6. Cambiar URL del Panel</h3>
+              <p class="ajustes-desc">Modifica el enlace web secreto para entrar a tu panel de administración.</p>
+              <div class="form-group">
+                <label for="ajustesPath">Nueva Ruta (min. 3 carac, letras, números y guiones)</label>
+                <span class="helper-text">💡 <strong>¿Qué es?</strong> La dirección web secreta personalizada.<br>🎯 <strong>¿Dónde se aplica?</strong> En la barra del navegador para acceder al panel.<br>📋 <strong>¿Para qué sirve?</strong> Para ocultar la administración de miradas curiosas.</span>
+                <input type="text" id="ajustesPath" required placeholder="mi-panel-secreto" oninput="previewNewPath()">
+                <span class="example-badge">Ejemplo: mi-panel-secreto</span>
+                <span style="font-size:0.75rem; color:#888; display:block; margin-top:6px;">Tu nueva URL será: <strong id="previewUrlSpan" style="color:var(--gold);">pixistech.store/admin-panel</strong></span>
+              </div>
+              <div class="form-group">
+                <label for="ajustesPathOTP" style="color:var(--gold);">Código OTP de tu 2FA Actual (Requerido)</label>
+                <input type="text" id="ajustesPathOTP" required placeholder="000000" pattern="\d{6}" maxlength="6" style="text-align: center; font-size: 1.3rem; letter-spacing: 4px; font-family: 'Orbitron';">
+              </div>
+              <button type="submit" class="btn-submit" style="width: 100%; padding: 10px; font-size: 13px; background: linear-gradient(135deg, var(--error), #ff4d4d); border-color: transparent;">Actualizar Ruta de Acceso</button>
+            </form>
+          </div>
+
+        </div><!-- /ajustes-grid -->
+      </div><!-- /tabContentSeguridad -->
+
+    </div><!-- /seccionAjustes -->
+
+
+
+      
+
     <!-- ── SECCIÓN EXCLUSIVA CUPONES (VISTA DEDICADA 1:1 MAESTRO POS) ── -->
     <div id="seccionCupones" style="display:none; max-width: 1200px; width: 100%; margin: 16px auto 0 auto; padding: 24px; background: var(--panel); border: 1px solid rgba(168, 85, 247, 0.4); border-radius: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
       <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px; padding-bottom: 15px; border-bottom: 1px solid rgba(255,255,255,0.1);">

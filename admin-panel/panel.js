@@ -1220,6 +1220,9 @@ async function loadAdminSettings() {
     if (seoDescTextarea && data.seo_description) seoDescTextarea.value = data.seo_description;
     if (seoKwInput && data.seo_keywords) seoKwInput.value = data.seo_keywords;
 
+    // Cargar estadísticas de almacenamiento para la Pestaña 1
+    if (typeof cargarStorageStats === 'function') cargarStorageStats();
+
   } catch (err) {
     console.error('Error al cargar ajustes:', err);
   }
@@ -1705,3 +1708,87 @@ window.guardarAjustesSEO = async function(event) {
   }
 };
 
+// ── NAVEGACIÓN ENTRE PESTAÑAS DE AJUSTES (BLOQUE 2) ──
+window.switchAjustesTab = function(tabName) {
+  const tabs = ['storage', 'garantia', 'seo', 'seguridad'];
+  tabs.forEach(t => {
+    const btn = document.getElementById('tabBtn' + t.charAt(0).toUpperCase() + t.slice(1));
+    const content = document.getElementById('tabContent' + t.charAt(0).toUpperCase() + t.slice(1));
+    if (btn) btn.classList.remove('tab-ajustes-active');
+    if (content) content.style.display = 'none';
+  });
+
+  const targetBtn = document.getElementById('tabBtn' + tabName.charAt(0).toUpperCase() + tabName.slice(1));
+  const targetContent = document.getElementById('tabContent' + tabName.charAt(0).toUpperCase() + tabName.slice(1));
+  if (targetBtn) targetBtn.classList.add('tab-ajustes-active');
+  if (targetContent) targetContent.style.display = 'block';
+
+  if (tabName === 'storage') {
+    cargarStorageStats();
+  }
+};
+
+// ── OPTIMIZACIÓN Y PURGA DE ALMACENAMIENTO (PESTAÑA 1) ──
+window.cargarStorageStats = async function() {
+  try {
+    const res = await fetch('/api/admin/settings/storage-stats');
+    if (!res.ok) return;
+    const data = await res.json();
+
+    const mbElem = document.getElementById('statTotalMB');
+    const archElem = document.getElementById('statTotalArchivos');
+    const purgElem = document.getElementById('statPurgables');
+
+    if (mbElem) mbElem.textContent = data.total_mb + ' MB';
+    if (archElem) archElem.textContent = data.total_archivos;
+    if (purgElem) purgElem.textContent = data.purgables_60_dias;
+  } catch (e) {
+    console.error('Error al cargar estadísticas de almacenamiento:', e);
+  }
+};
+
+window.ejecutarLimpiezaDisco = async function() {
+  const btn = document.getElementById('btnLimpiezaDisco');
+  const msg = document.getElementById('storagePurgeMsg');
+
+  if (!confirm('¿Desea escanear y purgar los comprobantes de pedidos antiguos (+60 días) ahora mismo?')) {
+    return;
+  }
+
+  btn.disabled = true;
+  btn.textContent = '⏳ Purgando comprobantes...';
+  if (msg) msg.style.display = 'none';
+
+  try {
+    const res = await fetch('/api/admin/settings/purge-storage', { method: 'POST' });
+    const data = await res.json();
+
+    btn.disabled = false;
+    btn.textContent = '🧹 Escanear y Purgar Almacenamiento Ahora';
+
+    if (!res.ok) {
+      if (msg) {
+        msg.style.display = 'block';
+        msg.style.color = '#f87171';
+        msg.textContent = '❌ ' + (data.error || 'Error al ejecutar purga.');
+      }
+      return;
+    }
+
+    if (msg) {
+      msg.style.display = 'block';
+      msg.style.color = '#4ade80';
+      msg.textContent = `✅ ${data.message || 'Purga completada con éxito.'}`;
+    }
+
+    cargarStorageStats();
+  } catch (e) {
+    btn.disabled = false;
+    btn.textContent = '🧹 Escanear y Purgar Almacenamiento Ahora';
+    if (msg) {
+      msg.style.display = 'block';
+      msg.style.color = '#f87171';
+      msg.textContent = '❌ Error de conexión con el servidor.';
+    }
+  }
+};
