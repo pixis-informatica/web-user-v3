@@ -578,6 +578,7 @@ function switchMainTab(tab) {
   const btnClientes = document.getElementById('mainTab-clientes');
   const btnAjustes  = document.getElementById('mainTab-ajustes');
   const btnCupones  = document.getElementById('mainTab-cupones');
+  const btnReset    = document.getElementById('btnResetTotalPedidos');
 
   // Control de visibilidad inteligente del botón Cupones (Solo visible si Ajustes está desbloqueado por 2FA)
   if (btnCupones) {
@@ -585,6 +586,15 @@ function switchMainTab(tab) {
       btnCupones.style.display = 'inline-flex';
     } else {
       btnCupones.style.display = 'none';
+    }
+  }
+
+  // Control de visibilidad inteligente del botón Reset Total Pedidos (Solo visible si estamos DENTRO de la pestaña Ajustes)
+  if (btnReset) {
+    if (tab === 'ajustes' && ajustesUnlocked) {
+      btnReset.style.display = 'inline-flex';
+    } else {
+      btnReset.style.display = 'none';
     }
   }
 
