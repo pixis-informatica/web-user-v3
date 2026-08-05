@@ -1289,4 +1289,24 @@ body.light-theme #metricVisitasHoy {
   color: #7e22ce !important; /* Púrpura oscuro ultra legible */
 }
 
+/* ── ESTILO BOTÓN RESET TOTAL PEDIDOS EN NAVEGACIÓN ── */
+.btn-reset-total-pedidos:hover {
+  background: rgba(245, 158, 11, 0.28) !important;
+  box-shadow: 0 0 15px rgba(245, 158, 11, 0.3) !important;
+  transform: translateY(-1px);
+}
+
+body.light-theme .btn-reset-total-pedidos {
+  background: #fffbeb !important;
+  color: #b45309 !important;
+  border-color: #fde68a !important;
+  font-weight: 800 !important;
+}
+
+body.light-theme .btn-reset-total-pedidos:hover {
+  background: #fef3c7 !important;
+  color: #92400e !important;
+  box-shadow: 0 4px 12px rgba(217, 119, 6, 0.25) !important;
+}
+
 
