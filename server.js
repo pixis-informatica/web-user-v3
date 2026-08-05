@@ -3118,7 +3118,7 @@ app.get('/api/admin/settings/storage-stats', verifyAdminToken, async (req, res) 
       where: {
         pedido: {
           estado: { in: ['completado', 'rechazado', 'vencido'] },
-          fecha_creacion: { lt: fechaLimite }
+          creado_en: { lt: fechaLimite }
         }
       }
     });
@@ -3144,7 +3144,7 @@ app.post('/api/admin/settings/purge-storage', verifyAdminToken, async (req, res)
       where: {
         pedido: {
           estado: { in: ['completado', 'rechazado', 'vencido'] },
-          fecha_creacion: { lt: fechaLimite }
+          creado_en: { lt: fechaLimite }
         }
       },
       select: { id: true, archivo_url: true }
@@ -4023,7 +4023,7 @@ async function purgarComprobantesAntiguos() {
       where: {
         pedido: {
           estado: { in: ['completado', 'rechazado', 'vencido'] },
-          fecha_creacion: { lt: fechaLimite }
+          creado_en: { lt: fechaLimite }
         }
       },
       select: { id: true, archivo_url: true }

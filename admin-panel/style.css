@@ -1080,3 +1080,163 @@ body.light-theme .tab-ajustes-active {
   box-shadow: 0 4px 14px rgba(168, 85, 247, 0.3);
 }
 
+/* ── TARJETAS Y CONTENEDOR DE ALMACENAMIENTO (PESTAÑA 1) ── */
+.storage-card-container {
+  border: 1px solid rgba(251, 191, 36, 0.4);
+  background: linear-gradient(135deg, rgba(251, 191, 36, 0.07), rgba(245, 158, 11, 0.04));
+  border-radius: 12px;
+  padding: 20px;
+}
+
+.storage-card-container h3 {
+  color: #fbbf24;
+}
+
+.storage-desc-text {
+  font-size: 0.85rem;
+  color: #d1d5db;
+  line-height: 1.5;
+  margin-bottom: 18px;
+}
+
+.storage-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+  margin: 18px 0;
+}
+
+.storage-stat-box {
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 12px;
+  padding: 16px 12px;
+  text-align: center;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.storage-stat-val {
+  font-size: 1.7rem;
+  font-weight: 800;
+  font-family: 'Orbitron', sans-serif;
+  margin-bottom: 4px;
+}
+
+.storage-stat-val.val-gold { color: #fbbf24; }
+.storage-stat-val.val-blue { color: #60a5fa; }
+.storage-stat-val.val-red  { color: #f87171; }
+
+.storage-stat-lbl {
+  font-size: 0.78rem;
+  color: #a1a1aa;
+  font-weight: 600;
+}
+
+.storage-info-banner {
+  background: rgba(34, 197, 94, 0.1);
+  border: 1px solid rgba(34, 197, 94, 0.3);
+  border-radius: 10px;
+  padding: 12px 16px;
+  margin-bottom: 18px;
+  font-size: 0.82rem;
+  color: #86efac;
+  line-height: 1.6;
+}
+
+.storage-btn-primary {
+  flex: 1;
+  min-width: 220px;
+  padding: 13px;
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+  color: #000000;
+  border: none;
+  border-radius: 10px;
+  font-weight: 800;
+  font-size: 13.5px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  box-shadow: 0 4px 14px rgba(245, 158, 11, 0.3);
+  transition: all 0.2s ease;
+}
+.storage-btn-primary:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 18px rgba(245, 158, 11, 0.4);
+}
+
+.storage-btn-secondary {
+  padding: 13px 18px;
+  background: rgba(255, 255, 255, 0.08);
+  color: #e2e8f0;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 10px;
+  font-size: 12.5px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.storage-btn-secondary:hover {
+  background: rgba(255, 255, 255, 0.15);
+  color: #ffffff;
+}
+
+/* ── MODO CLARO (body.light-theme): CONTRASTE Y LEGIBILIDAD TOTAL ── */
+body.light-theme .storage-card-container {
+  background: #ffffff !important;
+  border: 1.5px solid #fcd34d !important;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06) !important;
+}
+
+body.light-theme .storage-card-container h3 {
+  color: #b45309 !important; /* Ámbar oscuro legible */
+  font-weight: 800 !important;
+}
+
+body.light-theme .storage-desc-text {
+  color: #334155 !important; /* Slate 700 legible */
+  font-weight: 600 !important;
+}
+
+body.light-theme .storage-stat-box {
+  background: #f8fafc !important;
+  border: 1.5px solid #cbd5e1 !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04) !important;
+}
+
+body.light-theme .storage-stat-val.val-gold { color: #b45309 !important; }
+body.light-theme .storage-stat-val.val-blue { color: #1d4ed8 !important; }
+body.light-theme .storage-stat-val.val-red  { color: #dc2626 !important; }
+
+body.light-theme .storage-stat-lbl {
+  color: #475569 !important; /* Slate 600 ultra legible */
+  font-weight: 700 !important;
+}
+
+body.light-theme .storage-info-banner {
+  background: #f0fdf4 !important;
+  border: 1.5px solid #86efac !important;
+  color: #15803d !important; /* Verde oscuro nitidez total */
+  font-weight: 700 !important;
+}
+
+body.light-theme .storage-info-banner strong {
+  color: #166534 !important;
+}
+
+body.light-theme .storage-btn-primary {
+  background: linear-gradient(135deg, #d97706, #b45309) !important;
+  color: #ffffff !important; /* Texto blanco en negrita sobre botón naranja */
+  font-weight: 800 !important;
+  box-shadow: 0 4px 12px rgba(217, 119, 6, 0.3) !important;
+}
+
+body.light-theme .storage-btn-secondary {
+  background: #f1f5f9 !important;
+  border: 1.5px solid #94a3b8 !important;
+  color: #0f172a !important; /* Negro/Slate muy legible */
+  font-weight: 800 !important;
+}
+
+

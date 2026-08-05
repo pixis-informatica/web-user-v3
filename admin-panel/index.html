@@ -255,42 +255,42 @@
       <!-- PESTAÑA 1: ALMACENAMIENTO & COMPROBANTES                  -->
       <!-- ══════════════════════════════════════════════════════════ -->
       <div id="tabContentStorage" class="ajustes-tab-content">
-        <div class="ajustes-card" style="border: 1px solid rgba(251, 191, 36, 0.4); background: linear-gradient(135deg, rgba(251, 191, 36, 0.07), rgba(245, 158, 11, 0.04)); grid-column: 1 / -1;">
-          <h3 style="font-size: 1.05rem; color: #fbbf24; margin-bottom: 6px;"><i class="fas fa-database"></i> Optimización de Almacenamiento & Comprobantes</h3>
-          <p class="ajustes-desc">Gestioná el espacio en disco que ocupan los comprobantes de pago subidos por tus clientes. El sistema comprime automáticamente las imágenes al subirlas. Aquí podés ver el estado del disco y ejecutar una purga manual de archivos antiguos.</p>
+        <div class="ajustes-card storage-card-container">
+          <h3 style="font-size: 1.05rem; margin-bottom: 8px;"><i class="fas fa-database"></i> Optimización de Almacenamiento & Comprobantes</h3>
+          <p class="ajustes-desc storage-desc-text">Gestioná el espacio en disco que ocupan los comprobantes de pago subidos por tus clientes. El sistema comprime automáticamente las imágenes al subirlas. Aquí podés ver el estado del disco y ejecutar una purga manual de archivos antiguos.</p>
 
           <!-- Métricas en vivo -->
-          <div id="storageStatsBox" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin: 16px 0;">
-            <div style="background: rgba(0,0,0,0.35); border: 1px solid rgba(255,255,255,0.1); border-radius: 10px; padding: 14px; text-align: center;">
-              <div style="font-size: 1.6rem; font-weight: 800; color: #fbbf24; font-family: 'Orbitron';" id="statTotalMB">—</div>
-              <div style="font-size: 0.75rem; color: #888; margin-top: 4px;">MB en disco</div>
+          <div id="storageStatsBox" class="storage-stats-grid">
+            <div class="storage-stat-box">
+              <div class="storage-stat-val val-gold" id="statTotalMB">—</div>
+              <div class="storage-stat-lbl">MB en disco</div>
             </div>
-            <div style="background: rgba(0,0,0,0.35); border: 1px solid rgba(255,255,255,0.1); border-radius: 10px; padding: 14px; text-align: center;">
-              <div style="font-size: 1.6rem; font-weight: 800; color: #60a5fa; font-family: 'Orbitron';" id="statTotalArchivos">—</div>
-              <div style="font-size: 0.75rem; color: #888; margin-top: 4px;">archivos guardados</div>
+            <div class="storage-stat-box">
+              <div class="storage-stat-val val-blue" id="statTotalArchivos">—</div>
+              <div class="storage-stat-lbl">archivos guardados</div>
             </div>
-            <div style="background: rgba(0,0,0,0.35); border: 1px solid rgba(255,255,255,0.1); border-radius: 10px; padding: 14px; text-align: center;">
-              <div style="font-size: 1.6rem; font-weight: 800; color: #f87171; font-family: 'Orbitron';" id="statPurgables">—</div>
-              <div style="font-size: 0.75rem; color: #888; margin-top: 4px;">purgables (+60 días)</div>
+            <div class="storage-stat-box">
+              <div class="storage-stat-val val-red" id="statPurgables">—</div>
+              <div class="storage-stat-lbl">purgables (+60 días)</div>
             </div>
           </div>
 
           <!-- Info compresión automática -->
-          <div style="background: rgba(34,197,94,0.08); border: 1px solid rgba(34,197,94,0.25); border-radius: 8px; padding: 10px 14px; margin-bottom: 14px; font-size: 0.8rem; color: #86efac; line-height: 1.5;">
+          <div class="storage-info-banner">
             ✅ <strong>Compresión Automática Activa:</strong> Cada foto subida por un cliente se reduce automáticamente de ~4-10MB a ~150-200KB sin perder nitidez del ticket bancario.<br>
             🕒 <strong>Purga Automática:</strong> Todos los días a las 3:00 AM el servidor elimina automáticamente los comprobantes de pedidos completados, rechazados o vencidos con más de 60 días de antigüedad.
           </div>
 
           <!-- Botón de limpieza manual -->
           <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
-            <button type="button" id="btnLimpiezaDisco" onclick="ejecutarLimpiezaDisco()" style="flex: 1; min-width: 200px; padding: 12px; background: linear-gradient(135deg, #f59e0b, #d97706); color: #000; border: none; border-radius: 10px; font-weight: 800; font-size: 13px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px;">
-              🧹 Escanear y Purgar Almacenamiento Ahora
+            <button type="button" id="btnLimpiezaDisco" onclick="ejecutarLimpiezaDisco()" class="storage-btn-primary">
+              <i class="fas fa-broom"></i> <span>Escanear y Purgar Almacenamiento Ahora</span>
             </button>
-            <button type="button" onclick="cargarStorageStats()" style="padding: 12px 16px; background: rgba(255,255,255,0.05); color: #ccc; border: 1px solid rgba(255,255,255,0.15); border-radius: 10px; font-size: 12px; font-weight: 700; cursor: pointer;">
-              🔄 Actualizar Métricas
+            <button type="button" onclick="cargarStorageStats()" class="storage-btn-secondary">
+              <i class="fas fa-sync-alt"></i> <span>Actualizar Métricas</span>
             </button>
           </div>
-          <div id="storagePurgeMsg" style="display:none; margin-top: 10px; font-size: 0.82rem; font-weight: 600;"></div>
+          <div id="storagePurgeMsg" style="display:none; margin-top: 12px; font-size: 0.85rem; font-weight: 700; padding: 10px; border-radius: 8px;"></div>
         </div>
       </div>
 
