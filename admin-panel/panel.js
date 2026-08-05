@@ -303,11 +303,32 @@ async function loadStats() {
       if (metricClientes) metricClientes.textContent = data.total_clientes;
       const metricClientesOnline = document.getElementById('metricClientesOnline');
       if (metricClientesOnline) metricClientesOnline.textContent = data.total_online;
+      const metricVisitas = document.getElementById('metricVisitasHoy');
+      if (metricVisitas) metricVisitas.textContent = data.visitas_hoy !== undefined ? data.visitas_hoy : 0;
     }
   } catch (e) {
     // ignorar silenciosamente
   }
 }
+
+window.confirmarResetearTotalPedidos = async function() {
+  if (!confirm('⚠️ ¿Estás seguro de que deseas resetear el contador acumulado de Total Pedidos Web a 0?')) {
+    return;
+  }
+  try {
+    const res = await fetch('/api/admin/settings/reset-total-pedidos', { method: 'POST' });
+    const data = await res.json();
+    if (res.ok && data.ok) {
+      alert('✅ ' + (data.message || 'Contador de Total Pedidos Web reseteado a 0 exitosamente.'));
+      if (typeof loadStats === 'function') loadStats();
+    } else {
+      alert('❌ ' + (data.error || 'Error al resetear el contador.'));
+    }
+  } catch (e) {
+    console.error('Error al resetear total pedidos:', e);
+    alert('❌ Error de conexión con el servidor.');
+  }
+};
 
 function updateMetrics() {
   const pendientes = ordersList.filter(o => o.estado === 'pendiente_revision').length;

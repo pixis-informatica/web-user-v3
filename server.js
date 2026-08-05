@@ -51,6 +51,27 @@ function registerActiveClient(userId) {
   if (userId) activeClients.set(userId, Date.now());
 }
 
+// ── REGISTRO DE VISITAS DIARIAS DE LA PÁGINA WEB ──
+let visitasHoy = 0;
+let fechaVisitasHoy = new Date().toLocaleDateString('es-AR', { timeZone: 'America/Argentina/Buenos_Aires' });
+
+function registrarVisitaPaginaWeb(req, res) {
+  const hoyActual = new Date().toLocaleDateString('es-AR', { timeZone: 'America/Argentina/Buenos_Aires' });
+  if (hoyActual !== fechaVisitasHoy) {
+    visitasHoy = 0;
+    fechaVisitasHoy = hoyActual;
+  }
+  
+  if (!req.cookies || !req.cookies.pixis_v_today) {
+    visitasHoy++;
+    res.cookie('pixis_v_today', '1', {
+      maxAge: 12 * 60 * 60 * 1000,
+      httpOnly: true,
+      sameSite: 'lax'
+    });
+  }
+}
+
 // CONFIGURACIÓN DE SEGURIDAD (Cargada aisladamente desde entorno o DB)
 const ADMIN_CONFIG = {
   recoveryEmail: process.env.SMTP_USER || 'pixisinformatica.contacto@gmail.com',
@@ -1757,11 +1778,29 @@ app.get('/api/admin/stats', verifyAdminToken, async (req, res) => {
       ok: true,
       total_pedidos_historico: parseInt(cfg?.valor || '0', 10),
       total_clientes: totalClientes,
-      total_online: totalOnline
+      total_online: totalOnline,
+      visitas_hoy: visitasHoy
     });
   } catch (e) {
     console.error('Error al obtener estadísticas:', e);
     res.status(500).json({ error: 'Error al obtener estadísticas.' });
+  }
+});
+
+// POST /api/admin/settings/reset-total-pedidos — Resetear a 0 el contador acumulado de Total Pedidos Web
+app.post('/api/admin/settings/reset-total-pedidos', verifyAdminToken, async (req, res) => {
+  try {
+    await prisma.configGlobal.upsert({
+      where: { clave: 'total_pedidos_historico' },
+      update: { valor: '0' },
+      create: { clave: 'total_pedidos_historico', valor: '0' }
+    });
+
+    console.log('🔄 [ADMIN] Contador de Total Pedidos Web reseteado a 0 por el administrador.');
+    res.json({ ok: true, message: 'Contador de Total Pedidos Web reseteado a 0 exitosamente.' });
+  } catch (e) {
+    console.error('Error al resetear el contador de pedidos:', e);
+    res.status(500).json({ error: 'Error al resetear el contador de pedidos.' });
   }
 });
 
@@ -4236,6 +4275,18 @@ app.use((req, res, next) => {
     res.setHeader('Pragma', 'no-cache');
     res.setHeader('Expires', '0');
     res.setHeader('X-LiteSpeed-Cache-Control', 'no-cache');
+  }
+  next();
+});
+
+// Middleware para registro de visitas diarias a la tienda web (Excluye API, assets e imágenes)
+app.use((req, res, next) => {
+  if (req.method === 'GET') {
+    const p = req.path.toLowerCase();
+    const esRecurso = p.includes('.') || p.startsWith('/api/') || p.startsWith('/admin') || p.startsWith('/uploads/');
+    if (!esRecurso) {
+      registrarVisitaPaginaWeb(req, res);
+    }
   }
   next();
 });

@@ -161,6 +161,10 @@
         <div class="metric-val" id="metricTotalHistorico">—</div>
         <div class="metric-lbl">Total Pedidos Web</div>
       </div>
+      <div class="metric-card" id="cardVisitasHoy" style="border-color: #a855f7; box-shadow: 0 0 10px rgba(168, 85, 247, 0.15);">
+        <div class="metric-val" id="metricVisitasHoy" style="color: #c084fc;">0</div>
+        <div class="metric-lbl">👀 Visitas del Día</div>
+      </div>
     </section>
 
     <!-- Tabs Principales: Pedidos / Clientes / Ajustes -->
@@ -227,9 +231,12 @@
 
     <!-- ── SECCIÓN AJUSTES ── -->
     <div id="seccionAjustes" style="display:none; max-width: 1200px; width: 100%; margin: 16px auto 0 auto; padding: 20px; background: var(--panel); border: 1px solid var(--border); border-radius: 16px;">
-      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 10px;">
         <h2 style="font-family: 'Orbitron'; font-size: 1.4rem; color: var(--gold); display: flex; align-items: center; gap: 10px; margin: 0;">⚙️ Ajustes</h2>
-        <button type="button" onclick="bloquearAjustes()" style="padding: 6px 14px; background: rgba(239, 68, 68, 0.15); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.3); border-radius: 8px; font-size: 12px; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 6px;" title="Cerrar y volver a bloquear la sección de Ajustes">🔒 Bloquear Ajustes</button>
+        <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+          <button type="button" onclick="confirmarResetearTotalPedidos()" style="padding: 6px 14px; background: rgba(245, 158, 11, 0.15); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.35); border-radius: 8px; font-size: 12px; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 6px;" title="Resetear a 0 el contador acumulado de Total Pedidos Web">🔄 Resetear Total Pedidos</button>
+          <button type="button" onclick="bloquearAjustes()" style="padding: 6px 14px; background: rgba(239, 68, 68, 0.15); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.3); border-radius: 8px; font-size: 12px; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 6px;" title="Cerrar y volver a bloquear la sección de Ajustes">🔒 Bloquear Ajustes</button>
+        </div>
       </div>
 
       <div id="ajustesErrorMsg" class="auth-error" style="display:none; margin-bottom:15px;"></div>
