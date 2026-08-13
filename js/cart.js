@@ -6853,14 +6853,24 @@ onPixisDOMReady(() => {
         }
       }
 
-      // Tabla de ítems
-      const itemsRows = (o.items || []).map(item => `
-        <tr>
-          <td>${item.nombre_snapshot}</td>
-          <td style="text-align:center;">${item.cantidad}</td>
-          <td style="text-align:right;">${fmtPrecio(item.precio_unitario_snapshot)}</td>
-          <td style="text-align:right;"><strong>${fmtPrecio(item.precio_unitario_snapshot * item.cantidad)}</strong></td>
-        </tr>`).join('');
+      // Tabla de ítems con precio real adaptado al medio de pago / cuotas (retrocompatible)
+      const sumaItemsBase = (o.items || []).reduce((acc, it) => acc + ((it.precio_unitario_snapshot || 0) * (it.cantidad || 1)), 0);
+      const totalParaFactor = o.subtotal_sin_descuento || o.total;
+      const factorFinanciacion = (sumaItemsBase > 0 && totalParaFactor > 0 && o.forma_pago === 'tarjeta' && Math.abs(totalParaFactor - sumaItemsBase) > 2)
+        ? (totalParaFactor / sumaItemsBase)
+        : 1;
+
+      const itemsRows = (o.items || []).map(item => {
+        const precioUnitReal = Math.round((item.precio_unitario_snapshot || 0) * factorFinanciacion);
+        const subtotalReal = precioUnitReal * (item.cantidad || 1);
+        return `
+          <tr>
+            <td>${item.nombre_snapshot}</td>
+            <td style="text-align:center;">${item.cantidad}</td>
+            <td style="text-align:right;">${fmtPrecio(precioUnitReal)}</td>
+            <td style="text-align:right;"><strong>${fmtPrecio(subtotalReal)}</strong></td>
+          </tr>`;
+      }).join('');
 
       // Comprobantes subidos
       const compsList = (o.comprobantes || []).length > 0

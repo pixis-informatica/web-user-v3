@@ -790,6 +790,10 @@ async function getRealProductDetailsAndTotal(items, formaPago, cuotas) {
     let precioUnitario = 0;
     if (formaPago === 'efectivo') {
       precioUnitario = parseFloat(product.priceLocal) || parseFloat(product.price) || 0;
+    } else if (formaPago === 'tarjeta' && cuotas && cuotas > 0) {
+      const tasa = tasasCuotas[cuotas] || 1;
+      const base = parseFloat(product.price) || 0;
+      precioUnitario = Math.round(base * tasa);
     } else {
       precioUnitario = parseFloat(product.price) || 0;
     }
@@ -805,17 +809,9 @@ async function getRealProductDetailsAndTotal(items, formaPago, cuotas) {
     });
   }
 
-  let finalTotal = totalBase;
-  if (formaPago === 'tarjeta' && cuotas && cuotas > 0) {
-    const tasa = tasasCuotas[cuotas];
-    if (tasa) {
-      finalTotal = totalBase * tasa;
-    }
-  }
-
   return {
     items: verifiedItems,
-    total: Math.round(finalTotal)
+    total: Math.round(totalBase)
   };
 }
 
