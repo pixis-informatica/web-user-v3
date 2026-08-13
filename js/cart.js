@@ -566,8 +566,37 @@ envioDomicilio?.addEventListener('change', () => {
 
   }
 
+  actualizarAvisoMetodoPagoCarrito();
 });
+
+// ── AVISO DINÁMICO DE MÉTODO DE PAGO EN EL CARRITO (BLOQUE 2) ──
+function actualizarAvisoMetodoPagoCarrito() {
+  const avisoEl = document.getElementById('pagoMetodoAviso');
+  if (!avisoEl) return;
+
+  const esEfectivo = document.getElementById('pagoEfectivo')?.checked;
+  const esTarjeta = document.getElementById('pagoTarjetaVisual')?.checked;
+
+  if (esEfectivo) {
+    avisoEl.style.display = 'flex';
+    avisoEl.className = 'pago-metodo-aviso aviso-efectivo';
+    avisoEl.innerHTML = `<i class="fas fa-info-circle"></i> <span><strong>Aviso:</strong> Su pedido quedará pendiente a confirmación del vendedor. Una vez confirmado, nos pondremos en contacto con usted. ¡Muchas gracias!</span>`;
+  } else if (esTarjeta) {
+    avisoEl.style.display = 'flex';
+    avisoEl.className = 'pago-metodo-aviso aviso-tarjeta';
+    avisoEl.innerHTML = `<i class="fas fa-credit-card"></i> <span><strong>Aviso:</strong> Pedido pendiente a confirmación. Una vez confirmado su pedido, le enviaremos el Link de pago para que pueda abonar su producto. ¡Muchas gracias!</span>`;
+  } else {
+    avisoEl.style.display = 'none';
+  }
+}
+window.actualizarAvisoMetodoPagoCarrito = actualizarAvisoMetodoPagoCarrito;
+
+retiroLocal?.addEventListener('change', () => {
+  actualizarAvisoMetodoPagoCarrito();
+});
+
 pagoEfectivo?.addEventListener('change', () => {
+  actualizarAvisoMetodoPagoCarrito();
 
   if (pagoEfectivo.checked) {
 
@@ -591,6 +620,7 @@ modalEfectivo?.addEventListener("click", (e) => {
   }
 });
 pagoTransferencia?.addEventListener('change', () => {
+  actualizarAvisoMetodoPagoCarrito();
 
   if (pagoTransferencia.checked) {
     pagoEfectivo.checked = false;
@@ -601,6 +631,10 @@ pagoTransferencia?.addEventListener('change', () => {
 
   }
 
+});
+
+pagoTarjeta?.addEventListener('change', () => {
+  actualizarAvisoMetodoPagoCarrito();
 });
 
 /* =========================
@@ -826,6 +860,9 @@ function renderCart() {
   }
 
   mostrarAdvertenciaCantidad();
+  if (typeof actualizarAvisoMetodoPagoCarrito === 'function') {
+    actualizarAvisoMetodoPagoCarrito();
+  }
   saveCart();
 }
 const cuotasPreview = document.getElementById("cuotasPreviewCarrito");
@@ -835,6 +872,7 @@ const radiosPago = document.querySelectorAll("input[name='pago']");
 
 radiosPago.forEach(radio => {
   radio.addEventListener("change", () => {
+    actualizarAvisoMetodoPagoCarrito();
 
     if (pagoTarjeta.checked) {
 
@@ -1649,6 +1687,12 @@ window.openProductModal = function (card, pushToHistory = true) {
   resetZoom();
   resetZoomMobile();
   modalTitle.textContent = card.dataset.title;
+
+  // Inyección dinámica de SKU/ID (el ID importado del Excel = SKU del sistema)
+  const modalSkuVal = document.getElementById('modalSkuVal');
+  if (modalSkuVal) {
+    modalSkuVal.textContent = card.dataset.pixisId || productoActual.id || '—';
+  }
   actualizarPreciosModal(btn.dataset.price, btn.dataset.priceLocal, card.dataset.iva || '');
   
   // WhatsApp Dinámico del Producto
@@ -6698,6 +6742,22 @@ onPixisDOMReady(() => {
               onclick="event.stopPropagation()">
           </label>` : '';
 
+        // Aviso informativo para pedidos pendientes con efectivo o tarjeta (Bloque 3)
+        let avisoPendienteTag = '';
+        if (order.estado === 'pendiente_revision') {
+          if (order.forma_pago === 'efectivo') {
+            avisoPendienteTag = `
+              <div class="pedido-aviso-inline aviso-efectivo-tag">
+                <i class="fas fa-info-circle"></i> Pendiente a confirmación del vendedor. Nos pondremos en contacto con usted.
+              </div>`;
+          } else if (order.forma_pago === 'tarjeta') {
+            avisoPendienteTag = `
+              <div class="pedido-aviso-inline aviso-tarjeta-tag">
+                <i class="fas fa-credit-card"></i> Pendiente a confirmación. Le enviaremos el Link de pago una vez confirmado.
+              </div>`;
+          }
+        }
+
         return `
           <div class="pedido-card" onclick="verDetallePedido(${order.id})" role="button" tabindex="0"
                onkeydown="if(event.key==='Enter') verDetallePedido(${order.id})">
@@ -6708,6 +6768,7 @@ onPixisDOMReady(() => {
               ${checkboxHtml}
             </div>
             <div class="pedido-card-total">Total: <strong>${totalFmt}</strong> — ${order.forma_pago || 'N/A'}</div>
+            ${avisoPendienteTag}
             ${compTag}
           </div>`;
       }).join('');
@@ -6817,11 +6878,36 @@ onPixisDOMReady(() => {
         badgeHtml = `<span class="pedido-badge estado-reservado">${texto}</span>`;
       }
 
+      // Banner informativo para pedidos pendientes con efectivo o tarjeta (Bloque 3)
+      let avisoPendienteBanner = '';
+      if (o.estado === 'pendiente_revision') {
+        if (o.forma_pago === 'efectivo') {
+          avisoPendienteBanner = `
+            <div class="pedido-detalle-aviso-banner aviso-efectivo-banner">
+              <i class="fas fa-info-circle"></i>
+              <div>
+                <strong>Pedido pendiente de confirmación</strong><br>
+                Su pedido se encuentra en revisión por el vendedor. Una vez confirmado, nos pondremos en contacto con usted. ¡Muchas gracias!
+              </div>
+            </div>`;
+        } else if (o.forma_pago === 'tarjeta') {
+          avisoPendienteBanner = `
+            <div class="pedido-detalle-aviso-banner aviso-tarjeta-banner">
+              <i class="fas fa-credit-card"></i>
+              <div>
+                <strong>Pedido pendiente de confirmación</strong><br>
+                Una vez confirmado por el vendedor, le enviaremos el Link de pago para que pueda abonar su producto. ¡Muchas gracias!
+              </div>
+            </div>`;
+        }
+      }
+
       contenido.innerHTML = `
         ${badgeHtml}
         <br>
         ${reservaAlert}
         ${motivo}
+        ${avisoPendienteBanner}
         <div class="pedido-detalle-info" style="margin-top:12px;">
           Fecha: <span>${fmtFecha(o.creado_en)}</span><br>
           Forma de pago: <span>${o.forma_pago || '—'}</span><br>

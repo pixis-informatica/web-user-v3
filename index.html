@@ -1226,6 +1226,9 @@
                 (PORFAVOR COMPARTIR EL COMPROBANTE DE PAGO UNA VEZ REALIZADA ESTA ACCION)
 
             </div>
+            <!-- Aviso dinámico según método de pago seleccionado (Bloque 2) -->
+            <div id="pagoMetodoAviso" class="pago-metodo-aviso" style="display: none;"></div>
+
             <div class="cart-terminos">
 
                 <label class="terminos-check">
@@ -1435,10 +1438,15 @@
 
                     <div class="product-title-row">
                         <h3 id="modalTitle"></h3>
-                        <button id="btnShareLink" class="link-producto" title="Copiar link del producto">
-                            <i class="fas fa-share-alt"></i>
-                            <span>Compartir</span>
-                        </button>
+                        <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+                            <button id="btnShareLink" class="link-producto" title="Copiar link del producto">
+                                <i class="fas fa-share-alt"></i>
+                                <span>Compartir</span>
+                            </button>
+                            <div id="modalSkuBadge" class="product-sku-badge">
+                                <i class="fas fa-barcode"></i> SKU: <span id="modalSkuVal">—</span>
+                            </div>
+                        </div>
                     </div>
 
                     <!-- =========================
