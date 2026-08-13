@@ -9063,13 +9063,13 @@ body.light-mode .btn-view-toggle.active {
   display: flex !important;
   align-items: center;
   gap: 10px;
-  background: rgba(255, 255, 255, 0.04) !important;
+  background: rgba(255, 255, 255, 0.06) !important;
   border: 1.5px solid rgba(176, 38, 255, 0.6) !important;
   border-radius: 10px !important;
   padding: 5px 14px !important;
   cursor: pointer;
   color: #fff !important;
-  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif !important;
+  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif !important;
   text-transform: none !important;
   transition: all 0.2s ease;
   min-height: 42px !important;
@@ -9080,13 +9080,13 @@ body.light-mode .btn-view-toggle.active {
   text-align: left;
 }
 .client-login-btn:hover {
-  background: rgba(176, 38, 255, 0.15) !important;
+  background: rgba(176, 38, 255, 0.18) !important;
   border-color: #d880ff !important;
-  box-shadow: 0 0 12px rgba(176, 38, 255, 0.35);
+  box-shadow: 0 0 14px rgba(176, 38, 255, 0.45);
 }
 .client-login-btn i {
-  font-size: 22px;
-  color: #c084fc;
+  font-size: 22px !important;
+  color: #c084fc !important;
   flex-shrink: 0;
 }
 .client-login-text {
@@ -9096,33 +9096,17 @@ body.light-mode .btn-view-toggle.active {
   text-align: left;
 }
 .client-login-title {
-  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif !important;
-  font-size: 13.5px;
-  font-weight: 700;
-  color: #ffffff;
+  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif !important;
+  font-size: 13.5px !important;
+  font-weight: 700 !important;
+  color: #ffffff !important;
   letter-spacing: 0.1px;
 }
 .client-login-sub {
-  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif !important;
-  font-size: 11px;
-  font-weight: 400;
-  color: #9ca3af;
-}
-
-/* Modo Claro */
-body.light-mode .client-login-btn {
-  background: #ffffff !important;
-  border-color: #cbd5e1 !important;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
-}
-body.light-mode .client-login-title {
-  color: #111827;
-}
-body.light-mode .client-login-sub {
-  color: #6b7280;
-}
-body.light-mode .client-login-btn i {
-  color: #7c3aed;
+  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif !important;
+  font-size: 11px !important;
+  font-weight: 400 !important;
+  color: #d1d5db !important;
 }
 
 /* En mobile ocultamos el texto para no saturar la fila */
