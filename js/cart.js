@@ -5943,19 +5943,30 @@ onPixisDOMReady(() => {
         fillIfEmpty('clienteLocalidad',   currentUser.localidad);
         fillIfEmpty('clienteCodigoPostal', currentUser.codigo_postal);
         
-        // Actualizar botón de login a "Mi Cuenta"
+        // Actualizar botón de login a "Mi Cuenta" (Estilo dos líneas)
         if (btnLogin) {
-          btnLogin.innerHTML = `<i class="fas fa-user-check"></i> <span class="btn-text">${currentUser.nombre.split(' ')[0]}</span>`;
+          const primerNombre = currentUser.nombre ? currentUser.nombre.split(' ')[0] : 'Cliente';
+          btnLogin.innerHTML = `
+            <i class="far fa-user"></i>
+            <div class="client-login-text">
+              <span class="client-login-title">Mi cuenta</span>
+              <span class="client-login-sub">${primerNombre}</span>
+            </div>`;
           btnLogin.title = "Ver mis pedidos";
           btnLogin.dataset.action = 'abrirMisPedidos';
         }
         
         return true;
       } else {
-        // Resetear botón de login
+        // Resetear botón de login (Estilo dos líneas)
         if (btnLogin) {
-          btnLogin.innerHTML = `<i class="fas fa-user-circle"></i> <span class="btn-text">Ingresá</span>`;
-          btnLogin.title = "Acceder / Registrarse";
+          btnLogin.innerHTML = `
+            <i class="far fa-user"></i>
+            <div class="client-login-text">
+              <span class="client-login-title">Mi cuenta</span>
+              <span class="client-login-sub">Iniciar sesión</span>
+            </div>`;
+          btnLogin.title = "Mi cuenta / Iniciar sesión";
           btnLogin.dataset.action = 'openClientAuthModal';
         }
       }
@@ -7184,7 +7195,12 @@ onPixisDOMReady(() => {
         const btnLogin = document.getElementById('btn-client-login');
         if (btnLogin && userActualizado && userActualizado.nombre) {
           const primerNombre = userActualizado.nombre.split(' ')[0];
-          btnLogin.innerHTML = `<i class="fas fa-user-circle"></i> ${primerNombre}`;
+          btnLogin.innerHTML = `
+            <i class="far fa-user"></i>
+            <div class="client-login-text">
+              <span class="client-login-title">Mi cuenta</span>
+              <span class="client-login-sub">${primerNombre}</span>
+            </div>`;
         }
         setTimeout(() => {
           volverAListaPedidosDesdePerfil();

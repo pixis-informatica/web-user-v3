@@ -9057,41 +9057,72 @@ body.light-mode .btn-view-toggle.active {
   margin-top: 6px;
 }
 
-/* ── BOTÓN ACCESO CLIENTE (BLOQUE 13) ── */
+/* ── BOTÓN ACCESO CLIENTE: MI CUENTA / INICIAR SESIÓN ── */
 .client-login-btn {
   order: 3; /* Se ubica justo antes del carrito en la fila */
   display: flex !important;
   align-items: center;
-  justify-content: center;
-  gap: 6px;
-  background: rgba(255, 255, 255, 0.05) !important;
-  border: 2px solid #b026ff !important; /* Estilo consistente con el carrito */
-  border-radius: 8px !important;
-  padding: 6px 12px !important;
+  gap: 10px;
+  background: rgba(255, 255, 255, 0.04) !important;
+  border: 1.5px solid rgba(176, 38, 255, 0.6) !important;
+  border-radius: 10px !important;
+  padding: 5px 14px !important;
   cursor: pointer;
   color: #fff !important;
-  font-family: 'Orbitron', sans-serif;
-  font-size: 13px !important;
-  font-weight: 700;
+  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif !important;
+  text-transform: none !important;
   transition: all 0.2s ease;
-  min-height: 36px !important;
-  max-height: 40px;
+  min-height: 42px !important;
   margin-right: 8px !important;
   position: relative;
   z-index: 1005; /* 🔥 Aligned with cart-icon (1001) to stay above overlay layers */
   pointer-events: auto !important;
+  text-align: left;
 }
 .client-login-btn:hover {
   background: rgba(176, 38, 255, 0.15) !important;
   border-color: #d880ff !important;
-  box-shadow: 0 0 12px rgba(176, 38, 255, 0.4);
+  box-shadow: 0 0 12px rgba(176, 38, 255, 0.35);
 }
 .client-login-btn i {
-  font-size: 16px;
+  font-size: 22px;
   color: #c084fc;
+  flex-shrink: 0;
 }
-.client-login-btn .btn-text {
-  display: inline-block;
+.client-login-text {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.25;
+  text-align: left;
+}
+.client-login-title {
+  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif !important;
+  font-size: 13.5px;
+  font-weight: 700;
+  color: #ffffff;
+  letter-spacing: 0.1px;
+}
+.client-login-sub {
+  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif !important;
+  font-size: 11px;
+  font-weight: 400;
+  color: #9ca3af;
+}
+
+/* Modo Claro */
+body.light-mode .client-login-btn {
+  background: #ffffff !important;
+  border-color: #cbd5e1 !important;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+}
+body.light-mode .client-login-title {
+  color: #111827;
+}
+body.light-mode .client-login-sub {
+  color: #6b7280;
+}
+body.light-mode .client-login-btn i {
+  color: #7c3aed;
 }
 
 /* En mobile ocultamos el texto para no saturar la fila */
@@ -9100,7 +9131,7 @@ body.light-mode .btn-view-toggle.active {
     padding: 6px 8px !important;
     margin-right: 4px !important;
   }
-  .client-login-btn .btn-text {
+  .client-login-btn .client-login-text {
     display: none !important;
   }
 }
