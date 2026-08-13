@@ -4205,12 +4205,11 @@ body.buscando .card {
 .modal-cuotas-detalle {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.85);
+  background: rgba(0, 0, 0, 0.88);
   display: flex;
   justify-content: center;
   align-items: center;
-  z-index: 9999;
-  /* 🔥 más alto que el modal principal */
+  z-index: 1000020 !important; /* 🔥 Prioridad máxima por encima de .product-page-back-container (100001) y menús */
   opacity: 0;
   pointer-events: none;
   transition: opacity 0.25s ease;

@@ -6753,8 +6753,15 @@ onPixisDOMReady(() => {
               onclick="event.stopPropagation()">
           </label>` : '';
 
-        // Aviso informativo para pedidos pendientes con efectivo o tarjeta (Bloque 3)
+        // Desglose de forma de pago y cuotas transparente
+        let formaPagoInfo = order.forma_pago || 'N/A';
         let avisoPendienteTag = '';
+
+        if (order.forma_pago === 'tarjeta' && order.cuotas && order.cuotas > 0) {
+          const valorCuota = order.total / order.cuotas;
+          formaPagoInfo = `Tarjeta (${order.cuotas} cuotas de ${fmtPrecio(valorCuota)})`;
+        }
+
         if (order.estado === 'pendiente_revision') {
           if (order.forma_pago === 'efectivo') {
             avisoPendienteTag = `
@@ -6762,9 +6769,12 @@ onPixisDOMReady(() => {
                 <i class="fas fa-info-circle"></i> Pendiente a confirmación del vendedor. Nos pondremos en contacto con usted.
               </div>`;
           } else if (order.forma_pago === 'tarjeta') {
+            const detalleCuotaStr = (order.cuotas && order.cuotas > 0)
+              ? ` para abonar en ${order.cuotas} cuotas de ${fmtPrecio(order.total / order.cuotas)}`
+              : '';
             avisoPendienteTag = `
               <div class="pedido-aviso-inline aviso-tarjeta-tag">
-                <i class="fas fa-credit-card"></i> Pendiente a confirmación. Le enviaremos el Link de pago una vez confirmado.
+                <i class="fas fa-credit-card"></i> Pendiente a confirmación. Le enviaremos el Link de pago${detalleCuotaStr} una vez confirmado.
               </div>`;
           }
         }
@@ -6778,7 +6788,7 @@ onPixisDOMReady(() => {
               <span class="pedido-card-date">${fechaFmt}</span>
               ${checkboxHtml}
             </div>
-            <div class="pedido-card-total">Total: <strong>${totalFmt}</strong> — ${order.forma_pago || 'N/A'}</div>
+            <div class="pedido-card-total">Total: <strong>${totalFmt}</strong> — ${formaPagoInfo}</div>
             ${avisoPendienteTag}
             ${compTag}
           </div>`;
@@ -6889,8 +6899,19 @@ onPixisDOMReady(() => {
         badgeHtml = `<span class="pedido-badge estado-reservado">${texto}</span>`;
       }
 
-      // Banner informativo para pedidos pendientes con efectivo o tarjeta (Bloque 3)
+      // Banner y desglose detallado de cuotas
       let avisoPendienteBanner = '';
+      let formaPagoDetalleStr = o.forma_pago || '—';
+      let desgloseFinanciacionHtml = '';
+
+      if (o.forma_pago === 'tarjeta' && o.cuotas && o.cuotas > 0) {
+        const valorCuota = o.total / o.cuotas;
+        formaPagoDetalleStr = `Tarjeta de crédito (${o.cuotas} cuotas)`;
+        desgloseFinanciacionHtml = `
+          Plan de cuotas: <span style="color:#4ade80;font-weight:700;">${o.cuotas} cuotas de ${fmtPrecio(valorCuota)}</span><br>
+          Total a abonar: <span style="color:#4ade80;font-weight:700;">${fmtPrecio(o.total)}</span><br>`;
+      }
+
       if (o.estado === 'pendiente_revision') {
         if (o.forma_pago === 'efectivo') {
           avisoPendienteBanner = `
@@ -6902,12 +6923,15 @@ onPixisDOMReady(() => {
               </div>
             </div>`;
         } else if (o.forma_pago === 'tarjeta') {
+          const textoCuotasLink = (o.cuotas && o.cuotas > 0)
+            ? ` para que pueda abonar su producto en ${o.cuotas} cuotas de ${fmtPrecio(o.total / o.cuotas)}`
+            : ' para que pueda abonar su producto';
           avisoPendienteBanner = `
             <div class="pedido-detalle-aviso-banner aviso-tarjeta-banner">
               <i class="fas fa-credit-card"></i>
               <div>
                 <strong>Pedido pendiente de confirmación</strong><br>
-                Una vez confirmado por el vendedor, le enviaremos el Link de pago para que pueda abonar su producto. ¡Muchas gracias!
+                Una vez confirmado por el vendedor, le enviaremos el Link de pago${textoCuotasLink}. ¡Muchas gracias!
               </div>
             </div>`;
         }
@@ -6921,7 +6945,8 @@ onPixisDOMReady(() => {
         ${avisoPendienteBanner}
         <div class="pedido-detalle-info" style="margin-top:12px;">
           Fecha: <span>${fmtFecha(o.creado_en)}</span><br>
-          Forma de pago: <span>${o.forma_pago || '—'}</span><br>
+          Forma de pago: <span>${formaPagoDetalleStr}</span><br>
+          ${desgloseFinanciacionHtml}
           Tipo de entrega: <span>${o.entrega || '—'}</span><br>
           Total del pedido: <span style="color:#f5c518;font-weight:700;">${fmtPrecio(o.total)}</span>
         </div>
