@@ -3895,46 +3895,7 @@ function importProductsFromCSV(file) {
         if (existing) updatedCount++; else addedCount++;
       }
 
-      if (!imported.length) {
-        window.PixisOverlay.showToast('No se encontraron productos válidos.', 'error');
-        return;
-      }
-
-      if (!confirm(
-        `📦 IMPORTACIÓN INTELIGENTE: ${imported.length} PRODUCTOS\n\n` +
-        `✅ Actualizados: ${updatedCount}\n` +
-        `🆕 Nuevos: ${addedCount}\n\n` +
-        `Los productos que no estén en el Excel serán eliminados del catálogo. Sus imágenes y descripciones se mantendrán intactas.\n¿Continuar?`
-      )) return;
-      
-      // PRESERVAR PRODUCTOS EXCLUIDOS: Mantener productos que no están en el Excel 
-      // pero que fueron marcados manualmente como "Excluidos de sincronización".
-      currentProducts.forEach(p => {
-        if (p.excludeFromExport === true) {
-          if (!imported.some(imp => imp.id === p.id)) {
-            imported.push(p);
-          }
-        }
-      });
-
-      if (window.PixisState) {
-        window.PixisState.pushHistory();
-        window.PixisState.state.products = imported;
-        window.PixisState.saveState().then(saved => {
-          window.PixisOverlay.showToast(
-            (saved ? `✅ ${imported.length} productos importados` : `📥 ${imported.length} importados (sin servidor)`),
-            'success', 5000
-          );
-          window.PixisState.applyStateToDOM();
-          openProductsPanel();
-          markUnsaved();
-        });
-      } else {
-        PixisEditor.data.products = imported;
-        markUnsaved();
-        openProductsPanel();
-        window.PixisOverlay.showToast(`✅ ${imported.length} productos importados`, 'success');
-      }
+      procesarImportacionProductos(imported, updatedCount, addedCount, currentProducts);
     } catch (err) {
       console.error('[PIXIS CSV Import]', err);
       window.PixisOverlay.showToast('❌ Error al leer CSV: ' + err.message, 'error', 5000);
@@ -4080,40 +4041,7 @@ function importProductsFromXLSX(file) {
         if (existing) updatedCount++; else addedCount++;
       });
 
-      if (!imported.length) {
-        window.PixisOverlay.showToast('No se encontraron productos válidos.', 'error');
-        return;
-      }
-
-      if (!confirm(
-        `📦 IMPORTACIÓN INTELIGENTE: ${imported.length} PRODUCTOS\n\n` +
-        `✅ Actualizados: ${updatedCount}\n` +
-        `🆕 Nuevos: ${addedCount}\n\n` +
-        `Los productos que no estén en el Excel serán eliminados del catálogo. Sus imágenes y descripciones se mantendrán intactas.\n¿Continuar?`
-      )) return;
-
-      // PRESERVAR productos excluidos
-      currentProducts.forEach(p => {
-        if (p.excludeFromExport === true && !imported.some(imp => imp.id === p.id)) {
-          imported.push(p);
-        }
-      });
-
-      if (window.PixisState) {
-        window.PixisState.pushHistory();
-        window.PixisState.state.products = imported;
-        window.PixisState.saveState().then(saved => {
-          window.PixisOverlay.showToast(
-            (saved ? `✅ ${imported.length} productos importados desde Excel` : `📥 ${imported.length} importados (sin servidor)`),
-            'success', 5000
-          );
-          window.PixisState.applyStateToDOM();
-        });
-      } else {
-        PixisEditor.data.products = imported;
-        markUnsaved();
-        window.PixisOverlay.showToast(`📥 ${imported.length} productos importados (sin servidor)`, 'info', 5000);
-      }
+      procesarImportacionProductos(imported, updatedCount, addedCount, currentProducts);
 
     } catch (err) {
       console.error('[PIXIS XLSX Import]', err);
@@ -4121,6 +4049,112 @@ function importProductsFromXLSX(file) {
     }
   };
   reader.readAsArrayBuffer(file);
+}
+
+/**
+ * Muestra el modal interactivo para elegir entre Fusión Incremental o Sincronización Total
+ */
+function procesarImportacionProductos(imported, updatedCount, addedCount, currentProducts) {
+  if (!imported || !imported.length) {
+    window.PixisOverlay.showToast('No se encontraron productos válidos en el archivo.', 'error');
+    return;
+  }
+
+  const modalTitle = `<span class="modal-icon">📦</span> Importar Productos (${imported.length} detectados)`;
+  const modalBody = `
+    <div style="font-size:13px; color:#e0e0ff; line-height:1.6; margin-bottom:16px;">
+      Se detectaron <strong>${imported.length} productos</strong> en tu archivo:
+      <div style="margin:10px 0; padding:10px 14px; background:rgba(255,255,255,0.05); border-radius:8px; border:1px solid rgba(176,38,255,0.3);">
+        <span style="color:#00e676; font-weight:700;">🆕 ${addedCount} productos nuevos</span> para agregar.<br>
+        <span style="color:#00b4d8; font-weight:700;">✏️ ${updatedCount} productos existentes</span> para actualizar.
+      </div>
+      Elegí cómo querés procesar estos productos:
+    </div>
+
+    <div style="display:flex; flex-direction:column; gap:12px; margin-bottom:12px;">
+      <label style="display:flex; align-items:flex-start; gap:12px; padding:12px 14px; background:rgba(0,230,118,0.08); border:1.5px solid rgba(0,230,118,0.4); border-radius:10px; cursor:pointer;">
+        <input type="radio" name="modoImportacionPixis" value="merge" checked style="margin-top:3px; accent-color:#00e676;">
+        <div>
+          <strong style="color:#00e676; font-size:13px;">➕ Sumar y Actualizar (Fusión Incremental)</strong>
+          <p style="font-size:11px; color:#ccc; margin:4px 0 0 0;">
+            <strong>Mantiene todos tus productos actuales de la web.</strong> Agrega los nuevos y actualiza precios/stock de los que coincidan. (Ideal para subir listas parciales de 2 o más productos).
+          </p>
+        </div>
+      </label>
+
+      <label style="display:flex; align-items:flex-start; gap:12px; padding:12px 14px; background:rgba(255,165,0,0.08); border:1.5px solid rgba(255,165,0,0.4); border-radius:10px; cursor:pointer;">
+        <input type="radio" name="modoImportacionPixis" value="replace" style="margin-top:3px; accent-color:#ffa500;">
+        <div>
+          <strong style="color:#ffa500; font-size:13px;">🔄 Sincronización Total (Reemplazar catálogo)</strong>
+          <p style="font-size:11px; color:#ccc; margin:4px 0 0 0;">
+            El catálogo de la web quedará idéntico al archivo. <strong>Los productos que no estén en este archivo serán eliminados</strong> de la web. (Ideal para subir el inventario maestro completo).
+          </p>
+        </div>
+      </label>
+    </div>
+  `;
+
+  const modalFooter = `
+    <button class="panel-btn" onclick="window.PixisOverlay.closeModal()">Cancelar</button>
+    <button class="panel-btn panel-btn-primary" id="btnEjecutarImportacionPixis" style="background:linear-gradient(135deg, #00e676, #00b4d8); border:none; color:#000; font-weight:700;">
+      🚀 Procesar Importación
+    </button>
+  `;
+
+  window.PixisOverlay.openModal(modalTitle, modalBody, modalFooter);
+
+  document.getElementById('btnEjecutarImportacionPixis')?.addEventListener('click', () => {
+    const modo = document.querySelector('input[name="modoImportacionPixis"]:checked')?.value || 'merge';
+    window.PixisOverlay.closeModal();
+    aplicarImportacionProductos(imported, modo, currentProducts, updatedCount, addedCount);
+  });
+}
+
+/**
+ * Ejecuta la importación según el modo seleccionado (Merge o Replace)
+ */
+function aplicarImportacionProductos(imported, modo, currentProducts, updatedCount, addedCount) {
+  let finalCatalog = [];
+
+  if (modo === 'merge') {
+    // ➕ FUSIÓN INCREMENTAL: Conserva todos los existentes y agrega/actualiza los nuevos
+    finalCatalog = [...currentProducts];
+    imported.forEach(imp => {
+      const idx = finalCatalog.findIndex(p => String(p.id).trim() === String(imp.id).trim());
+      if (idx !== -1) {
+        finalCatalog[idx] = { ...finalCatalog[idx], ...imp };
+      } else {
+        finalCatalog.push(imp);
+      }
+    });
+  } else {
+    // 🔄 REEMPLAZO TOTAL: El archivo reemplaza el catálogo (comportamiento previo)
+    finalCatalog = [...imported];
+    currentProducts.forEach(p => {
+      if (p.excludeFromExport === true && !finalCatalog.some(imp => String(imp.id).trim() === String(p.id).trim())) {
+        finalCatalog.push(p);
+      }
+    });
+  }
+
+  if (window.PixisState) {
+    window.PixisState.pushHistory();
+    window.PixisState.state.products = finalCatalog;
+    window.PixisState.saveState().then(saved => {
+      const toastMsg = modo === 'merge'
+        ? `✅ Fusión exitosa: ${finalCatalog.length} productos en catálogo (+${addedCount} nuevos, ${updatedCount} actualizados)`
+        : `✅ Sincronización total: ${finalCatalog.length} productos en catálogo`;
+      window.PixisOverlay.showToast(toastMsg, 'success', 5000);
+      window.PixisState.applyStateToDOM();
+      if (typeof openProductsPanel === 'function') openProductsPanel();
+      if (typeof markUnsaved === 'function') markUnsaved();
+    });
+  } else {
+    PixisEditor.data.products = finalCatalog;
+    if (typeof markUnsaved === 'function') markUnsaved();
+    if (typeof openProductsPanel === 'function') openProductsPanel();
+    window.PixisOverlay.showToast(`✅ Catálogo actualizado (${finalCatalog.length} productos)`, 'success');
+  }
 }
 
 function offerDownloadFallback() {
