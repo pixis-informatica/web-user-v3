@@ -790,7 +790,7 @@ async function getRealProductDetailsAndTotal(items, formaPago, cuotas) {
     // Stock se valida manualmente por el empleado, no se rechaza automáticamente
 
     let precioUnitario = 0;
-    if (formaPago === 'efectivo') {
+    if (formaPago === 'efectivo' || formaPago === 'transferencia' || formaPago === 'efectivo_transferencia') {
       precioUnitario = parseFloat(product.priceLocal) || parseFloat(product.price) || 0;
     } else if (formaPago === 'tarjeta' && cuotas && cuotas > 0) {
       const tasa = tasasCuotas[cuotas] || 1;
@@ -829,7 +829,7 @@ app.post('/api/shop/orders', verifyCustomerToken, async (req, res) => {
       return res.status(400).json({ error: 'Modo de entrega inválido.' });
     }
 
-    if (!['efectivo', 'transferencia', 'tarjeta'].includes(forma_pago)) {
+    if (!['efectivo', 'transferencia', 'efectivo_transferencia', 'tarjeta'].includes(forma_pago)) {
       return res.status(400).json({ error: 'Forma de pago inválida.' });
     }
 

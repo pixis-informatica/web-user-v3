@@ -706,7 +706,12 @@ function renderCart() {
   let total = 0;
   let count = 0;
 
-  const esEfectivoTransferencia = Boolean(pagoTransferencia?.checked);
+  // Por defecto la web opera con Efectivo/Transferencia a menos que esté marcada Tarjeta
+  if (pagoTransferencia && !pagoTransferencia.checked && !pagoTarjeta?.checked) {
+    pagoTransferencia.checked = true;
+  }
+  const esTarjeta = Boolean(pagoTarjeta?.checked);
+  const esEfectivoTransferencia = !esTarjeta;
 
   cart.forEach((item, index) => {
     const sinStock = pixisIsProductSinStock(item.name);
@@ -913,6 +918,12 @@ selectCuotas?.addEventListener('change', () => {
 ========================= */
 btnClear?.addEventListener('click', () => {
   cart = [];
+  window.cuponAplicadoCheckout = null;
+  try { localStorage.removeItem('cuponAplicado'); } catch(_) {}
+  const msgBox = document.getElementById('msgCuponCheckout');
+  const inputCupon = document.getElementById('inputCuponCheckout');
+  if (msgBox) msgBox.style.display = 'none';
+  if (inputCupon) inputCupon.value = '';
   renderCart();
 });
 
@@ -1287,6 +1298,7 @@ window.openProductModal = function (card, pushToHistory = true) {
   const modalBtn = document.getElementById("btnAddToCart");
   modalBtn.dataset.name = productoActual.name;
   modalBtn.dataset.price = productoActual.price;
+  modalBtn.dataset.priceLocal = productoActual.priceLocal;
 
   /* =========================
      GALERÍA
@@ -6184,8 +6196,7 @@ onPixisDOMReady(() => {
     const direccionInput = document.getElementById('clienteDireccion');
     const direccion = entrega === 'envio' ? (direccionInput ? direccionInput.value.trim() : '') : null;
     
-    let forma_pago = 'efectivo_transferencia';
-    if (document.getElementById('pagoTarjetaVisual').checked) forma_pago = 'tarjeta';
+    let forma_pago = document.getElementById('pagoTarjetaVisual')?.checked ? 'tarjeta' : 'transferencia';
     
     const selectCuotas = document.getElementById('selectCuotas');
     const cuotas = forma_pago === 'tarjeta' ? parseInt(selectCuotas.value, 10) : null;
@@ -6836,13 +6847,8 @@ onPixisDOMReady(() => {
   // ── SISTEMA DE CUPONES DE DESCUENTO — CHECKOUT CLIENTE ──
   window.cuponAplicadoCheckout = null;
 
-  // Restaurar cupón aplicado desde localStorage (persiste si el usuario recarga la página)
-  (function() {
-    try {
-      const saved = localStorage.getItem('cuponAplicado');
-      if (saved) window.cuponAplicadoCheckout = JSON.parse(saved);
-    } catch(_) {}
-  })();
+  // Limpiar cualquier cupón huérfano de sesiones previas en localStorage
+  try { localStorage.removeItem('cuponAplicado'); } catch(_) {}
 
   window.validarAplicarCuponCheckout = async function () {
     const input = document.getElementById('inputCuponCheckout');
