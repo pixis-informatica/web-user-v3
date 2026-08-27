@@ -6535,41 +6535,38 @@ body:has(#toggle-cart:checked) {
   box-shadow: 0 0 20px rgba(255, 215, 0, 0.8) !important;
 }
 
-/* 🔥 AJUSTE PROPORCIONADO PARA CELULAR (MOBILE) EN TARJETAS GOLDEN */
+/* 🔥 AJUSTE PROPORCIONADO PARA CELULAR (MOBILE) EN TARJETAS GOLDEN (MISMA MEDIDA QUE LAS DEMÁS) */
 @media (max-width: 768px) {
-  .card.proximo-ingreso {
-    padding: 10px !important;
-  }
   .card.proximo-ingreso .card-badge-proximamente {
-    font-size: 8.5px !important;
-    padding: 2px 8px !important;
-    margin: 0 auto 3px auto !important;
+    font-size: 9px !important;
+    padding: 3px 10px !important;
+    margin: 0 auto 4px auto !important;
     letter-spacing: 0.5px !important;
   }
   .card.proximo-ingreso .card-gold-promo-title {
-    font-size: 10.5px !important;
-    margin: 1px 0 1px 0 !important;
-    line-height: 1.15 !important;
+    font-size: 12px !important;
+    margin: 2px 0 2px 0 !important;
+    line-height: 1.2 !important;
   }
   .card.proximo-ingreso .card-gold-promo-subtitle {
-    font-size: 8px !important;
-    margin-bottom: 4px !important;
-    letter-spacing: 0.2px !important;
+    font-size: 8.5px !important;
+    margin-bottom: 6px !important;
+    letter-spacing: 0.3px !important;
   }
   .card.proximo-ingreso img {
-    max-height: 120px !important;
-    margin-bottom: 6px !important;
+    max-height: 140px !important;
+    margin-bottom: 8px !important;
   }
   .card.proximo-ingreso .btn-add-cart {
-    padding: 7px 6px !important;
-    font-size: 10px !important;
-    margin-top: 4px !important;
+    padding: 10px 12px !important;
+    font-size: 11.5px !important;
+    margin-top: 6px !important;
   }
   .card.proximo-ingreso .btn-wsp,
   .card.proximo-ingreso .btn-whatsapp {
-    padding: 7px 6px !important;
-    font-size: 10.5px !important;
-    margin-top: 4px !important;
+    padding: 11px 12px !important;
+    font-size: 12px !important;
+    margin-top: 6px !important;
   }
 }
 
