@@ -16,6 +16,10 @@ window.addEventListener('DOMContentLoaded', async () => {
 });
 
 async function checkSession() {
+  // Si la pestaña/navegador se cerró, sessionStorage estará vacío → obliga a loguearse
+  if (!sessionStorage.getItem('pixis_admin_active')) {
+    return false;
+  }
   try {
     const res = await fetch('/api/admin/orders?estado=pendiente_revision');
     return res.status === 200;
@@ -120,6 +124,7 @@ async function handleAdmin2FA(e) {
       return;
     }
 
+    sessionStorage.setItem('pixis_admin_active', 'true');
     document.getElementById('loggedInUser').textContent = document.getElementById('adminEmail').value.trim();
     showPanel();
   } catch (err) {
@@ -142,6 +147,7 @@ async function handleLogout() {
   } catch (err) {
     console.error('Error al cerrar sesión en el servidor:', err);
   }
+  sessionStorage.removeItem('pixis_admin_active');
   document.cookie = 'admin_token=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT;';
   showLogin();
   location.reload();
@@ -378,16 +384,28 @@ function renderOrders() {
     if (order.comprobantes && order.comprobantes.length > 0) {
       comprobantesHtml = `
         <div class="comprobante-preview">
-          <h4>💳 Comprobantes de Pago Subidos por el Cliente:</h4>
-          <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-top: 6px;">
+          <h4>💳 Comprobante de Transferencia Informado por el Cliente:</h4>
+          <div style="display: flex; flex-direction: column; gap: 8px; margin-top: 6px;">
             ${order.comprobantes.map(c => {
               const ext = (c.archivo_url || '').split('.').pop().toUpperCase();
               const isPdf = ext === 'PDF';
               const icon = isPdf ? '📄' : '🖼️';
+              const signoMoneda = c.moneda === 'USD' ? 'US$' : '$';
+              const montoFmt = c.monto_transferido != null
+                ? signoMoneda + ' ' + Number(c.monto_transferido).toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+                : 'No informado';
               return `
-                <a href="${c.archivo_url}" target="_blank" class="comprobante-link" title="Abrir comprobante de pago en pestaña nueva">
-                  ${icon} VER COMPROBANTE DE PAGO (${ext})
-                </a>
+                <div style="background: rgba(255,255,255,0.04); border: 1px solid rgba(168,85,247,0.3); border-radius: 8px; padding: 10px 14px;">
+                  <div style="font-size: 0.85rem; color: #e0e0ff; line-height: 1.7; margin-bottom: 8px;">
+                    💵 <strong>Monto Transferido:</strong> <span style="color:#38bdf8; font-weight:700;">${montoFmt}</span>${c.moneda ? ' <span style="background:rgba(56,189,248,0.15); padding:1px 6px; border-radius:4px; font-size:0.75rem; color:#38bdf8; font-weight:600;">' + c.moneda + '</span>' : ''}<br>
+                    👤 <strong>Titular:</strong> ${c.titular_nombre || 'No informado'}<br>
+                    🆔 <strong>DNI/CUIT:</strong> ${c.titular_cuit || 'No informado'}<br>
+                    🔢 <strong>N° Comprobante:</strong> ${c.numero_comprobante || 'No informado'}
+                  </div>
+                  <a href="${c.archivo_url}" target="_blank" class="comprobante-link" title="Abrir comprobante de pago en pestaña nueva">
+                    ${icon} VER COMPROBANTE ADJUNTO (${ext})
+                  </a>
+                </div>
               `;
             }).join('')}
           </div>

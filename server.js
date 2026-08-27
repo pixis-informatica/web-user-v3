@@ -86,7 +86,8 @@ const ADMIN_CONFIG = {
 
 const isAuthorized = (req) => {
   if (!req) return false;
-  const token = req.cookies.admin_token;
+  // Aceptar admin_token (panel de ventas) O editor_token (editor web)
+  const token = req.cookies.admin_token || req.cookies.editor_token;
   if (!token) return false;
   try {
     jwt.verify(token, JWT_SECRET);
@@ -273,7 +274,8 @@ app.use((req, res, next) => {
     if (isAuthorized(req)) {
       return next();
     }
-    const token = req.cookies.admin_token;
+    // Aceptar admin_token O editor_token para el editor visual
+    const token = req.cookies.admin_token || req.cookies.editor_token;
     if (!token) {
       return res.status(404).send('Not Found');
     }
@@ -995,7 +997,7 @@ app.post('/api/shop/coupons/validate', async (req, res) => {
 // GET /api/admin/coupons — Listar todos los cupones (admin)
 app.get('/api/admin/coupons', async (req, res) => {
   try {
-    const token = req.cookies.admin_token;
+    const token = req.cookies.admin_token || req.cookies.editor_token;
     if (!token) return res.status(401).json({ error: 'No autenticado.' });
     jwt.verify(token, JWT_SECRET);
 
@@ -1018,7 +1020,7 @@ app.get('/api/admin/coupons', async (req, res) => {
 // POST /api/admin/coupons — Crear nuevo cupón (admin)
 app.post('/api/admin/coupons', async (req, res) => {
   try {
-    const token = req.cookies.admin_token;
+    const token = req.cookies.admin_token || req.cookies.editor_token;
     if (!token) return res.status(401).json({ error: 'No autenticado.' });
     jwt.verify(token, JWT_SECRET);
 
@@ -1084,7 +1086,7 @@ app.post('/api/admin/coupons', async (req, res) => {
 // DELETE /api/admin/coupons/:id — Desactivar/Eliminar cupón (admin)
 app.delete('/api/admin/coupons/:id', async (req, res) => {
   try {
-    const token = req.cookies.admin_token;
+    const token = req.cookies.admin_token || req.cookies.editor_token;
     if (!token) return res.status(401).json({ error: 'No autenticado.' });
     jwt.verify(token, JWT_SECRET);
 
@@ -1103,7 +1105,7 @@ app.delete('/api/admin/coupons/:id', async (req, res) => {
 // DELETE /api/admin/coupons/:id/destroy — Eliminar FÍSICAMENTE el cupón (admin)
 app.delete('/api/admin/coupons/:id/destroy', async (req, res) => {
   try {
-    const token = req.cookies.admin_token;
+    const token = req.cookies.admin_token || req.cookies.editor_token;
     if (!token) return res.status(401).json({ error: 'No autenticado.' });
     try { jwt.verify(token, JWT_SECRET); }
     catch { return res.status(401).json({ error: 'Sesión inválida.' }); }
@@ -1125,7 +1127,7 @@ app.delete('/api/admin/coupons/:id/destroy', async (req, res) => {
 // POST /api/admin/coupons/import-pxgcupon — Importar paquete de cupones desde Maestro POS (UPSERT)
 app.post('/api/admin/coupons/import-pxgcupon', async (req, res) => {
   try {
-    const token = req.cookies.admin_token;
+    const token = req.cookies.admin_token || req.cookies.editor_token;
     if (!token) return res.status(401).json({ error: 'No autenticado.' });
     jwt.verify(token, JWT_SECRET);
 
@@ -1178,7 +1180,7 @@ app.post('/api/admin/coupons/import-pxgcupon', async (req, res) => {
 // GET /api/admin/coupons/export-pxgcupon — Exportar paquete de cupones para Maestro POS
 app.get('/api/admin/coupons/export-pxgcupon', async (req, res) => {
   try {
-    const token = req.cookies.admin_token;
+    const token = req.cookies.admin_token || req.cookies.editor_token;
     if (!token) return res.status(401).json({ error: 'No autenticado.' });
     jwt.verify(token, JWT_SECRET);
 
@@ -1224,7 +1226,7 @@ app.get('/api/shop/orders', verifyCustomerToken, async (req, res) => {
 
   try {
     const orders = await prisma.pedido.findMany({
-      where: { usuario_id: req.user.id },
+      where: { usuario_id: req.user.id, oculto_cliente: false },
       orderBy: { creado_en: 'desc' },
       include: {
         items: true,
@@ -1302,24 +1304,12 @@ app.delete('/api/shop/orders', verifyCustomerToken, async (req, res) => {
       return res.status(404).json({ error: 'No se encontraron pedidos válidos para eliminar.' });
     }
 
-    // Obtener los archivos de comprobantes ANTES de borrar los registros
-    const comprobantesABorrar = await prisma.comprobante.findMany({
-      where: { pedido_id: { in: idsVerificados } },
-      select: { archivo_url: true }
+    // Soft-delete: ocultar los pedidos de la vista del cliente
+    // Los pedidos, comprobantes y archivos se MANTIENEN INTACTOS en el Panel de Ventas
+    await prisma.pedido.updateMany({
+      where: { id: { in: idsVerificados }, usuario_id: req.user.id },
+      data: { oculto_cliente: true }
     });
-
-    // Eliminar en cascada manual: comprobantes → items → pedido
-    await prisma.$transaction([
-      prisma.comprobante.deleteMany({ where: { pedido_id: { in: idsVerificados } } }),
-      prisma.itemPedido.deleteMany({ where: { pedido_id: { in: idsVerificados } } }),
-      prisma.pedido.deleteMany({ where: { id: { in: idsVerificados } } })
-    ]);
-
-    // Eliminar archivos físicos del disco
-    const archivosEliminados = eliminarArchivosComprobantes(comprobantesABorrar);
-    if (archivosEliminados > 0) {
-      console.log(`  🗑️ [LIMPIEZA] ${archivosEliminados} archivo(s) de comprobantes eliminados del disco.`);
-    }
 
     res.json({ ok: true, eliminados: idsVerificados.length });
   } catch (e) {
@@ -1622,11 +1612,24 @@ app.post('/api/shop/orders/:id/comprobante', verifyCustomerToken, (req, res) => 
       const compressedFilename = path.basename(compressedPath);
       const archivoUrl = `/api/comprobantes/${compressedFilename}`;
 
-      // Crear el registro de comprobante en la base de datos
+      // Extraer datos del formulario de transferencia enviados por el cliente
+      const monedaStr = req.body.moneda ? String(req.body.moneda).trim().toUpperCase() : null;
+      const montoRaw = req.body.monto ? String(req.body.monto).replace(/\./g, '').replace(',', '.') : null;
+      const montoTransferidoNum = montoRaw ? parseFloat(montoRaw) : null;
+      const titularNombreStr = req.body.titular_nombre ? String(req.body.titular_nombre).trim() : null;
+      const titularCuitStr = req.body.titular_cuit ? String(req.body.titular_cuit).trim() : null;
+      const numeroCompStr = req.body.numero_comprobante ? String(req.body.numero_comprobante).replace(/\D/g, '') : null;
+
+      // Crear el registro de comprobante enriquecido con los datos del titular y pago
       const comprobante = await prisma.comprobante.create({
         data: {
           pedido_id: orderId,
-          archivo_url: archivoUrl
+          archivo_url: archivoUrl,
+          moneda: monedaStr,
+          monto_transferido: montoTransferidoNum,
+          titular_nombre: titularNombreStr,
+          titular_cuit: titularCuitStr,
+          numero_comprobante: numeroCompStr
         }
       });
 
@@ -1682,11 +1685,11 @@ app.get('/api/comprobantes/:filename', async (req, res) => {
 
     let isAuthorized = false;
 
-    // Caso 1: ¿Es Empleado/Admin?
-    const adminToken = req.cookies.admin_token;
-    if (adminToken) {
+    // Caso 1: ¿Es Empleado/Admin o Editor?
+    const adminOrEditorToken = req.cookies.admin_token || req.cookies.editor_token;
+    if (adminOrEditorToken) {
       try {
-        jwt.verify(adminToken, JWT_SECRET);
+        jwt.verify(adminOrEditorToken, JWT_SECRET);
         isAuthorized = true;
       } catch (e) {}
     }
@@ -2490,11 +2493,11 @@ app.post('/admin/login/2fa', async (req, res) => {
       { expiresIn: '8h' }
     );
 
+    // Cookie de sesión pura (sin maxAge): se destruye al cerrar el navegador
     const cookieOpts = {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
-      maxAge: 8 * 60 * 60 * 1000,
       path: '/'
     };
     const host = req.headers.host || '';
@@ -3507,7 +3510,6 @@ app.use('/admin', (req, res, next) => {
           httpOnly: true,
           secure: process.env.NODE_ENV === 'production',
           sameSite: 'lax',
-          maxAge: 8 * 60 * 60 * 1000,
           path: '/'
         });
       }
@@ -3691,19 +3693,18 @@ app.post('/api/verify-2fa', async (req, res) => {
       });
     }
 
-    // Generar JWT admin_token con 8 horas
-    const adminJwt = jwt.sign(
-      { id: empleado.id, email: empleado.email, role: 'admin' },
+    // Generar JWT exclusivo para el Editor Web (editor_token con role: 'editor')
+    const editorJwt = jwt.sign(
+      { id: empleado.id, email: empleado.email, role: 'editor' },
       JWT_SECRET,
       { expiresIn: '8h' }
     );
 
-    // Opciones de cookie: soporte de domain para subdominios si es configurado en env
+    // Cookie de sesión para el editor (sin maxAge = session cookie, se destruye al cerrar navegador)
     const cookieOptions = {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
-      maxAge: 8 * 60 * 60 * 1000,
       path: '/'
     };
     const host = req.headers.host || '';
@@ -3711,7 +3712,8 @@ app.post('/api/verify-2fa', async (req, res) => {
       cookieOptions.domain = process.env.COOKIE_DOMAIN;
     }
 
-    res.cookie('admin_token', adminJwt, cookieOptions);
+    // Se emite SOLO como editor_token — impide acceso al admin-panel
+    res.cookie('editor_token', editorJwt, cookieOptions);
 
     res.json({ ok: true, session: 'active' });
   } catch (e) {
@@ -3727,7 +3729,7 @@ app.post('/api/config-admin', async (req, res) => {
   }
   try {
     const { user, pass, recoveryEmail } = req.body;
-    const token = req.cookies.admin_token;
+    const token = req.cookies.admin_token || req.cookies.editor_token;
     const decoded = jwt.verify(token, JWT_SECRET);
 
     const updateData = {};
@@ -3839,7 +3841,7 @@ app.post('/api/sync-all', async (req, res) => {
 // POST /api/sync
 app.post('/api/sync', async (req, res) => {
   // 🔍 Diagnóstico de autorización (remover después de verificar)
-  const hasCookie = !!req.cookies.admin_token;
+  const hasCookie = !!(req.cookies.admin_token || req.cookies.editor_token);
   const isAuth = isAuthorized(req);
   console.log(`[SAVE-JSON] Cookie presente: ${hasCookie} | Autorizado: ${isAuth} | Protocolo: ${req.protocol} | Secure: ${req.secure} | Host: ${req.headers.host}`);
   if (!isAuth) {

@@ -66,6 +66,7 @@ model Pedido {
   descuento_porcentaje   Float?        // Porcentaje de descuento aplicado
   monto_descuento        Float?        // Monto en $ descontado
   reservado_hasta        DateTime?
+  oculto_cliente         Boolean       @default(false)
   creado_en              DateTime      @default(now())
   actualizado_en         DateTime      @updatedAt
   items                  ItemPedido[]
@@ -87,14 +88,19 @@ model ItemPedido {
 }
 
 model Comprobante {
-  id             Int             @id @default(autoincrement())
-  pedido_id      Int
-  pedido         Pedido          @relation(fields: [pedido_id], references: [id])
-  archivo_url    String
-  subido_en      DateTime        @default(now())
-  revisado_por   Int?
-  revisor        EmpleadoVentas? @relation(fields: [revisado_por], references: [id])
-  revisado_en    DateTime?
+  id                 Int             @id @default(autoincrement())
+  pedido_id          Int
+  pedido             Pedido          @relation(fields: [pedido_id], references: [id])
+  archivo_url        String
+  moneda             String?
+  monto_transferido  Float?
+  titular_nombre     String?
+  titular_cuit       String?
+  numero_comprobante String?
+  subido_en          DateTime        @default(now())
+  revisado_por       Int?
+  revisor            EmpleadoVentas? @relation(fields: [revisado_por], references: [id])
+  revisado_en        DateTime?
 
   @@map("comprobantes")
 }

@@ -6520,8 +6520,19 @@ onPixisDOMReady(() => {
       return;
     }
     
+    const monedaVal  = document.querySelector('input[name="compMoneda"]:checked')?.value || 'ARS';
+    const montoVal   = document.getElementById('compMonto')?.value || '';
+    const titularVal = document.getElementById('compTitular')?.value || '';
+    const cuitVal    = document.getElementById('compCuit')?.value || '';
+    const numeroVal  = document.getElementById('compNumero')?.value.replace(/\D/g, '') || '';
+
     const formData = new FormData();
     formData.append('comprobante', file);
+    formData.append('moneda', monedaVal);
+    formData.append('monto', montoVal);
+    formData.append('titular_nombre', titularVal);
+    formData.append('titular_cuit', cuitVal);
+    formData.append('numero_comprobante', numeroVal);
     
     const progressContainer = document.getElementById('uploadProgressContainer');
     const progressBar = document.getElementById('uploadProgressBar');
@@ -7252,6 +7263,135 @@ onPixisDOMReady(() => {
       }
     }
   };
+
+  // ── Formato automático del monto de comprobante (Pesos/Dólares) ──
+
+  (function initComprobanteMontoFormatter() {
+    var montoInput = document.getElementById('compMonto');
+    var signoEl = document.getElementById('compMonedaSigno');
+    var hintEl = document.getElementById('compMontoHint');
+    if (!montoInput) return;
+
+    // Actualizar signo de moneda cuando se cambia la selección
+    document.querySelectorAll('input[name="compMoneda"]').forEach(function(radio) {
+      radio.addEventListener('change', function() {
+        if (signoEl) {
+          signoEl.textContent = this.value === 'USD' ? 'US$' : '$';
+        }
+        if (hintEl) {
+          hintEl.textContent = this.value === 'USD'
+            ? 'Usá el punto (.) para separar los centavos. Ej: 1.500,00 dólares'
+            : 'Usá el punto (.) para separar los centavos. Ej: 174.500,50 pesos';
+        }
+      });
+    });
+
+    var parteEntera = '';
+    var parteDecimal = '';
+    var modoDecimal = false;
+
+    montoInput.addEventListener('keydown', function(e) {
+      // Cuando se presiona punto o coma, activar modo decimal
+      if (e.key === '.' || e.key === ',') {
+        e.preventDefault();
+        if (!modoDecimal && parteEntera.length > 0) {
+          modoDecimal = true;
+          parteDecimal = '';
+          renderMonto();
+        }
+        return;
+      }
+
+      // Backspace: borrar desde el final
+      if (e.key === 'Backspace') {
+        e.preventDefault();
+        if (modoDecimal) {
+          if (parteDecimal.length > 0) {
+            parteDecimal = parteDecimal.slice(0, -1);
+          } else {
+            modoDecimal = false;
+          }
+        } else {
+          parteEntera = parteEntera.slice(0, -1);
+        }
+        renderMonto();
+        return;
+      }
+
+      // Solo permitir dígitos
+      if (!/^\d$/.test(e.key)) {
+        if (!['Tab', 'Enter', 'ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(e.key)) {
+          e.preventDefault();
+        }
+        return;
+      }
+
+      e.preventDefault();
+
+      if (modoDecimal) {
+        if (parteDecimal.length < 2) {
+          parteDecimal += e.key;
+        }
+      } else {
+        if (parteEntera.length < 12) {
+          parteEntera += e.key;
+        }
+      }
+
+      renderMonto();
+    });
+
+    // Prevenir pegado libre
+    montoInput.addEventListener('paste', function(e) {
+      e.preventDefault();
+      var pasteData = (e.clipboardData || window.clipboardData).getData('text');
+      var soloDigitos = pasteData.replace(/\D/g, '');
+      if (soloDigitos && !modoDecimal) {
+        parteEntera += soloDigitos;
+        if (parteEntera.length > 12) parteEntera = parteEntera.slice(0, 12);
+        renderMonto();
+      }
+    });
+
+    function renderMonto() {
+      var enteraFormateada = '';
+      var digits = parteEntera;
+      while (digits.length > 3) {
+        enteraFormateada = '.' + digits.slice(-3) + enteraFormateada;
+        digits = digits.slice(0, -3);
+      }
+      enteraFormateada = digits + enteraFormateada;
+
+      if (modoDecimal) {
+        montoInput.value = enteraFormateada + ',' + parteDecimal;
+      } else {
+        montoInput.value = enteraFormateada;
+      }
+    }
+
+    // Reset campos al abrir el modal de comprobante
+    var origAbrirModal = window.abrirModalComprobanteDesde;
+    window.abrirModalComprobanteDesde = function(orderId, totalStr) {
+      parteEntera = '';
+      parteDecimal = '';
+      modoDecimal = false;
+      if (montoInput) montoInput.value = '';
+      var titularInput = document.getElementById('compTitular');
+      var cuitInput = document.getElementById('compCuit');
+      var numeroInput = document.getElementById('compNumero');
+      var fileInput = document.getElementById('compFile');
+      if (titularInput) titularInput.value = '';
+      if (cuitInput) cuitInput.value = '';
+      if (numeroInput) numeroInput.value = '';
+      if (fileInput) fileInput.value = '';
+      var arsRadio = document.querySelector('input[name="compMoneda"][value="ARS"]');
+      if (arsRadio) {
+        arsRadio.checked = true;
+        arsRadio.dispatchEvent(new Event('change'));
+      }
+      if (origAbrirModal) origAbrirModal(orderId, totalStr);
+    };
+  })();
 
   // ── Puente: abrir modal de comprobante desde "Mis Pedidos" ──
 
