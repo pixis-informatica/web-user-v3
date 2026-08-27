@@ -2751,32 +2751,7 @@ body:has(#toggle-cart:checked) {
   font-weight: 700;
 }
 
-/* =========================
-   BOTÓN FINALIZAR
-========================= */
 
-.btn-finish {
-  width: 100%;
-  padding: 12px;
-  margin-top: 12px;
-
-  border: none;
-  border-radius: 12px;
-
-  background: linear-gradient(90deg, #00c3ff, #0044ff);
-  color: #fff;
-
-  font-weight: 700;
-  font-size: 15px;
-  cursor: pointer;
-
-  transition: 0.2s;
-}
-
-.btn-finish:hover {
-  transform: scale(1.02);
-  box-shadow: 0 0 15px rgba(255, 0, 255, 0.6);
-}
 
 /* =========================
    BOTÓN VACIAR
@@ -3165,7 +3140,7 @@ body:has(#toggle-cart:checked) {
   .cart-cuotas-info,
   #transferenciaInfo,
   .cart-terminos,
-  .btn-finish,
+  .btn-reserve,
   #btn-clear-cart {
     grid-column: span 2 !important;
   }

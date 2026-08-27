@@ -137,19 +137,11 @@ window.openProductBySlug = function(slug, fromHistory = false) {
 const cartItems = document.querySelector('.cart-items');
 const cartTotal = document.querySelector('.cart-total strong');
 const cartCount = document.querySelector('.cart-count');
-const btnFinish = document.querySelector('.btn-finish');
 const btnClear = document.getElementById('btn-clear-cart');
 const btnAbrirTerminos = document.getElementById("btnAbrirTerminos");
 const modalTerminos = document.getElementById("modalTerminos");
 const cerrarTerminos = document.getElementById("cerrarTerminos");
 const aceptaTerminos = document.getElementById("aceptaTerminos");
-const modalEfectivo = document.getElementById("modalDescuentoEfectivo");
-const cerrarModalEfectivo = document.querySelector(".cerrar-modal-efectivo");
-
-
-cerrarModalEfectivo?.addEventListener("click", () => {
-  modalEfectivo.classList.remove("active");
-});
 /* abrir */
 
 btnAbrirTerminos?.addEventListener("click", () => {
@@ -450,7 +442,6 @@ Sábados de 09:00 a 13:00 hs.
 ========================= */
 const retiroLocal = document.getElementById('retiroLocal');
 const envioDomicilio = document.getElementById('envioDomicilio');
-const pagoEfectivo = document.getElementById('pagoEfectivo');
 const pagoTransferencia = document.getElementById('pagoTransferencia');
 const pagoTarjeta = document.getElementById("pagoTarjetaVisual");
 const transferenciaInfo = document.getElementById("transferenciaInfo");
@@ -517,17 +508,7 @@ if (inputLocalidad) {
 
 function validarZonaEnvio() {
   if (!envioDomicilio.checked) return;
-
-  const loc = inputLocalidad.value.trim();
-  const zonaConEfectivo = loc === "Capital" || loc === "La Banda";
-
-  if (zonaConEfectivo) {
-    pagoEfectivo.disabled = false;
-  } else {
-    pagoEfectivo.checked = false;
-    pagoEfectivo.disabled = true;
-    pagoTransferencia.checked = true;
-  }
+  // Ya no se gestiona pagoEfectivo (eliminado). Transferencia siempre disponible.
 }
 
 retiroLocal?.addEventListener('change', () => {
@@ -536,7 +517,6 @@ retiroLocal?.addEventListener('change', () => {
 
     envioDomicilio.checked = false;
 
-    pagoEfectivo.disabled = false;
     pagoTarjeta.disabled = false;
     pagoTransferencia.disabled = false;
 
@@ -551,10 +531,6 @@ envioDomicilio?.addEventListener('change', () => {
   if (envioDomicilio.checked) {
 
     retiroLocal.checked = false;
-
-    // ❌ efectivo no permitido
-    pagoEfectivo.checked = false;
-    pagoEfectivo.disabled = true;
 
     // ✅ transferencia y tarjeta permitidas
     pagoTarjeta.disabled = false;
@@ -574,14 +550,9 @@ function actualizarAvisoMetodoPagoCarrito() {
   const avisoEl = document.getElementById('pagoMetodoAviso');
   if (!avisoEl) return;
 
-  const esEfectivo = document.getElementById('pagoEfectivo')?.checked;
   const esTarjeta = document.getElementById('pagoTarjetaVisual')?.checked;
 
-  if (esEfectivo) {
-    avisoEl.style.display = 'flex';
-    avisoEl.className = 'pago-metodo-aviso aviso-efectivo';
-    avisoEl.innerHTML = `<i class="fas fa-info-circle"></i> <span><strong>Aviso:</strong> Su pedido quedará pendiente a confirmación del vendedor. Una vez confirmado, nos pondremos en contacto con usted. ¡Muchas gracias!</span>`;
-  } else if (esTarjeta) {
+  if (esTarjeta) {
     avisoEl.style.display = 'flex';
     avisoEl.className = 'pago-metodo-aviso aviso-tarjeta';
     avisoEl.innerHTML = `<i class="fas fa-credit-card"></i> <span><strong>Aviso:</strong> Pedido pendiente a confirmación. Una vez confirmado su pedido, le enviaremos el Link de pago para que pueda abonar su producto. ¡Muchas gracias!</span>`;
@@ -595,42 +566,14 @@ retiroLocal?.addEventListener('change', () => {
   actualizarAvisoMetodoPagoCarrito();
 });
 
-pagoEfectivo?.addEventListener('change', () => {
-  actualizarAvisoMetodoPagoCarrito();
-
-  if (pagoEfectivo.checked) {
-
-    pagoTransferencia.checked = false;
-
-    if (transferenciaInfo) {
-      transferenciaInfo.style.display = "none";
-    }
-
-    // ✅ ABRIR MODAL SOLO SI SE SELECCIONA EFECTIVO
-    if (modalEfectivo) {
-      modalEfectivo.classList.add("active");
-    }
-
-  }
-
-});
-modalEfectivo?.addEventListener("click", (e) => {
-  if (e.target === modalEfectivo) {
-    modalEfectivo.classList.remove("active");
-  }
-});
 pagoTransferencia?.addEventListener('change', () => {
   actualizarAvisoMetodoPagoCarrito();
 
   if (pagoTransferencia.checked) {
-    pagoEfectivo.checked = false;
-
     if (transferenciaInfo) {
       transferenciaInfo.style.display = "block";
     }
-
   }
-
 });
 
 pagoTarjeta?.addEventListener('change', () => {
@@ -763,10 +706,18 @@ function renderCart() {
   let total = 0;
   let count = 0;
 
+  const esEfectivoTransferencia = Boolean(pagoTransferencia?.checked);
+
   cart.forEach((item, index) => {
     const sinStock = pixisIsProductSinStock(item.name);
+    
+    // Precio unitario según método de pago:
+    // Efectivo/Transferencia usa priceLocal, Tarjeta usa price (Precio Normal En El Local)
+    const unitPrice = esEfectivoTransferencia 
+      ? (parseFloat(item.priceLocal) || parseFloat(item.price) || 0)
+      : (parseFloat(item.price) || 0);
 
-    total += item.price * item.qty;
+    total += (parseFloat(item.price) || 0) * item.qty; // Base intacta para tarjeta y cuotas
     count += item.qty;
 
     cartItems.innerHTML += `
@@ -774,7 +725,7 @@ function renderCart() {
         <img src="${item.img}" alt="${item.name}">
         <div>
           <h4>${item.name}</h4>
-          <span>$${item.price.toLocaleString()}</span>
+          <span>$${Math.round(unitPrice).toLocaleString('es-AR')}</span>
           ${sinStock ? '<span class="badge-sin-stock-cart" style="color: #ff4d4d; font-size: 11px; font-weight: bold; display: block; margin-top: 4px; letter-spacing: 0.3px;"><i class="fas fa-exclamation-triangle"></i> SIN STOCK (Remover)</span>' : ''}
         </div>
         <div class="cart-qty">
@@ -788,26 +739,22 @@ function renderCart() {
 
   cartCount.textContent = count;
 
-
   let totalFinal;
   const infoCuotas = document.querySelector(".cart-cuotas-info");
 
   if (pagoTarjeta?.checked) {
-
+    // 💳 Tarjeta calcula cuotas e intereses sobre 'total' (Precio Normal En El Local)
     totalFinal = calcularTotalConCuotas(total);
-
+  } else if (esEfectivoTransferencia) {
+    if (infoCuotas) infoCuotas.innerHTML = "";
+    // 💵 Efectivo/Transferencia calcula sobre 'priceLocal'
+    totalFinal = cart.reduce((acc, item) => {
+      const pl = parseFloat(item.priceLocal) || parseFloat(item.price) || 0;
+      return acc + (pl * item.qty);
+    }, 0);
   } else {
-
-    if (infoCuotas) infoCuotas.innerHTML = ""; // Limpiar leyenda de cuotas si no es tarjeta
-
-    if (pagoEfectivo?.checked) {
-      totalFinal = cart.reduce((acc, item) => {
-        return acc + (item.priceLocal * item.qty);
-      }, 0);
-    } else {
-      totalFinal = total;
-    }
-
+    if (infoCuotas) infoCuotas.innerHTML = "";
+    totalFinal = total;
   }
 
   // ── APLICACIÓN Y DESGLOSE DE CUPÓN DE DESCUENTO EN CARRITO ──
@@ -875,28 +822,24 @@ radiosPago.forEach(radio => {
     actualizarAvisoMetodoPagoCarrito();
 
     if (pagoTarjeta.checked) {
-
       selectCuotas.style.display = "block";
       cuotasPreview.style.display = "block";
-
     } else {
-
       selectCuotas.style.display = "none";
       cuotasPreview.style.display = "none";
       selectCuotas.value = "0";
       cuotasPreview.innerHTML = "";
-
-      // 🔥 ESTO ES LO IMPORTANTE
-      renderCart(); // recalcula total sin cuotas
-
     }
-    if (!pagoTransferencia.checked) {
-      if (transferenciaInfo) {
-        transferenciaInfo.style.display = "none";
-      }
+
+    if (pagoTransferencia?.checked) {
+      if (transferenciaInfo) transferenciaInfo.style.display = "block";
+    } else {
+      if (transferenciaInfo) transferenciaInfo.style.display = "none";
     }
+
+    // 🔥 Recalcula total y actualiza precios unitarios según el método seleccionado
+    renderCart();
   });
-
 });
 /* =========================
    ADVERTENCIA CANTIDAD MAYOR A 2
@@ -973,166 +916,7 @@ btnClear?.addEventListener('click', () => {
   renderCart();
 });
 
-/* =========================
-   FINALIZAR COMPRA
-========================= */
-btnFinish?.addEventListener('click', e => {
 
-  if (!aceptaTerminos.checked) {
-    alert("Debes aceptar los términos y condiciones para continuar.");
-    return;
-  }
-
-  e.preventDefault();
-  if (!cart.length) return;
-
-  // Verificar si hay productos sin stock
-  const sinStockItems = [];
-  cart.forEach(item => {
-    if (pixisIsProductSinStock(item.name)) {
-      sinStockItems.push(item.name);
-    }
-  });
-
-  if (sinStockItems.length > 0) {
-    alert("⚠️ Hay productos sin stock en tu carrito:\n\n" + sinStockItems.map(name => `• ${name}`).join('\n') + "\n\nPor favor, remuévelos para poder finalizar la compra.");
-    return;
-  }
-
-  const inputNombre = document.getElementById('clienteNombre');
-  const inputTelefono = document.getElementById('clienteTelefono');
-  const inputDireccion = document.getElementById('clienteDireccion');
-
-  const nombre = inputNombre?.value.trim();
-  const provincia = inputProvincia?.value.trim() || "";
-  const localidad = inputLocalidad?.value.trim() || "";
-  const direccion = inputDireccion?.value.trim();
-  const codigoPostal = inputCodigoPostal?.value.trim() || "";
-  const email = inputEmail?.value.trim() || "";
-  const telefono = inputTelefono?.value.trim();
-
-  // Limpiar clases de error previas
-  inputNombre?.classList.remove('invalid-field');
-  inputTelefono?.classList.remove('invalid-field');
-  inputDireccion?.classList.remove('invalid-field');
-
-  if (!retiroLocal.checked && !envioDomicilio.checked) {
-    alert('Seleccioná modo de entrega.');
-    return;
-  }
-
-  if (!pagoEfectivo.checked && !pagoTransferencia.checked && !pagoTarjeta.checked) {
-    alert('Seleccioná forma de pago.');
-    return;
-  }
-
-  if (pagoTarjeta.checked && selectCuotas.value === "0") {
-    alert('Seleccioná la cantidad de cuotas para pagar con tarjeta.');
-    return;
-  }
-
-  if (!nombre || !telefono) {
-    if (!nombre) inputNombre?.classList.add('invalid-field');
-    if (!telefono) inputTelefono?.classList.add('invalid-field');
-    alert('En datos del cliente, es obligatorio completar Nombre completo y Celular.');
-    return;
-  }
-
-  if (envioDomicilio.checked && !direccion) {
-    inputDireccion?.classList.add('invalid-field');
-    alert('Para envíos a domicilio debés ingresar una Dirección.');
-    return;
-  }
-
-  // Registrar listeners de limpieza de error dinámico al escribir
-  [inputNombre, inputTelefono, inputDireccion].forEach(el => {
-    if (el && !el.dataset.hasErrorListener) {
-      el.dataset.hasErrorListener = "true";
-      el.addEventListener('input', () => {
-        el.classList.remove('invalid-field');
-      });
-    }
-  });
-
-  /* ── 1. GENERAR PDF ── */
-  generarPDFPresupuesto();
-
-  /* ── 2. ARMAR MENSAJE WHATSAPP ── */
-  let msg = '🛒 *Pedido PIXIS Informática*%0A%0A';
-  msg += `🚚 *Entrega:* ${retiroLocal.checked ? 'Retiro en el local' : 'Envío a domicilio'}%0A`;
-
-  if (envioDomicilio.checked) {
-    msg += `%0A👤 *Nombre:* ${nombre}%0A📍 *Dirección:* ${direccion}%0A🗺️ *Provincia:* ${provincia}%0A🏙️ *Localidad:* ${localidad}%0A📮 *Código Postal:* ${codigoPostal}%0A📧 *Email:* ${email}%0A📞 *Celular:* ${telefono}%0A`;
-  } else {
-    if (nombre || telefono) {
-      msg += `%0A👤 Nombre: ${nombre || 'No especificado'}`;
-      if (telefono) msg += `%0A📞 Celular: ${telefono}`;
-      msg += `%0A`;
-    }
-  }
-
-  msg += `%0A────────────────────%0A`;
-
-  let total = 0;
-
-
-  cart.forEach(i => {
-
-    let precioUnitario = pagoEfectivo.checked 
-  ? parseFloat(i.priceLocal) || 0 
-  : parseFloat(i.price) || 0;
-
-    let subtotal = precioUnitario * i.qty;
-
-    msg += `• ${i.name} x${i.qty} — $${subtotal.toLocaleString()}%0A`;
-
-    total += subtotal;
-  });
-
-  const hayExceso = cart.some(item => item.qty > 2);
-  if (hayExceso) {
-    msg += `%0A⚠ *Aviso:* Se solicitaron más de 2 unidades de uno o más productos.%0A`;
-    msg += `La disponibilidad deberá confirmarse dentro de nuestros horarios de atención.%0A`;
-    msg += `🕒 Lunes a viernes 09:00–12:30 y 13:30–21:30.%0ASábados 09:00–13:00.%0A`;
-  }
-
-  msg += `%0A────────────────────%0A`;
-
-  if (pagoTarjeta.checked && selectCuotas.value !== "0") {
-    const cuotas = parseInt(selectCuotas.value);
-    const tasa = tasasCuotas[cuotas];
-    const totalConInteres = total * tasa;
-    const valorCuota = totalConInteres / cuotas;
-    msg += `💳 *Pago:* Tarjeta de crédito%0A`;
-    msg += `💳 ${cuotas} cuotas de $${Math.round(valorCuota).toLocaleString()}%0A`;
-    msg += `💰 *Total final:* $${Math.round(totalConInteres).toLocaleString()}%0A`;
-    msg += `%0A⏳ El pago se concretará dentro de nuestros horarios de atención.%0A`;
-  } else if (pagoEfectivo.checked) {
-    msg += `💵 *Pago:* Efectivo%0A`;
-    msg += `💰 *Total:* $${Math.round(total).toLocaleString()}%0A`;
-  } else if (pagoTransferencia.checked) {
-    msg += `🏦 *Pago:* Transferencia bancaria%0A`;
-    msg += `💰 *Total:* $${total.toLocaleString()}%0A`;
-  }
-
-  /* ── 3. ENVIAR: Web Share (móvil) o descarga + WhatsApp texto (desktop) ── */
-  // Construir mensaje en texto plano para el Web Share API
-  const msgPlain = msg
-    .replace(/%0A/gi, '\n')
-    .replace(/%0a/gi, '\n')
-    .replace(/\*([^*]+)\*/g, '$1'); // quitar asteriscos de bold para el share nativo
-
-  setTimeout(() => {
-    // Número de destino: se lee desde site.json (campo whatsappPhone) — cambiable desde el editor
-    const waPhone = window.PixisState?.state?.site?.whatsappPhone || '5493856970135';
-
-    // Abrir WhatsApp con el mensaje (el PDF ya se descargó en generarPDFPresupuesto)
-    // En móvil usamos window.location.href para una redirección más fluida si es necesario, 
-    // pero window.open con _blank suele ser más compatible para no cerrar la web.
-    window.open(`https://wa.me/${waPhone}?text=${msg}`, '_blank');
-  }, 600);
-
-});
 
 function aplicarConfiguracionPreciosCategorias() {
 
@@ -3779,7 +3563,7 @@ function generarPDFPresupuesto() {
   const fechaVenc = `${vencimiento.getDate()}/${vencimiento.getMonth() + 1}/${vencimiento.getFullYear()}`;
 
   /* ── DESCUENTO: 5% solo si efectivo + retiro local ── */
-  const esEfectivoLocal = pagoEfectivo.checked && retiroLocal.checked;
+  const esEfectivoLocal = pagoTransferencia.checked && retiroLocal.checked;
 
 
   /* ── DATOS CLIENTE ── */
@@ -3977,7 +3761,7 @@ function generarPDFPresupuesto() {
   let totalBase = 0;
   const rows = cart.map(item => {
 
-    const precio = pagoEfectivo?.checked
+    const precio = pagoTransferencia?.checked
       ? Number(item.priceLocal ?? item.price ?? 0)
       : Number(item.price ?? 0);
 
@@ -4096,9 +3880,9 @@ function generarPDFPresupuesto() {
   if (pagoTarjeta?.checked) {
     textoDestacado = "PAGO CON TARJETA DE CREDITO";
   } else if (esEfectivoLocal) {
-    textoDestacado = "PRECIO EFECTIVO EN LOCAL";
+    textoDestacado = "EFECTIVO (EN LOCAL)";
   } else {
-    textoDestacado = "PAGO POR TRANSFERENCIA";
+    textoDestacado = "EFECTIVO / TRANSFERENCIA";
   }
   doc.setFillColor(...ROSA);
   doc.rect(xLbl - 3, yFin - 5, W - xLbl + 1, 9, "F");
@@ -6356,7 +6140,6 @@ onPixisDOMReady(() => {
       
       const retiroLocal = document.getElementById('retiroLocal');
       const envioDomicilio = document.getElementById('envioDomicilio');
-      const pagoEfectivo = document.getElementById('pagoEfectivo');
       const pagoTransferencia = document.getElementById('pagoTransferencia');
       const pagoTarjeta = document.getElementById('pagoTarjetaVisual');
       const selectCuotas = document.getElementById('selectCuotas');
@@ -6366,7 +6149,7 @@ onPixisDOMReady(() => {
         return;
       }
       
-      if (pagoEfectivo && pagoTransferencia && pagoTarjeta && !pagoEfectivo.checked && !pagoTransferencia.checked && !pagoTarjeta.checked) {
+      if (pagoTransferencia && pagoTarjeta && !pagoTransferencia.checked && !pagoTarjeta.checked) {
         alert('Seleccioná forma de pago.');
         return;
       }
@@ -6401,9 +6184,8 @@ onPixisDOMReady(() => {
     const direccionInput = document.getElementById('clienteDireccion');
     const direccion = entrega === 'envio' ? (direccionInput ? direccionInput.value.trim() : '') : null;
     
-    let forma_pago = 'efectivo';
-    if (document.getElementById('pagoTransferencia').checked) forma_pago = 'transferencia';
-    else if (document.getElementById('pagoTarjetaVisual').checked) forma_pago = 'tarjeta';
+    let forma_pago = 'efectivo_transferencia';
+    if (document.getElementById('pagoTarjetaVisual').checked) forma_pago = 'tarjeta';
     
     const selectCuotas = document.getElementById('selectCuotas');
     const cuotas = forma_pago === 'tarjeta' ? parseInt(selectCuotas.value, 10) : null;

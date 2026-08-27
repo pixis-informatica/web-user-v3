@@ -1080,30 +1080,7 @@
         <div class="footer-copy">Copyright © PIXIS INFORMÁTICA 2026</div>
 
     </footer>
-    <div id="modalDescuentoEfectivo" class="modal-efectivo">
 
-        <div class="modal-efectivo-box">
-
-            <span class="cerrar-modal-efectivo">&times;</span>
-
-            <h3>💵 Pago en efectivo</h3>
-
-            <p>
-                Pagando <strong>en nuestro local en efectivo</strong> obtenés
-            </p>
-
-            <div class="efectivo-descuento">
-                <span>MEJOR PRECIO</span>
-            </div>
-
-            <p>
-                Este PRECIO se reflejará en el <strong>presupuesto PDF</strong>
-                que se genera al finalizar el pedido.
-            </p>
-
-        </div>
-
-    </div>
     <div id="cart-toast">Se agregó al carrito</div>
     <a href="#top" class="btn-top" id="btnHome">
         <i class="fas fa-arrow-up"></i>
@@ -1157,12 +1134,13 @@
             <!-- PAGO -->
             <div class="cart-section section-pago">
                 <h4>Forma de pago</h4>
-                <label><input type="radio" id="pagoEfectivo" name="pago"> Efectivo (mejor precio abonando en nuestro
-                    local)</label>
-                <label><input type="radio" id="pagoTransferencia" name="pago"> Transferencia</label>
-                <label>
+                <label style="cursor: pointer; display: flex; align-items: flex-start; gap: 8px; margin-bottom: 8px; line-height: 1.35;">
+                    <input type="radio" id="pagoTransferencia" name="pago" style="margin-top: 3px;">
+                    <span><strong>Efectivo (en local) / Transferencia (Unicamente abonando por la web)</strong></span>
+                </label>
+                <label style="cursor: pointer; display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
                     <input type="radio" name="pago" id="pagoTarjetaVisual">
-                    Tarjeta de crédito
+                    <span>Tarjeta de crédito</span>
                 </label>
 
                 <select id="selectCuotas">
@@ -1248,7 +1226,6 @@
                 </label>
 
             </div>
-            <button class="btn-finish">Finalizar compra (WhatsApp)</button>
             <button id="btn-reserve-online" class="btn-reserve">Reservar Online</button>
             <button id="btn-clear-cart">Vaciar carrito</button>
 
@@ -1463,7 +1440,7 @@
                         <!-- 1. Efectivo (en local) - Amarillo -->
                         <div class="precio-local">
                             <span class="precio-local-label"><i class="fas fa-money-bill-wave"></i> Efectivo (en
-                                local):</span>
+                                local) / Transferencia (Unicamente abonando por la web):</span>
                             <strong id="precioLocal"></strong>
                         </div>
 
@@ -1475,7 +1452,7 @@
 
                         <!-- 3. Transferencia - Verde -->
                         <div class="precio-contado">
-                            <span><i class="fas fa-university"></i> Transferencia:</span>
+                            <span><i class="fas fa-university"></i> Precio Normal En El Local:</span>
                             <strong id="precioContado"></strong>
                         </div>
 

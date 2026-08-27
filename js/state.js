@@ -1833,7 +1833,7 @@ function renderDynamicProducts(products) {
         <h3>${escStateHtml(prod.title)}</h3>
         <p>${escStateHtml(prod.subcategoria || '')}</p>
         <div class="precio-box">
-          <span class="precio-label">PRECIO ESPECIAL EFECTIVO SOLO EN PEDIDOS POR LA WEB</span>
+          <span class="precio-label">PRECIO ESPECIAL WEB</span>
           <span class="precio">${priceFormatted}</span>
         </div>
         <div class="card-actions">
