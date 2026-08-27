@@ -2535,6 +2535,7 @@ window.PixisEditorAPI = {
 
     html += products.map((p, i) => {
       const coverImg = (p.img || '').trim().split(',')[0].trim();
+      const catLabel = categoryId === 'destacados' ? 'Destacados' : 'Nuevos Ingresos';
       return `
         <div class="pixis-reorder-item" 
              draggable="true"
@@ -2546,18 +2547,79 @@ window.PixisEditorAPI = {
              onmouseover="this.style.borderColor='var(--editor-purple)'"
              onmouseout="this.style.borderColor='rgba(255,255,255,0.1)'">
           <img src="${coverImg}" style="width:100%; height:100%; object-fit:cover;">
-          <div style="position:absolute; bottom:0; left:0; right:0; background:rgba(0,0,0,0.7); color:#fff; font-size:8px; padding:2px; text-overflow:ellipsis; overflow:hidden; white-space:nowrap; text-align:center;">
+          
+          <!-- Título inferior -->
+          <div style="position:absolute; bottom:0; left:0; right:0; background:rgba(0,0,0,0.75); color:#fff; font-size:8px; padding:2px; text-overflow:ellipsis; overflow:hidden; white-space:nowrap; text-align:center;">
             ${escHtml(p.title)}
           </div>
-          <div style="position:absolute; top:2px; left:2px; background:rgba(0,0,0,0.8); color:#aaa; font-size:8px; width:14px; height:14px; display:flex; align-items:center; justify-content:center; border-radius:50%; border:1px solid rgba(255,255,255,0.2);">
+          
+          <!-- Badge de número de orden a la izquierda -->
+          <div style="position:absolute; top:2px; left:2px; background:rgba(0,0,0,0.85); color:#aaa; font-size:8px; font-weight:700; width:15px; height:15px; display:flex; align-items:center; justify-content:center; border-radius:50%; border:1px solid rgba(255,255,255,0.2); pointer-events:none;">
             ${i + 1}
           </div>
+
+          <!-- Botón Cruz (×) para remover de Destacados / Nuevos a la derecha -->
+          <button type="button"
+                  onclick="window.PixisEditorAPI.pixisRemoveFromReorderCategory(event, '${p.id}', '${categoryId}')"
+                  title="Quitar de ${catLabel}"
+                  style="position:absolute; top:2px; right:2px; background:rgba(239,68,68,0.92); color:#fff; font-size:12px; font-weight:900; width:16px; height:16px; border-radius:50%; border:1px solid rgba(255,255,255,0.4); display:flex; align-items:center; justify-content:center; cursor:pointer; z-index:10; transition:transform 0.15s, background 0.15s; line-height:1; padding:0;"
+                  onmouseover="this.style.transform='scale(1.2)'; this.style.background='#dc2626';"
+                  onmouseout="this.style.transform='scale(1)'; this.style.background='rgba(239,68,68,0.92)';">
+            &times;
+          </button>
         </div>
       `;
     }).join('');
 
     html += `</div>`;
     return html;
+  },
+
+  /**
+   * Quita un producto de Destacados o Nuevos Ingresos directamente desde la pestaña de reordenar
+   */
+  async pixisRemoveFromReorderCategory(e, prodId, categoryId) {
+    if (e) {
+      e.stopPropagation();
+      e.preventDefault();
+    }
+
+    const prod = (PixisEditor.data.products || []).find(p => String(p.id) === String(prodId));
+    const prodName = prod ? prod.title : 'el producto';
+    const catLabel = categoryId === 'destacados' ? 'Destacados' : 'Nuevos Ingresos';
+
+    if (!confirm(`¿Deseas quitar "${prodName}" de ${catLabel}?`)) {
+      return;
+    }
+
+    if (window.PixisState) window.PixisState.pushHistory();
+
+    const products = [...PixisEditor.data.products];
+    const targetProd = products.find(p => String(p.id) === String(prodId));
+
+    if (targetProd) {
+      if (targetProd.category === categoryId) targetProd.category = '';
+      if (targetProd.category2 === categoryId) targetProd.category2 = '';
+      if (targetProd.category3 === categoryId) targetProd.category3 = '';
+
+      // Si la categoría principal quedó vacía pero tenía category2, promover category2 a principal
+      if (!targetProd.category && targetProd.category2) {
+        targetProd.category = targetProd.category2;
+        targetProd.category2 = '';
+      }
+
+      PixisEditor.data.products = products;
+
+      if (window.PixisState) {
+        window.PixisState.state.products = products;
+        await window.PixisState.saveState();
+        window.PixisState.applyStateToDOM();
+      }
+
+      // Re-renderizar el panel de productos manteniendo abierta la misma pestaña
+      openProductsPanel();
+      window.PixisOverlay.showToast(`✅ Quitado de ${catLabel}`, 'success', 1500);
+    }
   },
 
   pixisHandleProductDragStart(e, prodId) {

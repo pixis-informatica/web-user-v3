@@ -1624,54 +1624,59 @@
                     </div>
 
                     <form id="formUploadComprobante" onsubmit="handleComprobanteUpload(event)">
-                        <p style="font-size: 0.85rem; color: #d1d5db; margin-bottom: 14px; line-height: 1.5;">
+                        <p style="font-size: 0.88rem; color: #d1d5db; margin-bottom: 16px; line-height: 1.5;">
                             Informa tu pago subiendo el comprobante y completando los campos. Ingresá el valor exacto depositado o transferido en este comprobante.
                         </p>
 
-                        <!-- Selector de Moneda -->
-                        <div class="form-group" style="margin-bottom: 12px;">
-                            <label style="display: block; margin-bottom: 6px; font-size: 0.8rem; font-weight: 700; color: #f5c518;">Seleccioná la moneda de pago:</label>
-                            <div id="compMonedaSelector" style="display: flex; gap: 10px;">
-                                <label style="flex:1; display:flex; align-items:center; justify-content:center; gap:6px; padding:10px; background:rgba(0,230,118,0.1); border:1.5px solid rgba(0,230,118,0.5); border-radius:8px; cursor:pointer; font-weight:700; color:#00e676; font-size:0.9rem; transition:0.2s;">
-                                    <input type="radio" name="compMoneda" value="ARS" checked style="accent-color:#00e676;"> 🇦🇷 Pesos ($)
-                                </label>
-                                <label style="flex:1; display:flex; align-items:center; justify-content:center; gap:6px; padding:10px; background:rgba(56,189,248,0.1); border:1.5px solid rgba(56,189,248,0.5); border-radius:8px; cursor:pointer; font-weight:700; color:#38bdf8; font-size:0.9rem; transition:0.2s;">
-                                    <input type="radio" name="compMoneda" value="USD" style="accent-color:#38bdf8;"> 🇺🇸 Dólares (US$)
-                                </label>
+                        <!-- Fila 1 en Desktop: Selector de Moneda + Monto -->
+                        <div class="comp-form-row">
+                            <!-- Selector de Moneda -->
+                            <div class="form-group comp-col-half">
+                                <label style="display: block; margin-bottom: 6px; font-size: 0.82rem; font-weight: 700; color: #f5c518;">Moneda de Pago:</label>
+                                <div id="compMonedaSelector" style="display: flex; gap: 10px;">
+                                    <label style="flex:1; display:flex; align-items:center; justify-content:center; gap:6px; padding:11px 8px; background:rgba(0,230,118,0.1); border:1.5px solid rgba(0,230,118,0.5); border-radius:8px; cursor:pointer; font-weight:700; color:#00e676; font-size:0.88rem; transition:0.2s; user-select:none;">
+                                        <input type="radio" name="compMoneda" value="ARS" checked style="accent-color:#00e676;"> 🇦🇷 Pesos ($)
+                                    </label>
+                                    <label style="flex:1; display:flex; align-items:center; justify-content:center; gap:6px; padding:11px 8px; background:rgba(56,189,248,0.1); border:1.5px solid rgba(56,189,248,0.5); border-radius:8px; cursor:pointer; font-weight:700; color:#38bdf8; font-size:0.88rem; transition:0.2s; user-select:none;">
+                                        <input type="radio" name="compMoneda" value="USD" style="accent-color:#38bdf8;"> 🇺🇸 Dólares (US$)
+                                    </label>
+                                </div>
+                            </div>
+
+                            <!-- Monto con input-group flex (Sin superposición de símbolo) -->
+                            <div class="form-group comp-col-half">
+                                <label for="compMonto" style="display: block; margin-bottom: 6px; font-size: 0.82rem; font-weight: 700; color: #f5c518;">Valor exacto depositado o transferido:</label>
+                                <div class="comp-monto-input-group">
+                                    <span id="compMonedaSigno" class="comp-monto-badge">$</span>
+                                    <input type="text" id="compMonto" class="comp-monto-field" inputmode="numeric" placeholder="0" required autocomplete="off">
+                                </div>
+                                <small id="compMontoHint" style="font-size: 0.72rem; color: rgba(255,255,255,0.45); margin-top: 4px; display: block;">Usá el punto (.) para separar los centavos. Ej: 174.500,50</small>
                             </div>
                         </div>
 
-                        <!-- Monto con formato automático -->
-                        <div class="form-group" style="margin-bottom: 12px;">
-                            <label for="compMonto" style="display: block; margin-bottom: 4px; font-size: 0.8rem; font-weight: 700; color: #f5c518;">Valor exacto depositado o transferido:</label>
-                            <div style="position: relative;">
-                                <span id="compMonedaSigno" style="position:absolute; left:12px; top:50%; transform:translateY(-50%); color:#f5c518; font-weight:800; font-size:1rem; pointer-events:none;">$</span>
-                                <input type="text" id="compMonto" inputmode="numeric" placeholder="0" required autocomplete="off" style="width: 100%; padding: 10px 14px 10px 30px; background: rgba(255,255,255,0.06); border: 1px solid rgba(245,197,24,0.4); border-radius: 8px; color: #fff; font-size: 1.05rem; font-weight: 700; font-family: monospace; letter-spacing: 1px;">
+                        <!-- Fila 2 en Desktop: Nombre Titular + DNI/CUIT -->
+                        <div class="comp-form-row">
+                            <!-- Nombre del Titular -->
+                            <div class="form-group comp-col-half">
+                                <label for="compTitular" style="display: block; margin-bottom: 6px; font-size: 0.82rem; font-weight: 700; color: #f5c518;">Nombre y Apellido del Titular:</label>
+                                <input type="text" id="compTitular" placeholder="Ej: Juan Pérez" required style="width: 100%; padding: 11px 14px; background: rgba(255,255,255,0.06); border: 1px solid rgba(245,197,24,0.4); border-radius: 8px; color: #fff; font-size: 0.9rem;">
                             </div>
-                            <small id="compMontoHint" style="font-size: 0.72rem; color: rgba(255,255,255,0.4); margin-top: 3px; display: block;">Usá el punto (.) para separar los centavos. Ej: 174500.50</small>
-                        </div>
 
-                        <!-- Nombre del Titular -->
-                        <div class="form-group" style="margin-bottom: 12px;">
-                            <label for="compTitular" style="display: block; margin-bottom: 4px; font-size: 0.8rem; font-weight: 700; color: #f5c518;">Nombre completo y apellido del titular que transfiere:</label>
-                            <input type="text" id="compTitular" placeholder="Ej: Juan Pérez" required style="width: 100%; padding: 10px 14px; background: rgba(255,255,255,0.06); border: 1px solid rgba(245,197,24,0.4); border-radius: 8px; color: #fff; font-size: 0.9rem;">
-                        </div>
-
-                        <!-- DNI/CUIT del Titular -->
-                        <div class="form-group" style="margin-bottom: 12px;">
-                            <label for="compCuit" style="display: block; margin-bottom: 4px; font-size: 0.8rem; font-weight: 700; color: #f5c518;">DNI / CUIT del titular (facturación):</label>
-                            <input type="text" id="compCuit" placeholder="Ej: 20-12345678-9 o DNI" required style="width: 100%; padding: 10px 14px; background: rgba(255,255,255,0.06); border: 1px solid rgba(245,197,24,0.4); border-radius: 8px; color: #fff; font-size: 0.9rem;">
-                            <small style="font-size: 0.72rem; color: rgba(255,255,255,0.35); margin-top: 2px; display: block;">El DNI/CUIT ingresado debe pertenecer al titular de la transferencia y coincidir con la persona o empresa que recibirá la factura.</small>
+                            <!-- DNI/CUIT del Titular -->
+                            <div class="form-group comp-col-half">
+                                <label for="compCuit" style="display: block; margin-bottom: 6px; font-size: 0.82rem; font-weight: 700; color: #f5c518;">DNI / CUIT del Titular (Facturación):</label>
+                                <input type="text" id="compCuit" placeholder="Ej: 20-12345678-9 o DNI" required style="width: 100%; padding: 11px 14px; background: rgba(255,255,255,0.06); border: 1px solid rgba(245,197,24,0.4); border-radius: 8px; color: #fff; font-size: 0.9rem;">
+                            </div>
                         </div>
 
                         <!-- Número de Comprobante -->
                         <div class="form-group" style="margin-bottom: 14px;">
-                            <label for="compNumero" style="display: block; margin-bottom: 4px; font-size: 0.8rem; font-weight: 700; color: #f5c518;">Número de comprobante (solo números):</label>
-                            <input type="text" id="compNumero" inputmode="numeric" placeholder="Ej: 987654321" required style="width: 100%; padding: 10px 14px; background: rgba(255,255,255,0.06); border: 1px solid rgba(245,197,24,0.4); border-radius: 8px; color: #fff; font-size: 0.9rem;">
+                            <label for="compNumero" style="display: block; margin-bottom: 6px; font-size: 0.82rem; font-weight: 700; color: #f5c518;">Número de Comprobante / Transacción (solo números):</label>
+                            <input type="text" id="compNumero" inputmode="numeric" placeholder="Ej: 987654321" required style="width: 100%; padding: 11px 14px; background: rgba(255,255,255,0.06); border: 1px solid rgba(245,197,24,0.4); border-radius: 8px; color: #fff; font-size: 0.9rem;">
                         </div>
 
                         <!-- Archivo del Comprobante -->
-                        <div class="form-group" style="margin-bottom: 16px;">
+                        <div class="form-group" style="margin-bottom: 18px;">
                             <label for="compFile" style="display: block; margin-bottom: 6px; font-size: 0.82rem; font-weight: 700; color: #e2e8f0 !important; text-transform: uppercase; letter-spacing: 0.5px;">Archivo del Comprobante (JPG, PNG, WEBP, PDF - Máx. 5MB)</label>
                             <input type="file" id="compFile" accept="image/jpeg,image/png,image/webp,application/pdf" required style="border: 2px dashed var(--gold) !important; padding: 14px !important; text-align: center; background: #1c0a33 !important; cursor: pointer; width: 100%; border-radius: 10px; color: #ffffff !important; font-weight: 600;">
                         </div>
