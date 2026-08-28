@@ -388,6 +388,64 @@
         "webkitBackgroundClip": "",
         "webkitTextFillColor": ""
       }
+    },
+    "div#categorias > div > div:nth-of-type(2) > a > div > img": {
+      "src": "http://localhost:8080/img/categorias/cat-cables-1787868248449.png?v=1787869094890",
+      "alt": "Adaptadores & Cables",
+      "href": "#Cables",
+      "style": {
+        "width": "",
+        "fontSize": "",
+        "lineHeight": "",
+        "textAlign": "",
+        "display": "",
+        "transform": "",
+        "position": "",
+        "zIndex": "",
+        "color": "",
+        "fontFamily": "",
+        "background": "",
+        "webkitBackgroundClip": "",
+        "webkitTextFillColor": ""
+      }
+    },
+    "div#brandsTrack > img:nth-of-type(18)": {
+      "src": "http://localhost:8080/img/logos/raptor.png",
+      "alt": "Fuentes Raptor y componentes disponibles en PIXIS Informática Argentina",
+      "style": {
+        "width": "",
+        "fontSize": "",
+        "lineHeight": "",
+        "textAlign": "",
+        "display": "",
+        "transform": "",
+        "position": "",
+        "zIndex": "",
+        "color": "",
+        "fontFamily": "",
+        "background": "",
+        "webkitBackgroundClip": "",
+        "webkitTextFillColor": ""
+      }
+    },
+    "div#categorias > div > div:nth-of-type(2) > a:nth-of-type(2) > div > img": {
+      "src": "http://localhost:8080/img/categorias/cat-almacenamiento-1787869186589.png?v=1787869187866",
+      "alt": "Almacenamiento",
+      "style": {
+        "width": "",
+        "fontSize": "",
+        "lineHeight": "",
+        "textAlign": "",
+        "display": "",
+        "transform": "",
+        "position": "",
+        "zIndex": "",
+        "color": "",
+        "fontFamily": "",
+        "background": "",
+        "webkitBackgroundClip": "",
+        "webkitTextFillColor": ""
+      }
     }
   },
   "sections": {

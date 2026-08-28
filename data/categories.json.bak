@@ -15,14 +15,14 @@
     "name": "Adaptadores & Cables",
     "icon": "🔌",
     "active": true,
-    "customIcon": "img/categorias/cat-cables-1780094107377.png"
+    "customIcon": "img/categorias/cat-cables-1787869168156.png"
   },
   {
     "id": "almacenamiento",
     "name": "Almacenamiento",
     "icon": "💾",
     "active": true,
-    "customIcon": "img/categorias/cat-almacenamiento-1780093856104.png"
+    "customIcon": "img/categorias/cat-almacenamiento-1787869202266.png"
   },
   {
     "id": "Camara de Seguridad",

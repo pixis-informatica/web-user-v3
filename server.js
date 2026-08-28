@@ -234,8 +234,15 @@ async function withProductsMutex(callback) {
 function validarYDescontarStock(products, items) {
   for (const item of items) {
     const product = products.find(p => p.title === item.nombre_snapshot);
-    if (product && product.stock !== undefined && product.stock < item.cantidad) {
-      return { ok: false, error: `Stock insuficiente para el producto "${item.nombre_snapshot}". Disponible: ${product.stock}, Solicitado: ${item.cantidad}` };
+    const stockActual = product && product.stock !== undefined ? product.stock : (product && product.inStock === false ? 0 : 0);
+    if (stockActual < item.cantidad) {
+      return { 
+        ok: false, 
+        error: `Stock insuficiente para "${item.nombre_snapshot}". Disponible: ${stockActual}, Solicitado: ${item.cantidad}`,
+        producto: item.nombre_snapshot,
+        disponible: stockActual,
+        solicitado: item.cantidad
+      };
     }
   }
   for (const item of items) {
@@ -817,6 +824,78 @@ async function getRealProductDetailsAndTotal(items, formaPago, cuotas) {
   };
 }
 
+// GET /api/shop/stock/check (Pre-check de stock rápido sin autenticación)
+app.get('/api/shop/stock/check', async (req, res) => {
+  try {
+    const rawItems = req.query.items;
+    if (!rawItems) return res.json({ ok: true });
+    
+    let items;
+    try {
+      items = JSON.parse(rawItems);
+    } catch (_) {
+      return res.json({ ok: true });
+    }
+
+    if (!Array.isArray(items) || items.length === 0) return res.json({ ok: true });
+
+    let products = [];
+    try {
+      const pPath = path.join(__dirname, 'data', 'products.json');
+      if (fs.existsSync(pPath)) {
+        products = JSON.parse(fs.readFileSync(pPath, 'utf-8'));
+      }
+    } catch (_) {
+      return res.json({ ok: true });
+    }
+
+    for (const item of items) {
+      const product = products.find(p => p.title === item.name);
+      const stockActual = product && product.stock !== undefined ? product.stock : (product && product.inStock === false ? 0 : 0);
+      if (stockActual < (item.qty || 1)) {
+        return res.json({
+          ok: false,
+          codigo: 'STOCK_INSUFICIENTE',
+          producto: item.name,
+          disponible: stockActual,
+          solicitado: item.qty || 1
+        });
+      }
+    }
+
+    return res.json({ ok: true });
+  } catch (e) {
+    return res.json({ ok: true });
+  }
+});
+
+// PATCH /api/shop/orders/:id/confirmar-retiro-efectivo (Cliente confirma que retirará en efectivo)
+app.patch('/api/shop/orders/:id/confirmar-retiro-efectivo', verifyCustomerToken, async (req, res) => {
+  try {
+    const orderId = parseInt(req.params.id, 10);
+    if (isNaN(orderId)) return res.status(400).json({ error: 'ID de pedido inválido.' });
+
+    const order = await prisma.pedido.findUnique({ where: { id: orderId } });
+    if (!order) return res.status(404).json({ error: 'Pedido no encontrado.' });
+    if (order.usuario_id !== req.user.id) return res.status(403).json({ error: 'No tenés permiso para modificar este pedido.' });
+    if (order.estado !== 'pendiente_revision') return res.status(400).json({ error: 'Este pedido ya no está en estado pendiente.' });
+
+    const limiteRetiro24h = new Date(Date.now() + 24 * 60 * 60 * 1000);
+    await prisma.pedido.update({
+      where: { id: orderId },
+      data: {
+        forma_pago: 'efectivo',
+        reservado_hasta: limiteRetiro24h
+      }
+    });
+
+    res.json({ ok: true, message: 'Pedido actualizado a retiro en efectivo.' });
+  } catch (e) {
+    console.error('Error al confirmar retiro efectivo:', e);
+    res.status(500).json({ error: 'Error interno del servidor.' });
+  }
+});
+
 // POST /api/shop/orders (Checkout/Reservas)
 app.post('/api/shop/orders', verifyCustomerToken, async (req, res) => {
   try {
@@ -846,6 +925,21 @@ app.post('/api/shop/orders', verifyCustomerToken, async (req, res) => {
       validated = await getRealProductDetailsAndTotal(items, forma_pago, cuotas);
     } catch (err) {
       return res.status(400).json({ error: err.message });
+    }
+
+    // ── VALIDACIÓN Y DESCUENTO ATÓMICO DE STOCK (Bajo Mutex - Anti Race Condition) ──
+    const stockResult = await withProductsMutex(async (products) => {
+      return validarYDescontarStock(products, validated.items);
+    });
+
+    if (!stockResult.ok) {
+      return res.status(400).json({ 
+        error: stockResult.error, 
+        codigo: 'STOCK_INSUFICIENTE',
+        producto: stockResult.producto,
+        disponible: stockResult.disponible,
+        solicitado: stockResult.solicitado
+      });
     }
 
     // ── VALIDACIÓN Y APLICACIÓN DE CUPÓN SERVER-SIDE (Anti-Manipulación) ──
@@ -891,32 +985,48 @@ app.post('/api/shop/orders', verifyCustomerToken, async (req, res) => {
 
     const totalFinal = subtotal_sin_descuento - monto_descuento;
 
-    // Crear el pedido en estado 'pendiente_revision'
-    const order = await prisma.pedido.create({
-      data: {
-        usuario_id: req.user.id,
-        estado: 'pendiente_revision',
-        entrega,
-        direccion: entrega === 'envio' ? direccion : null,
-        forma_pago,
-        cuotas: forma_pago === 'tarjeta' ? parseInt(cuotas, 10) : null,
-        total: totalFinal,
-        subtotal_sin_descuento: cuponCodigoFinal ? subtotal_sin_descuento : null,
-        cupon_codigo: cuponCodigoFinal,
-        cupon_tipo,
-        descuento_porcentaje,
-        monto_descuento: monto_descuento > 0 ? monto_descuento : null,
-        items: {
-          create: validated.items.map(item => ({
-            producto_id: item.producto_id,
-            nombre_snapshot: item.nombre_snapshot,
-            precio_unitario_snapshot: item.precio_unitario_snapshot,
-            cantidad: item.cantidad
-          }))
-        }
-      },
-      include: { items: true }
-    });
+    // Ventana de reserva: 60 minutos (1 hora) para transferencias, o 24 horas para retiro en local
+    const minutosHold = forma_pago === 'transferencia' ? 60 : 1440;
+    const reservado_hasta = new Date(Date.now() + minutosHold * 60 * 1000);
+
+    // Crear el pedido con stock ya descontado atómicamente y Rollback ante errores de base de datos
+    let order;
+    try {
+      order = await prisma.pedido.create({
+        data: {
+          usuario_id: req.user.id,
+          estado: 'pendiente_revision',
+          stock_descontado: true,
+          reservado_hasta,
+          entrega,
+          direccion: entrega === 'envio' ? direccion : null,
+          forma_pago,
+          cuotas: forma_pago === 'tarjeta' ? parseInt(cuotas, 10) : null,
+          total: totalFinal,
+          subtotal_sin_descuento: cuponCodigoFinal ? subtotal_sin_descuento : null,
+          cupon_codigo: cuponCodigoFinal,
+          cupon_tipo,
+          descuento_porcentaje,
+          monto_descuento: monto_descuento > 0 ? monto_descuento : null,
+          items: {
+            create: validated.items.map(item => ({
+              producto_id: item.producto_id,
+              nombre_snapshot: item.nombre_snapshot,
+              precio_unitario_snapshot: item.precio_unitario_snapshot,
+              cantidad: item.cantidad
+            }))
+          }
+        },
+        include: { items: true }
+      });
+    } catch (err) {
+      // Rollback: restaurar el stock que acabamos de descontar si falla la creación del pedido
+      await withProductsMutex(async (products) => {
+        restaurarStock(products, validated.items);
+      });
+      console.error('Error al crear pedido, stock restaurado:', err);
+      return res.status(500).json({ error: 'Error interno al registrar el pedido. El stock fue restaurado.' });
+    }
 
     // Incrementar uso del cupón (si se aplicó uno)
     if (cuponCodigoFinal) {
@@ -1633,7 +1743,10 @@ app.post('/api/shop/orders/:id/comprobante', verifyCustomerToken, (req, res) => 
         }
       });
 
-      // Si descontamos el stock, actualizar el estado del pedido a reservado y marcar stock_descontado
+      // Obtener usuario antes de procesar estados y correos para evitar ReferenceError
+      const usuario = await prisma.usuario.findUnique({ where: { id: req.user.id } });
+
+      // Si descontamos el stock en este paso (flujo fallback)
       if (stockDescontadoCorrectamente) {
         await prisma.pedido.update({
           where: { id: orderId },
@@ -1645,8 +1758,23 @@ app.post('/api/shop/orders/:id/comprobante', verifyCustomerToken, (req, res) => 
         });
       }
 
+      // Nuevo flujo: stock ya descontado al crear el pedido -> extender a 24h y pasar a 'reservado'
+      if (order.stock_descontado && !stockDescontadoCorrectamente) {
+        const limiteReserva24h = new Date(Date.now() + 24 * 60 * 60 * 1000);
+        await prisma.pedido.update({
+          where: { id: orderId },
+          data: {
+            estado: 'reservado',
+            reservado_hasta: limiteReserva24h
+          }
+        });
+        if (usuario) {
+          order.reservado_hasta = limiteReserva24h;
+          mail.enviarPedidoReservado(usuario.email, order, limiteReserva24h).catch(console.error);
+        }
+      }
+
       // Enviar correos en segundo plano
-      const usuario = await prisma.usuario.findUnique({ where: { id: req.user.id } });
       if (usuario) {
         mail.enviarComprobanteRecibido(usuario.email, order).catch(console.error);
         
@@ -3971,10 +4099,10 @@ async function liberarReservasVencidas() {
   try {
     const ahora = new Date();
     
-    // 1. Obtener pedidos vencidos en estado 'reservado'
+    // 1. Obtener pedidos vencidos en estado 'pendiente_revision' o 'reservado'
     const pedidosVencidos = await prisma.pedido.findMany({
       where: {
-        estado: 'reservado',
+        estado: { in: ['pendiente_revision', 'reservado'] },
         reservado_hasta: {
           lt: ahora
         }
@@ -4009,11 +4137,14 @@ async function liberarReservasVencidas() {
               }
             });
 
-            // Enviar mail de notificación de vencimiento al cliente
+            // Enviar mail de notificación de vencimiento al cliente con mensaje contextual
+            const motivoVencimiento = order.estado === 'pendiente_revision'
+              ? 'El tiempo de 60 minutos para subir el comprobante ha expirado.'
+              : 'El tiempo de reserva de 24 horas ha expirado sin que se complete el retiro o entrega de los productos.';
             mail.enviarPedidoRechazado(
               order.usuario.email,
               order,
-              'El tiempo de reserva de 24 horas ha expirado sin que se complete el retiro o entrega de los productos.'
+              motivoVencimiento
             ).catch(console.error);
 
             console.log(`  \x1b[32m⏰ [${logTime}] [CRON] Pedido #${order.id} liberado con éxito.\x1b[0m`);
@@ -4044,8 +4175,8 @@ async function liberarReservasVencidas() {
   }
 }
 
-// Programar cron para correr cada 1 hora: 0 * * * *
-cron.schedule('0 * * * *', liberarReservasVencidas);
+// Programar cron para correr cada 5 minutos: */5 * * * *
+cron.schedule('*/5 * * * *', liberarReservasVencidas);
 
 // ── TAREA PROGRAMADA: PURGA DE COMPROBANTES ANTIGUOS (>60 DÍAS) ──
 async function purgarComprobantesAntiguos() {

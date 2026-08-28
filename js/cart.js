@@ -6192,6 +6192,26 @@ onPixisDOMReady(() => {
 
   async function realizarReservaOnline() {
     const items = cart.map(i => ({ name: i.name, qty: i.qty }));
+    try {
+      const preCheck = await fetch(`/api/shop/stock/check?items=${encodeURIComponent(JSON.stringify(items))}`);
+      const preData = await preCheck.json();
+      if (!preData.ok && preData.codigo === 'STOCK_INSUFICIENTE') {
+        const itemEnCarrito = cart.find(p => p.name === preData.producto);
+        if (itemEnCarrito) {
+          if (preData.disponible > 0) {
+            itemEnCarrito.qty = preData.disponible;
+            alert(`⚠️ El stock de "${preData.producto}" cambió.\nSolo quedan ${preData.disponible} unidad(es). Ajustamos tu carrito.`);
+          } else {
+            cart = cart.filter(p => p.name !== preData.producto);
+            alert(`⚠️ "${preData.producto}" se agotó.\nFue removido de tu carrito.`);
+          }
+          saveCart();
+          renderCart();
+          return;
+        }
+      }
+    } catch (_) { /* no crítico: si el pre-check falla, el servidor valida igual */ }
+
     const entrega = document.getElementById('retiroLocal').checked ? 'retiro' : 'envio';
     const direccionInput = document.getElementById('clienteDireccion');
     const direccion = entrega === 'envio' ? (direccionInput ? direccionInput.value.trim() : '') : null;
@@ -6211,6 +6231,22 @@ onPixisDOMReady(() => {
       const data = await res.json();
       
       if (!res.ok) {
+        if (data.codigo === 'STOCK_INSUFICIENTE' && typeof data.disponible === 'number') {
+          // Auto-ajustar cantidad del producto conflictivo en el carrito
+          const itemEnCarrito = cart.find(p => p.name === data.producto);
+          if (itemEnCarrito) {
+            if (data.disponible > 0) {
+              itemEnCarrito.qty = data.disponible;
+              alert(`⚠️ ¡Atención con el stock!\n\nOtro comprador acaba de reservar unidades de "${data.producto}".\n\nSolo quedan ${data.disponible} unidad(es) disponible(s). Ajustamos tu carrito automáticamente a ${data.disponible} para que puedas completar tu compra.`);
+            } else {
+              cart = cart.filter(p => p.name !== data.producto);
+              alert(`⚠️ ¡Producto Agotado!\n\nOtro comprador acaba de reservar la última unidad disponible de "${data.producto}".\n\nLo hemos removido de tu carrito para que puedas continuar con el resto.`);
+            }
+            saveCart();
+            renderCart();
+            return;
+          }
+        }
         alert('Error al realizar la reserva: ' + (data.error || 'Intente nuevamente.'));
         return;
       }
@@ -6267,12 +6303,73 @@ onPixisDOMReady(() => {
     }
   };
 
+  let pixisHoldTimerInterval = null;
+
+  window.pixisCambiarModoAbono = function(modo) {
+    const tabTransf = document.getElementById('tabModoTransferencia');
+    const tabEfect = document.getElementById('tabModoEfectivoLocal');
+    const panelTransf = document.getElementById('panelAbonoTransferencia');
+    const panelEfect = document.getElementById('panelAbonoEfectivoLocal');
+    const formUpload = document.getElementById('formUploadComprobante');
+
+    if (modo === 'efectivo_local') {
+      if (tabTransf) { tabTransf.style.background = 'rgba(255,255,255,0.05)'; tabTransf.style.borderColor = 'rgba(255,255,255,0.2)'; tabTransf.style.color = '#aaa'; }
+      if (tabEfect) { tabEfect.style.background = 'rgba(0,230,118,0.15)'; tabEfect.style.borderColor = '#00e676'; tabEfect.style.color = '#00e676'; }
+      if (panelTransf) panelTransf.style.display = 'none';
+      if (panelEfect) panelEfect.style.display = 'block';
+      if (formUpload) formUpload.style.display = 'none';
+    } else {
+      if (tabTransf) { tabTransf.style.background = 'rgba(245,197,24,0.15)'; tabTransf.style.borderColor = 'var(--gold)'; tabTransf.style.color = '#fff'; }
+      if (tabEfect) { tabEfect.style.background = 'rgba(255,255,255,0.05)'; tabEfect.style.borderColor = 'rgba(255,255,255,0.2)'; tabEfect.style.color = '#aaa'; }
+      if (panelTransf) panelTransf.style.display = 'block';
+      if (panelEfect) panelEfect.style.display = 'none';
+      if (formUpload) formUpload.style.display = 'block';
+    }
+  };
+
+  window.pixisConfirmarRetiroEfectivoLocal = async function() {
+    const orderId = window.ultimoPedidoId;
+    if (!orderId) {
+      alert('⚠️ No se encontró el ID del pedido. Intenta nuevamente.');
+      return;
+    }
+    try {
+      const res = await fetch(`/api/shop/orders/${orderId}/confirmar-retiro-efectivo`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' }
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        alert('⚠️ ' + (data.error || 'No se pudo confirmar el retiro en efectivo.'));
+        return;
+      }
+    } catch (err) {
+      console.error('Error al confirmar retiro efectivo:', err);
+      alert('⚠️ Error de conexión al confirmar retiro en efectivo.');
+      return;
+    }
+    const modal = document.getElementById('modalUploadComprobante');
+    if (modal) {
+      modal.style.display = 'none';
+      modal.classList.remove('active');
+    }
+    if (pixisHoldTimerInterval) clearInterval(pixisHoldTimerInterval);
+    alert('✅ ¡Excelente! Tu reserva quedó guardada.\n\nUno de nuestros vendedores se comunicará para confirmar y coordinar tu retiro durante el día en nuestro local.');
+  };
+
   window.mostrarSeccionSubidaComprobante = function(orderId, total) {
     const modal = document.getElementById('modalUploadComprobante');
     if (modal) {
       document.getElementById('compOrderId').textContent = `#${orderId}`;
+      const compOrderIdEfectivo = document.getElementById('compOrderIdEfectivo');
+      if (compOrderIdEfectivo) compOrderIdEfectivo.textContent = `#${orderId}`;
       document.getElementById('compTotal').textContent = `$${total.toLocaleString('es-AR')}`;
       
+      const compMonto = document.getElementById('compMonto');
+      if (compMonto && total) {
+        compMonto.value = Number(total).toLocaleString('es-AR');
+      }
+
       // Limpiar inputs y alerts anteriores
       document.getElementById('compFile').value = '';
       document.getElementById('uploadProgressContainer').style.display = 'none';
@@ -6281,6 +6378,28 @@ onPixisDOMReady(() => {
       document.getElementById('uploadErrorMsg').style.display = 'none';
       document.getElementById('uploadSuccessMsg').style.display = 'none';
       
+      // Resetear a modo transferencia por defecto
+      pixisCambiarModoAbono('transferencia');
+
+      // Iniciar cuenta regresiva visual de 60 minutos (1 hora)
+      const clockEl = document.getElementById('compTimerHoldClock');
+      if (clockEl) {
+        if (pixisHoldTimerInterval) clearInterval(pixisHoldTimerInterval);
+        let segundosRestantes = 60 * 60; // 3600 segundos
+        const actualizarReloj = () => {
+          const m = Math.floor(segundosRestantes / 60);
+          const s = segundosRestantes % 60;
+          clockEl.textContent = `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+          if (segundosRestantes <= 0) {
+            clearInterval(pixisHoldTimerInterval);
+            clockEl.textContent = '00:00 (Vencido)';
+          }
+          segundosRestantes--;
+        };
+        actualizarReloj();
+        pixisHoldTimerInterval = setInterval(actualizarReloj, 1000);
+      }
+
       modal.style.display = 'flex';
       modal.classList.add('active');
     }
@@ -6292,6 +6411,7 @@ onPixisDOMReady(() => {
       modal.style.display = 'none';
       modal.classList.remove('active');
     }
+    if (pixisHoldTimerInterval) clearInterval(pixisHoldTimerInterval);
   };
 
   window.handleComprobanteUpload = async function(event) {
@@ -6581,6 +6701,11 @@ onPixisDOMReady(() => {
                 <i class="fas fa-credit-card"></i> Pendiente a confirmación. Le enviaremos el Link de pago${detalleCuotaStr} una vez confirmado.
               </div>`;
           }
+        } else if (order.estado === 'vencido') {
+          avisoPendienteTag = `
+            <div class="pedido-aviso-inline aviso-vencido-tag">
+              <i class="fas fa-clock"></i> Tu reserva se venció por falta de pago dentro del plazo establecido. El stock fue liberado.
+            </div>`;
         }
 
         return `

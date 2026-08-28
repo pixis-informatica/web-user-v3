@@ -1150,32 +1150,44 @@ function commitTextEdit() {
    EDITOR DE IMAGEN
 ════════════════════════════════════════════════════════════════ */
 function openImageEditor(imgEl) {
-  const currentSrc = imgEl.src || imgEl.getAttribute('srcset') || '';
+  // Función auxiliar para obtener ruta relativa limpia sin dominio ni query params de versionado
+  const cleanImgPath = (url) => {
+    if (!url) return '';
+    return url.replace(/^https?:\/\/[^\/]+\//, '').split('?')[0].split('#')[0].trim();
+  };
+
+  const currentRawSrc = imgEl.getAttribute('src') || imgEl.src || imgEl.getAttribute('srcset') || '';
+  const currentCleanSrc = cleanImgPath(currentRawSrc);
+
+  // Detectar si la imagen pertenece a una categoría del menú de productos
+  const catLink = imgEl.closest('.categorias-lista a');
+  const catIdFromData = imgEl.dataset.catId || (catLink?.getAttribute('href') || '').replace('#', '');
+  const isCatIcon = Boolean(catIdFromData && (imgEl.classList.contains('cat-icon-img') || catLink));
 
   const body = `
     <div class="panel-section">
       <div class="panel-section-title">🖼️ Vista previa</div>
-      <img src="${currentSrc}" id="imgPreviewModal" class="panel-img-preview" alt="Preview">
+      <img src="${currentRawSrc}" id="imgPreviewModal" class="panel-img-preview" alt="Preview">
     </div>
 
     <div class="panel-section">
       <div class="panel-section-title">📁 Archivo local</div>
       <div class="panel-field">
         <label class="panel-label">Seleccionar imagen del equipo</label>
-        <input type="file" id="imgFileInput" class="panel-input" accept="image/*"
+        <input type="file" id="imgFileInput" class="panel-input" accept="image/*,image/png,image/jpeg,image/webp,image/svg+xml,image/gif"
                style="padding:4px;font-size:11px;cursor:pointer;">
-        <div style="font-size:10px;color:#666;margin-top:2px;">Sube una foto directamente desde tu computadora.</div>
+        <div style="font-size:10px;color:#666;margin-top:2px;">Sube una foto directamente desde tu computadora (${isCatIcon ? 'se guardará en img/categorias/' : 'se guardará en img/uploads/'}).</div>
       </div>
     </div>
 
     <div class="panel-section">
       <div class="panel-section-title">🔗 URL de imagen</div>
       <div class="panel-field">
-        <label class="panel-label">Pegar URL externa</label>
+        <label class="panel-label">Ruta de la imagen</label>
         <input type="text" id="imgUrlInput" class="panel-input" 
-               placeholder="https://ejemplo.com/imagen.jpg"
-               value="${currentSrc}">
-        <div style="font-size:10px;color:#666;margin-top:2px;">O si prefieres, pega el enlace de una imagen que ya esté en la web.</div>
+               placeholder="img/uploads/foto.jpg"
+               value="${escHtml(currentCleanSrc)}">
+        <div style="font-size:10px;color:#666;margin-top:2px;">Ruta relativa o enlace web de la imagen.</div>
       </div>
       <button class="panel-btn" id="imgPreviewBtn">👁️ Ver preview</button>
     </div>
@@ -1186,15 +1198,16 @@ function openImageEditor(imgEl) {
           <label class="panel-label">Alt text (descripción SEO)</label>
           <input type="text" id="imgAltInput" class="panel-input" 
                  placeholder="Descripción de la imagen"
-                 value="${imgEl.alt || ''}">
+                 value="${escHtml(imgEl.alt || '')}">
           <div style="font-size:10px;color:#666;margin-top:2px;">Breve descripción de la imagen para mejorar el posicionamiento en Google.</div>
         </div>
       </div>
 
+      ${!isCatIcon ? `
       <div class="panel-section">
         <div class="panel-section-title">🔗 Enlace de destino (Link)</div>
         <div style="font-size:11px;color:#999;margin-bottom:12px;line-height:1.4;">
-          <strong>¿Qué es esto?</strong> Aquí puedes elegir qué sucede cuando alguien hace clic en esta imagen. Lo más común es usarla como un "botón" hacia una de tus promociones (Banners). Al seleccionar un banner aquí, la imagen redirigirá a los productos que tengan ese banner asignado.
+          <strong>¿Qué es esto?</strong> Aquí puedes elegir qué sucede cuando alguien hace clic en esta imagen. Lo más común es usarla como un "botón" hacia una de tus promociones (Banners).
         </div>
         <div class="panel-field" style="margin-bottom:8px;">
           <label class="panel-label">Vincular a un Banner Promocional existente:</label>
@@ -1206,17 +1219,15 @@ function openImageEditor(imgEl) {
               return `<option value="${escHtml(bId)}" ${isSelected}>${escHtml(bData.t)}</option>`;
             }).join('') : ''}
           </select>
-          <div style="font-size:10px;color:#888;margin-top:6px;font-style:italic;">
-            💡 <b>Nota:</b> Al elegir un banner aquí, solo se mostrarán los productos que hayas marcado previamente con ese mismo nombre.
-          </div>
         </div>
         <div class="panel-field">
-          <label class="panel-label">URL manual (se rellena solo si eliges un banner arriba)</label>
+          <label class="panel-label">URL manual</label>
           <input type="text" id="imgHrefInput" class="panel-input" 
                  placeholder="Ej: ?banner=navidad-2026 o https://google.com"
-                 value="${imgEl.closest('a')?.getAttribute('href') || ''}">
+                 value="${escHtml(imgEl.closest('a')?.getAttribute('href') || '')}">
         </div>
       </div>
+      ` : ''}
     `;
 
   const footer = `
@@ -1234,84 +1245,151 @@ function openImageEditor(imgEl) {
     // Mostrar preview inmediato en base64 mientras sube
     const reader = new FileReader();
     reader.onload = (e) => {
-      document.getElementById('imgPreviewModal').src = e.target.result;
+      const preview = document.getElementById('imgPreviewModal');
+      if (preview) preview.src = e.target.result;
     };
     reader.readAsDataURL(file);
 
-    // Subir al servidor para obtener ruta real (no base64)
+    // Subir al servidor para obtener ruta real
     try {
       window.PixisOverlay.showToast('📤 Subiendo imagen...', 'info', 2000);
-      const ext = file.name.split('.').pop() || 'jpg';
-      const filename = `img-${Date.now()}.${ext}`;
-      const res = await fetch(`/api/upload-image?filename=${encodeURIComponent(filename)}&folder=img/uploads`, {
+      const ext = (file.name.split('.').pop() || 'png').toLowerCase().replace(/[^a-z0-9]/g, '');
+      
+      let folder = 'img/uploads';
+      let filename = `img-${Date.now()}.${ext}`;
+
+      if (isCatIcon) {
+        folder = 'img/categorias';
+        const cleanCatId = catIdFromData.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]/g, '-').replace(/-+/g, '-');
+        filename = `cat-${cleanCatId}-${Date.now()}.${ext}`;
+      }
+
+      const res = await fetch(`/api/upload-image?filename=${encodeURIComponent(filename)}&folder=${encodeURIComponent(folder)}`, {
         method: 'POST',
         body: file
       });
       const data = await res.json();
       if (data.ok && data.url) {
         document.getElementById('imgUrlInput').value = data.url;
-        document.getElementById('imgPreviewModal').src = data.url;
+        const preview = document.getElementById('imgPreviewModal');
+        if (preview) preview.src = data.url;
         window.PixisOverlay.showToast('✅ Imagen subida: ' + data.url, 'success', 3000);
       } else {
-        window.PixisOverlay.showToast('⚠️ No se pudo subir al servidor. Verifique que el servidor esté corriendo.', 'warning', 4000);
-        // Fallback: dejar el campo vacío para forzar al usuario a usar URL
-        document.getElementById('imgUrlInput').value = '';
+        window.PixisOverlay.showToast('⚠️ No se pudo subir al servidor: ' + (data.error || ''), 'warning', 4000);
       }
     } catch (e) {
       window.PixisOverlay.showToast('⚠️ Error al subir imagen: ' + e.message, 'warning', 4000);
-      document.getElementById('imgUrlInput').value = '';
     }
   });
 
   // URL preview
   document.getElementById('imgPreviewBtn')?.addEventListener('click', () => {
     const url = document.getElementById('imgUrlInput').value.trim();
-    if (url) document.getElementById('imgPreviewModal').src = url;
+    if (url) {
+      const preview = document.getElementById('imgPreviewModal');
+      if (preview) preview.src = url;
+    }
   });
 
   // Aplicar
-  document.getElementById('imgApplyBtn')?.addEventListener('click', () => {
-    const newSrc = document.getElementById('imgUrlInput').value.trim();
+  document.getElementById('imgApplyBtn')?.addEventListener('click', async () => {
+    const rawSrc = document.getElementById('imgUrlInput').value.trim();
     const newAlt = document.getElementById('imgAltInput').value.trim();
-    const newHref = document.getElementById('imgHrefInput').value.trim();
+    const hrefInput = document.getElementById('imgHrefInput');
+    const newHref = hrefInput ? hrefInput.value.trim() : '';
 
-    if (!newSrc) {
+    if (!rawSrc) {
       window.PixisOverlay.showToast('Ingresá una URL o seleccioná un archivo', 'error');
       return;
     }
 
+    const cleanNewSrc = cleanImgPath(rawSrc);
+    const cleanOldSrc = currentCleanSrc;
+
+    // ── CASO A: Imagen de Categoría en el Menú de Productos ──
+    if (isCatIcon) {
+      const catId = catIdFromData;
+      const cat = (PixisEditor.data.categories || []).find(c => c.id === catId);
+      const stateCat = (window.PixisState?.state?.categories || []).find(c => c.id === catId);
+
+      // 🗑️ Eliminar la imagen anterior físicamente del servidor si pertenecía a img/categorias o img/uploads y cambió
+      const oldIconUrl = (cat && cat.customIcon) || cleanOldSrc;
+      if (oldIconUrl && (oldIconUrl.startsWith('img/categorias/') || oldIconUrl.startsWith('img/uploads/')) && oldIconUrl !== cleanNewSrc) {
+        try {
+          await fetch('/api/remove-image', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ url: oldIconUrl })
+          });
+        } catch (delErr) {
+          console.warn('[PixisEditor] No se pudo borrar el icono previo del servidor:', delErr);
+        }
+      }
+
+      if (cat) cat.customIcon = cleanNewSrc;
+      if (stateCat) stateCat.customIcon = cleanNewSrc;
+
+      // Sincronizar en el input del modal lateral si está abierto
+      const modalCustomInput = document.getElementById('editCatCustomIcon');
+      if (modalCustomInput) modalCustomInput.value = cleanNewSrc;
+
+      // Persistir via PixisState y refrescar DOM
+      if (window.PixisState) {
+        window.PixisState.pushHistory();
+        await window.PixisState.saveState();
+        window.PixisState.applyStateToDOM();
+      }
+
+      markUnsaved();
+      window.PixisOverlay.closeModal();
+      window.PixisOverlay.showToast('✅ Ícono de categoría actualizado y limpiado en disco', 'success');
+      return;
+    }
+
+    // ── CASO B: Imagen UI Normal ──
+    // 🗑️ Eliminar imagen previa del servidor si fue una subida personalizada en img/uploads
+    if (cleanOldSrc && cleanOldSrc.startsWith('img/uploads/') && cleanOldSrc !== cleanNewSrc) {
+      try {
+        await fetch('/api/remove-image', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ url: cleanOldSrc })
+        });
+      } catch (delErr) {
+        console.warn('[PixisEditor] No se pudo borrar la imagen previa del servidor:', delErr);
+      }
+    }
+
     // Actualizar DOM
-    imgEl.src = newSrc;
+    imgEl.src = cleanNewSrc;
     if (newAlt) imgEl.alt = newAlt;
     
     let aParent = imgEl.closest('a');
     if (newHref) {
       if (!aParent) {
-         // Envolver la imagen en un tag A si no existe
          aParent = document.createElement('a');
          imgEl.parentNode.insertBefore(aParent, imgEl);
          aParent.appendChild(imgEl);
       }
       aParent.href = newHref;
-      aParent.removeAttribute('onclick'); // Remover comportamiento estático del HTML
-    } else if (aParent && !newHref) {
-      // Si borró el href, quitamos el atributo
+      aParent.removeAttribute('onclick');
+    } else if (aParent && !newHref && !isCatIcon) {
       aParent.removeAttribute('href');
     }
 
     // Guardar via PixisState → JSON
     const id = imgEl.dataset.pixisId;
     if (id && window.PixisState) {
-      window.PixisState.updateState({ type: 'ui', path: ['images', id], value: { src: newSrc, alt: newAlt, href: newHref } })
+      window.PixisState.updateState({ type: 'ui', path: ['images', id], value: { src: cleanNewSrc, alt: newAlt, href: newHref } })
         .then(saved => markUnsaved());
     } else if (id) {
       if (!PixisEditor.data.ui.images) PixisEditor.data.ui.images = {};
-      PixisEditor.data.ui.images[id] = { src: newSrc, alt: newAlt, href: newHref };
+      PixisEditor.data.ui.images[id] = { src: cleanNewSrc, alt: newAlt, href: newHref };
       markUnsaved();
     }
 
     window.PixisOverlay.closeModal();
-    window.PixisOverlay.showToast('Imagen actualizada', 'success');
+    window.PixisOverlay.showToast('✅ Imagen actualizada', 'success');
   });
 }
 
@@ -2357,6 +2435,18 @@ window.PixisEditorAPI = {
       PixisEditor.data.products = PixisEditor.data.products.filter(p => p.category !== cat.id);
     }
 
+    // 🗑️ Eliminar imagen física del servidor si tenía customIcon
+    const oldIconUrl = cat.customIcon;
+    if (oldIconUrl && oldIconUrl.startsWith('img/categorias/')) {
+      try {
+        fetch('/api/remove-image', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ url: oldIconUrl })
+        }).catch(() => {});
+      } catch (_) {}
+    }
+
     // Eliminar la categoría
     PixisEditor.data.categories.splice(idx, 1);
 
@@ -2406,7 +2496,7 @@ window.PixisEditorAPI = {
    * @param {string} catId ID de la categoría
    */
   async editCategoryIcon(catId) {
-    const cat = PixisEditor.data.categories.find(c => c.id === catId);
+    const cat = (PixisEditor.data.categories || []).find(c => c.id === catId);
     if (!cat) {
       window.PixisOverlay.showToast(`Error: No se encontró la categoría ${catId}`, 'error');
       return;
@@ -2414,30 +2504,55 @@ window.PixisEditorAPI = {
 
     const fileInput = document.createElement('input');
     fileInput.type = 'file';
-    fileInput.accept = 'image/png';
+    fileInput.accept = 'image/*,image/png,image/jpeg,image/webp,image/svg+xml,image/gif';
     fileInput.onchange = async () => {
       const file = fileInput.files[0];
       if (!file) return;
 
-      window.PixisOverlay.showToast('Subiendo icono...', 'info');
+      window.PixisOverlay.showToast('Subiendo y actualizando icono...', 'info');
       try {
-        const filename = `cat-${catId.toLowerCase()}-${Date.now()}.png`;
+        const oldIconUrl = cat.customIcon;
+        const ext = (file.name.split('.').pop() || 'png').toLowerCase().replace(/[^a-z0-9]/g, '');
+        const cleanCatId = catId.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]/g, '-').replace(/-+/g, '-');
+        const filename = `cat-${cleanCatId}-${Date.now()}.${ext}`;
         const folder = 'img/categorias';
         
-        const res = await fetch(`/api/upload-image?folder=${folder}&filename=${filename}`, {
+        const res = await fetch(`/api/upload-image?folder=${encodeURIComponent(folder)}&filename=${encodeURIComponent(filename)}`, {
           method: 'POST',
           body: file
         });
         const json = await res.json();
 
         if (json.ok) {
+          // 🗑️ Eliminar automáticamente la imagen anterior del disco si pertenecía a img/categorias
+          if (oldIconUrl && oldIconUrl.startsWith('img/categorias/') && oldIconUrl !== json.url) {
+            try {
+              await fetch('/api/remove-image', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ url: oldIconUrl })
+              });
+            } catch (delErr) {
+              console.warn('[PixisEditor] No se pudo borrar el icono previo del servidor:', delErr);
+            }
+          }
+
           cat.customIcon = json.url;
+
+          // Sincronizar en el input del modal si está abierto
+          const modalCustomInput = document.getElementById('editCatCustomIcon');
+          if (modalCustomInput) modalCustomInput.value = json.url;
+
+          // Sincronizar con PixisState
           if (window.PixisState) {
+            const stateCat = (window.PixisState.state.categories || []).find(c => c.id === catId);
+            if (stateCat) stateCat.customIcon = json.url;
             window.PixisState.pushHistory();
             await window.PixisState.saveState();
             window.PixisState.applyStateToDOM();
           }
-          window.PixisOverlay.showToast('✅ Icono de categoría actualizado', 'success');
+
+          window.PixisOverlay.showToast('✅ Icono de categoría actualizado y limpiado', 'success');
           markUnsaved();
         } else {
           window.PixisOverlay.showToast(`Error: ${json.error}`, 'error');

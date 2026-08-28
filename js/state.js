@@ -1567,9 +1567,9 @@ window.PixisState = {
 
             // Prioridad para DESKTOP: 1. PNG Custom, 2. Icono mapeado, 3. Emoji original
             if (cat.customIcon) {
-              const iconVersion = window.PIXIS_VERSION || Date.now();
+              const iconVersion = isEditor ? Date.now() : (window.PIXIS_VERSION || Date.now());
               const iconUrl = cat.customIcon.includes('?') ? `${cat.customIcon}&v=${iconVersion}` : `${cat.customIcon}?v=${iconVersion}`;
-              iconHtml = `<img src="${iconUrl}" class="cat-icon-img" alt="${cat.name}">`;
+              iconHtml = `<img src="${iconUrl}" class="cat-icon-img" data-cat-id="${escStateHtml(cat.id)}" alt="${cat.name}">`;
             } else if (iconMap[cat.id]) {
               iconHtml = iconMap[cat.id];
             } else {
