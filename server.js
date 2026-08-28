@@ -1850,7 +1850,7 @@ app.post('/api/shop/orders/:id/comprobante', verifyCustomerToken, (req, res) => 
         });
         if (usuario) {
           order.reservado_hasta = limiteReserva24h;
-          mail.enviarPedidoReservado(usuario.email, order, limiteReserva24h).catch(console.error);
+          mail.enviarPedidoReservado(usuario.email, order).catch(console.error);
         }
       }
 
@@ -1860,7 +1860,7 @@ app.post('/api/shop/orders/:id/comprobante', verifyCustomerToken, (req, res) => 
         
         if (stockDescontadoCorrectamente && limiteReserva) {
           order.reservado_hasta = limiteReserva;
-          mail.enviarPedidoReservado(usuario.email, order, limiteReserva).catch(console.error);
+          mail.enviarPedidoReservado(usuario.email, order).catch(console.error);
         }
       }
       mail.notificarAdminComprobanteNuevo(orderId).catch(console.error);
@@ -2156,7 +2156,7 @@ app.post('/api/admin/orders/:id/confirm', verifyAdminToken, async (req, res) => 
 
     // 4. Enviar mail en segundo plano
     order.reservado_hasta = limiteReserva;
-    mail.enviarPedidoReservado(order.usuario.email, order, limiteReserva).catch(console.error);
+    mail.enviarPedidoReservado(order.usuario.email, order).catch(console.error);
 
     res.json({ ok: true, message: 'Pedido confirmado y stock reservado con éxito.' });
   } catch (e) {

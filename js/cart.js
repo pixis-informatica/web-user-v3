@@ -6379,8 +6379,11 @@ onPixisDOMReady(() => {
       document.getElementById('uploadErrorMsg').style.display = 'none';
       document.getElementById('uploadSuccessMsg').style.display = 'none';
       
-      // Resetear a modo transferencia por defecto
-      pixisCambiarModoAbono('transferencia');
+      // Mostrar directamente panel transferencia y formulario de subida
+      const panelTransf = document.getElementById('panelAbonoTransferencia');
+      const formUpload = document.getElementById('formUploadComprobante');
+      if (panelTransf) panelTransf.style.display = 'block';
+      if (formUpload) formUpload.style.display = 'block';
 
       // Iniciar cuenta regresiva visual sincronizada con reservado_hasta real
       const clockEl = document.getElementById('compTimerHoldClock');
@@ -6454,9 +6457,8 @@ onPixisDOMReady(() => {
     }
   };
 
-  // ── FUNCIÓN: Timers en vivo para todos los pedidos visibles ──
-
-  function iniciarLiveTimersPedidos() {
+  // ── FUNCIÓN: Timers en vivo para todos los pedidos visibles (Global) ──
+  window.iniciarLiveTimersPedidos = function() {
     if (pixisLiveTimerInterval) clearInterval(pixisLiveTimerInterval);
 
     const tick = () => {

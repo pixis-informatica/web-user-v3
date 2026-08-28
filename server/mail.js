@@ -274,15 +274,10 @@ async function enviarComprobanteRecibido(email, order) {
   return sendMail(email, `📎 Comprobante recibido — Pedido #${order.id}`, html);
 }
 
-// Pedido aprobado/reservado — incluye fecha exacta de vencimiento de 24hs
-async function enviarPedidoReservado(email, order, fechaLimiteRaw) {
-  const fechaFormateada = formatFechaHora(fechaLimiteRaw);
+// Pedido aprobado/reservado
+async function enviarPedidoReservado(email, order) {
   const html = wrapHtml('✅ Pedido Aprobado y Reservado', `
     <p>¡Excelente! Tu pedido fue aprobado y los productos están reservados a tu nombre.</p>
-    <div style="background: rgba(74, 222, 128, 0.1); border-left: 4px solid #4ade80; padding: 14px 16px; border-radius: 8px; margin: 16px 0;">
-      <p style="margin: 0; color: #4ade80; font-weight: 700; font-size: 14px;">📦 Reservado hasta: ${fechaFormateada}</p>
-      <p style="margin: 6px 0 0 0; color: #aaa; font-size: 12px;">Si no retirás o coordinás la entrega antes de esa fecha, la reserva se liberará automáticamente.</p>
-    </div>
     ${generarResumenPedidoHTML(order)}
     ${generarBloqueGarantiaHTML()}
   `);
