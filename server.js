@@ -274,6 +274,59 @@ function restaurarStock(products, items) {
   }
 }
 
+// ── CONFIGURACIÓN DINÁMICA DE TIEMPOS DE RESERVA ──
+
+const RESERVATION_DEFAULTS = {
+  reserva_transf_valor: '60',
+  reserva_transf_unidad: 'minutos',
+  reserva_efectivo_valor: '1440',
+  reserva_efectivo_unidad: 'minutos',
+  reserva_timer_msg: '⏳ Tiempo para transferir y asegurar pedido:',
+  reserva_efectivo_msg: 'Tu pedido quedará registrado con el stock apartado a la espera de confirmación de uno de nuestros vendedores.\n⚠️ Importante: Debes retirar tu pedido durante el día en nuestro horario comercial, ya que los precios pueden sufrir variaciones sin previo aviso si no son abonados previamente.'
+};
+
+async function getReservationConfig() {
+  try {
+    const claves = Object.keys(RESERVATION_DEFAULTS);
+    const rows = await prisma.configGlobal.findMany({
+      where: { clave: { in: claves } }
+    });
+    const map = {};
+    for (const row of rows) {
+      map[row.clave] = row.valor;
+    }
+    return {
+      transfValor:    parseInt(map.reserva_transf_valor, 10) || parseInt(RESERVATION_DEFAULTS.reserva_transf_valor, 10),
+      transfUnidad:   map.reserva_transf_unidad || RESERVATION_DEFAULTS.reserva_transf_unidad,
+      efectivoValor:  parseInt(map.reserva_efectivo_valor, 10) || parseInt(RESERVATION_DEFAULTS.reserva_efectivo_valor, 10),
+      efectivoUnidad: map.reserva_efectivo_unidad || RESERVATION_DEFAULTS.reserva_efectivo_unidad,
+      timerMsg:       map.reserva_timer_msg || RESERVATION_DEFAULTS.reserva_timer_msg,
+      efectivoMsg:    map.reserva_efectivo_msg || RESERVATION_DEFAULTS.reserva_efectivo_msg
+    };
+  } catch (e) {
+    console.error('Error al leer config de reserva, usando defaults:', e.message);
+    return {
+      transfValor:    60,
+      transfUnidad:   'minutos',
+      efectivoValor:  1440,
+      efectivoUnidad: 'minutos',
+      timerMsg:       RESERVATION_DEFAULTS.reserva_timer_msg,
+      efectivoMsg:    RESERVATION_DEFAULTS.reserva_efectivo_msg
+    };
+  }
+}
+
+function calcularTiempoHoldMs(valor, unidad) {
+  const v = (typeof valor === 'number' && valor > 0) ? valor : 60;
+  switch (unidad) {
+    case 'minutos':  return v * 60 * 1000;
+    case 'horas':    return v * 60 * 60 * 1000;
+    case 'dias':     return v * 24 * 60 * 60 * 1000;
+    case 'semanas':  return v * 7 * 24 * 60 * 60 * 1000;
+    default:         return v * 60 * 1000; // fallback seguro a minutos
+  }
+}
+
 // ── SEGURIDAD DE ACCESO AL EDITOR (BLOQUE 13 - Interceptar ?edit=true) ──
 app.use((req, res, next) => {
   // Si contiene el parámetro edit y es la página principal
@@ -869,6 +922,25 @@ app.get('/api/shop/stock/check', async (req, res) => {
   }
 });
 
+// GET /api/shop/reservation-config (Devuelve config de tiempos y mensajes al frontend del cliente)
+app.get('/api/shop/reservation-config', verifyCustomerToken, async (req, res) => {
+  try {
+    const config = await getReservationConfig();
+    res.json({
+      ok: true,
+      transf_valor: config.transfValor,
+      transf_unidad: config.transfUnidad,
+      efectivo_valor: config.efectivoValor,
+      efectivo_unidad: config.efectivoUnidad,
+      timer_msg: config.timerMsg,
+      efectivo_msg: config.efectivoMsg
+    });
+  } catch (e) {
+    console.error('Error al obtener config de reserva:', e);
+    res.status(500).json({ error: 'Error interno del servidor.' });
+  }
+});
+
 // PATCH /api/shop/orders/:id/confirmar-retiro-efectivo (Cliente confirma que retirará en efectivo)
 app.patch('/api/shop/orders/:id/confirmar-retiro-efectivo', verifyCustomerToken, async (req, res) => {
   try {
@@ -880,7 +952,9 @@ app.patch('/api/shop/orders/:id/confirmar-retiro-efectivo', verifyCustomerToken,
     if (order.usuario_id !== req.user.id) return res.status(403).json({ error: 'No tenés permiso para modificar este pedido.' });
     if (order.estado !== 'pendiente_revision') return res.status(400).json({ error: 'Este pedido ya no está en estado pendiente.' });
 
-    const limiteRetiro24h = new Date(Date.now() + 24 * 60 * 60 * 1000);
+    const reservaConfig = await getReservationConfig();
+    const holdMsEfectivo = calcularTiempoHoldMs(reservaConfig.efectivoValor, reservaConfig.efectivoUnidad);
+    const limiteRetiro24h = new Date(Date.now() + holdMsEfectivo);
     await prisma.pedido.update({
       where: { id: orderId },
       data: {
@@ -985,9 +1059,12 @@ app.post('/api/shop/orders', verifyCustomerToken, async (req, res) => {
 
     const totalFinal = subtotal_sin_descuento - monto_descuento;
 
-    // Ventana de reserva: 60 minutos (1 hora) para transferencias, o 24 horas para retiro en local
-    const minutosHold = forma_pago === 'transferencia' ? 60 : 1440;
-    const reservado_hasta = new Date(Date.now() + minutosHold * 60 * 1000);
+    // Ventana de reserva dinámica según configuración del panel de ventas
+    const reservaConfig = await getReservationConfig();
+    const holdMs = forma_pago === 'transferencia'
+      ? calcularTiempoHoldMs(reservaConfig.transfValor, reservaConfig.transfUnidad)
+      : calcularTiempoHoldMs(reservaConfig.efectivoValor, reservaConfig.efectivoUnidad);
+    const reservado_hasta = new Date(Date.now() + holdMs);
 
     // Crear el pedido con stock ya descontado atómicamente y Rollback ante errores de base de datos
     let order;
@@ -1052,6 +1129,7 @@ app.post('/api/shop/orders', verifyCustomerToken, async (req, res) => {
       message: 'Reserva registrada con éxito, pendiente de comprobante.',
       orderId: order.id,
       total: order.total,
+      reservado_hasta: order.reservado_hasta,
       subtotal_sin_descuento: order.subtotal_sin_descuento,
       monto_descuento: order.monto_descuento,
       cupon_codigo: order.cupon_codigo
@@ -1714,7 +1792,8 @@ app.post('/api/shop/orders/:id/comprobante', verifyCustomerToken, (req, res) => 
           return res.status(400).json({ error: stockResult.error });
         }
         stockDescontadoCorrectamente = true;
-        limiteReserva = new Date(Date.now() + 24 * 60 * 60 * 1000);
+        const reservaConfigComp = await getReservationConfig();
+        limiteReserva = new Date(Date.now() + calcularTiempoHoldMs(reservaConfigComp.efectivoValor, reservaConfigComp.efectivoUnidad));
       }
 
       // Comprimir imagen si es posible (reduce ~8MB a ~180KB)
@@ -1758,9 +1837,10 @@ app.post('/api/shop/orders/:id/comprobante', verifyCustomerToken, (req, res) => 
         });
       }
 
-      // Nuevo flujo: stock ya descontado al crear el pedido -> extender a 24h y pasar a 'reservado'
+      // Nuevo flujo: stock ya descontado al crear el pedido -> extender según config y pasar a 'reservado'
       if (order.stock_descontado && !stockDescontadoCorrectamente) {
-        const limiteReserva24h = new Date(Date.now() + 24 * 60 * 60 * 1000);
+        const reservaConfigExt = await getReservationConfig();
+        const limiteReserva24h = new Date(Date.now() + calcularTiempoHoldMs(reservaConfigExt.efectivoValor, reservaConfigExt.efectivoUnidad));
         await prisma.pedido.update({
           where: { id: orderId },
           data: {
@@ -3357,6 +3437,66 @@ app.post('/api/admin/settings/purge-storage', verifyAdminToken, async (req, res)
   }
 });
 
+// GET /api/admin/settings/reservation — Obtener configuración de tiempos y mensajes de reserva
+app.get('/api/admin/settings/reservation', verifyAdminToken, async (req, res) => {
+  try {
+    const config = await getReservationConfig();
+    res.json({
+      ok: true,
+      transf_valor: config.transfValor,
+      transf_unidad: config.transfUnidad,
+      efectivo_valor: config.efectivoValor,
+      efectivo_unidad: config.efectivoUnidad,
+      timer_msg: config.timerMsg,
+      efectivo_msg: config.efectivoMsg
+    });
+  } catch (e) {
+    console.error('Error al obtener config de reserva (admin):', e);
+    res.status(500).json({ error: 'Error interno del servidor.' });
+  }
+});
+
+// POST /api/admin/settings/reservation — Guardar configuración de tiempos y mensajes de reserva
+app.post('/api/admin/settings/reservation', verifyAdminToken, async (req, res) => {
+  try {
+    const { transf_valor, transf_unidad, efectivo_valor, efectivo_unidad, timer_msg, efectivo_msg } = req.body;
+
+    const unidadesValidas = ['minutos', 'horas', 'dias', 'semanas'];
+
+    const tv = parseInt(transf_valor, 10);
+    const ev = parseInt(efectivo_valor, 10);
+    if (!tv || tv <= 0) return res.status(400).json({ error: 'El tiempo de transferencia debe ser un número mayor a 0.' });
+    if (!ev || ev <= 0) return res.status(400).json({ error: 'El tiempo de efectivo debe ser un número mayor a 0.' });
+    if (!unidadesValidas.includes(transf_unidad)) return res.status(400).json({ error: 'Unidad de transferencia inválida.' });
+    if (!unidadesValidas.includes(efectivo_unidad)) return res.status(400).json({ error: 'Unidad de efectivo inválida.' });
+    if (!timer_msg || !timer_msg.trim()) return res.status(400).json({ error: 'El mensaje del temporizador no puede estar vacío.' });
+    if (!efectivo_msg || !efectivo_msg.trim()) return res.status(400).json({ error: 'El mensaje de retiro en efectivo no puede estar vacío.' });
+
+    const pares = [
+      { clave: 'reserva_transf_valor', valor: String(tv) },
+      { clave: 'reserva_transf_unidad', valor: transf_unidad },
+      { clave: 'reserva_efectivo_valor', valor: String(ev) },
+      { clave: 'reserva_efectivo_unidad', valor: efectivo_unidad },
+      { clave: 'reserva_timer_msg', valor: timer_msg.trim() },
+      { clave: 'reserva_efectivo_msg', valor: efectivo_msg.trim() }
+    ];
+
+    for (const par of pares) {
+      await prisma.configGlobal.upsert({
+        where: { clave: par.clave },
+        update: { valor: par.valor },
+        create: { clave: par.clave, valor: par.valor }
+      });
+    }
+
+    console.log('⏱️ [ADMIN] Configuración de tiempos de reserva actualizada.');
+    res.json({ ok: true, message: 'Configuración de tiempos y mensajes guardada correctamente.' });
+  } catch (e) {
+    console.error('Error al guardar config de reserva:', e);
+    res.status(500).json({ error: 'Error interno del servidor.' });
+  }
+});
+
 // GET /api/admin/settings/all — Cargar todos los datos actuales configurados
 app.get('/api/admin/settings/all', verifyAdminToken, async (req, res) => {
   try {
@@ -4137,10 +4277,20 @@ async function liberarReservasVencidas() {
               }
             });
 
-            // Enviar mail de notificación de vencimiento al cliente con mensaje contextual
-            const motivoVencimiento = order.estado === 'pendiente_revision'
-              ? 'El tiempo de 60 minutos para subir el comprobante ha expirado.'
-              : 'El tiempo de reserva de 24 horas ha expirado sin que se complete el retiro o entrega de los productos.';
+            // Enviar mail de notificación de vencimiento al cliente con mensaje contextual y tiempos dinámicos
+            let motivoVencimiento;
+            try {
+              const cfgSweep = await getReservationConfig();
+              const tiempoTransfStr = `${cfgSweep.transfValor} ${cfgSweep.transfUnidad}`;
+              const tiempoEfectivoStr = `${cfgSweep.efectivoValor} ${cfgSweep.efectivoUnidad}`;
+              motivoVencimiento = order.estado === 'pendiente_revision'
+                ? `El tiempo de ${tiempoTransfStr} para subir el comprobante ha expirado.`
+                : `El tiempo de reserva de ${tiempoEfectivoStr} ha expirado sin que se complete el retiro o entrega de los productos.`;
+            } catch (_) {
+              motivoVencimiento = order.estado === 'pendiente_revision'
+                ? 'El tiempo para subir el comprobante ha expirado.'
+                : 'El tiempo de reserva ha expirado sin que se complete el retiro o entrega de los productos.';
+            }
             mail.enviarPedidoRechazado(
               order.usuario.email,
               order,

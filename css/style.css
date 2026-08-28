@@ -9469,4 +9469,137 @@ body.light-mode .pedido-detalle-aviso-banner.aviso-tarjeta-banner {
   color: #7e22ce;
 }
 
+/* ── NUEVOS ESTILOS: TIMER BANNER, BOTONES DE PAGO Y FORMA DE PAGO (BLOQUE 4) ── */
+
+.pedido-card-pago {
+  margin-top: 4px;
+  font-size: 12px;
+  color: #9ca3af;
+}
+.pedido-card-pago span {
+  color: #d1d5db;
+  font-weight: 600;
+}
+
+.pedido-timer-banner {
+  margin-top: 8px;
+  padding: 8px 14px;
+  border-radius: 8px;
+  background: rgba(245, 158, 11, 0.1);
+  border: 1px solid rgba(245, 158, 11, 0.35);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: #fbbf24;
+}
+.pedido-timer-banner .timer-msg {
+  flex: 1;
+}
+.pedido-timer-banner .timer-clock {
+  font-family: 'Orbitron', monospace;
+  font-size: 14px;
+  letter-spacing: 1px;
+  color: #facc15;
+}
+
+.pedido-acciones-pago {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.btn-accion-transf {
+  padding: 9px 12px;
+  border: none;
+  border-radius: 8px;
+  background: linear-gradient(135deg, #7c3aed, #d97706);
+  color: #fff;
+  font-weight: 700;
+  font-size: 12px;
+  cursor: pointer;
+  transition: filter 0.2s, transform 0.15s;
+  font-family: 'Orbitron', sans-serif;
+}
+.btn-accion-transf:hover {
+  filter: brightness(1.15);
+  transform: translateY(-1px);
+}
+
+.btn-accion-efectivo {
+  padding: 9px 12px;
+  border: none;
+  border-radius: 8px;
+  background: linear-gradient(135deg, #059669, #10b981);
+  color: #fff;
+  font-weight: 700;
+  font-size: 12px;
+  cursor: pointer;
+  transition: filter 0.2s, transform 0.15s;
+  font-family: 'Orbitron', sans-serif;
+}
+.btn-accion-efectivo:hover {
+  filter: brightness(1.15);
+  transform: translateY(-1px);
+}
+
+/* Aviso vencido en lista */
+.pedido-aviso-inline.aviso-vencido-tag {
+  background: rgba(156, 163, 175, 0.12);
+  color: #9ca3af;
+  border: 1px solid rgba(156, 163, 175, 0.3);
+}
+
+/* Micro-animación pulse en badge pendiente */
+@keyframes pulsePendiente {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+.pedido-badge.estado-pendiente {
+  animation: pulsePendiente 2s ease-in-out infinite;
+}
+
+/* ── LIGHT MODE ── */
+body.light-mode .pedido-card-pago {
+  color: #64748b;
+}
+body.light-mode .pedido-card-pago span {
+  color: #334155;
+}
+
+body.light-mode .pedido-timer-banner {
+  background: rgba(245, 158, 11, 0.08);
+  border-color: rgba(217, 119, 6, 0.4);
+  color: #b45309;
+}
+body.light-mode .pedido-timer-banner .timer-clock {
+  color: #92400e;
+}
+
+body.light-mode .btn-accion-transf {
+  background: linear-gradient(135deg, #8b5cf6, #f59e0b);
+}
+
+body.light-mode .btn-accion-efectivo {
+  background: linear-gradient(135deg, #10b981, #34d399);
+}
+
+body.light-mode .pedido-acciones-pago {
+  gap: 10px;
+}
+
+body.light-mode .pedido-aviso-inline.aviso-vencido-tag {
+  background: #f1f5f9;
+  border-color: #cbd5e1;
+  color: #64748b;
+}
+
+/* Responsive: botones stack en mobile */
+@media (max-width: 480px) {
+  .pedido-acciones-pago {
+    grid-template-columns: 1fr;
+  }
+}
+
 

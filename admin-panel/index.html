@@ -254,6 +254,9 @@
         <button type="button" id="tabBtnSeguridad" class="tab-ajustes-btn" onclick="switchAjustesTab('seguridad')">
           <i class="fas fa-user-shield"></i><span>Seguridad & Acceso</span>
         </button>
+        <button type="button" id="tabBtnReserva" class="tab-ajustes-btn" onclick="switchAjustesTab('reserva')">
+          <i class="fas fa-clock"></i><span>Tiempos de Reserva</span>
+        </button>
       </div>
 
       <!-- ══════════════════════════════════════════════════════════ -->
@@ -535,6 +538,63 @@
 
         </div><!-- /ajustes-grid -->
       </div><!-- /tabContentSeguridad -->
+
+      <!-- ══════════════════════════════════════════════════════════ -->
+      <!-- PESTAÑA 5: TIEMPOS DE RESERVA Y PAGOS                   -->
+      <!-- ══════════════════════════════════════════════════════════ -->
+      <div id="tabContentReserva" class="ajustes-tab-content" style="display:none;">
+        <div class="ajustes-card" style="border: 1px solid rgba(245, 158, 11, 0.4); background: linear-gradient(135deg, rgba(245, 158, 11, 0.08), rgba(234, 179, 8, 0.05)); grid-column: 1 / -1;">
+          <h3 style="font-size: 1.05rem; color: #fbbf24; margin-bottom: 6px;"><i class="fas fa-clock"></i> Tiempos de Reserva y Pagos</h3>
+          <p class="ajustes-desc">Configurá los plazos que tienen tus clientes para realizar el pago por transferencia o retirar en efectivo, y personalizá los mensajes que ven durante el proceso.</p>
+
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 18px; margin-top: 14px;">
+            <div class="form-group">
+              <label for="reservaTransfValor" style="color: #c084fc;">⏱️ Plazo para Transferencia Web</label>
+              <span class="helper-text">💡 <strong>¿Qué es?</strong> El tiempo máximo que tiene el cliente para subir su comprobante de transferencia antes de que la reserva expire.<br>📋 <strong>Ejemplo:</strong> 60 minutos, 2 horas, 1 dia.</span>
+              <div style="display: flex; gap: 8px;">
+                <input type="number" id="reservaTransfValor" min="1" value="60" style="flex: 1; padding: 8px 12px; border-radius: 8px; border: 1px solid rgba(168, 85, 247, 0.35); background: rgba(255,255,255,0.05); color: #fff; font-size: 14px; font-family: 'Orbitron';">
+                <select id="reservaTransfUnidad" style="padding: 8px 12px; border-radius: 8px; border: 1px solid rgba(168, 85, 247, 0.35); background: rgba(255,255,255,0.05); color: #fff; font-size: 13px;">
+                  <option value="minutos">Minutos</option>
+                  <option value="horas">Horas</option>
+                  <option value="dias">Días</option>
+                  <option value="semanas">Semanas</option>
+                </select>
+              </div>
+            </div>
+            <div class="form-group">
+              <label for="reservaEfectivoValor" style="color: #4ade80;">💵 Plazo para Retiro en Efectivo</label>
+              <span class="helper-text">💡 <strong>¿Qué es?</strong> El tiempo máximo que tiene el cliente para pasar a retirar y abonar su pedido en el local.<br>📋 <strong>Ejemplo:</strong> 24 horas, 2 dias, 1 semana.</span>
+              <div style="display: flex; gap: 8px;">
+                <input type="number" id="reservaEfectivoValor" min="1" value="1440" style="flex: 1; padding: 8px 12px; border-radius: 8px; border: 1px solid rgba(74, 222, 128, 0.35); background: rgba(255,255,255,0.05); color: #fff; font-size: 14px; font-family: 'Orbitron';">
+                <select id="reservaEfectivoUnidad" style="padding: 8px 12px; border-radius: 8px; border: 1px solid rgba(74, 222, 128, 0.35); background: rgba(255,255,255,0.05); color: #fff; font-size: 13px;">
+                  <option value="minutos">Minutos</option>
+                  <option value="horas">Horas</option>
+                  <option value="dias">Días</option>
+                  <option value="semanas">Semanas</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <div class="form-group" style="margin-top: 16px;">
+            <label for="reservaTimerMsg" style="color: #fbbf24;">📝 Mensaje del Temporizador (visible para el cliente)</label>
+            <span class="helper-text">💡 Es el texto que aparece junto al reloj regresivo en "Mis Pedidos".</span>
+            <input type="text" id="reservaTimerMsg" value="⏳ Tiempo para transferir y asegurar pedido:" style="width: 100%; padding: 10px 14px; border-radius: 8px; border: 1px solid rgba(245, 158, 11, 0.35); background: rgba(255,255,255,0.05); color: #fff; font-size: 13px; box-sizing: border-box;">
+          </div>
+
+          <div class="form-group" style="margin-top: 14px;">
+            <label for="reservaEfectivoMsg" style="color: #4ade80;">📝 Mensaje de Retiro en Efectivo (visible para el cliente)</label>
+            <span class="helper-text">💡 Es el aviso que ve el cliente al seleccionar retiro en efectivo.</span>
+            <textarea id="reservaEfectivoMsg" rows="4" style="width: 100%; padding: 10px 14px; border-radius: 8px; border: 1px solid rgba(74, 222, 128, 0.35); background: rgba(255,255,255,0.05); color: #fff; font-size: 13px; resize: vertical; font-family: inherit; box-sizing: border-box;">Tu pedido quedará registrado con el stock apartado a la espera de confirmación de uno de nuestros vendedores.
+⚠️ Importante: Debes retirar tu pedido durante el día en nuestro horario comercial, ya que los precios pueden sufrir variaciones sin previo aviso si no son abonados previamente.</textarea>
+          </div>
+
+          <div style="margin-top: 18px; display: flex; gap: 10px; align-items: center;">
+            <button type="button" id="btnGuardarReserva" onclick="guardarConfigReservaAdmin()" class="btn-submit" style="padding: 10px 24px; font-size: 13px; background: linear-gradient(135deg, #f59e0b, #eab308); border: none; color: #000; font-weight: 700; border-radius: 8px; cursor: pointer; font-family: 'Orbitron';">💾 Guardar Configuración de Tiempos y Mensajes</button>
+            <span id="reservaGuardarMsg" style="display: none; font-size: 0.85rem; font-weight: 700;"></span>
+          </div>
+        </div>
+      </div><!-- /tabContentReserva -->
 
     </div><!-- /seccionAjustes -->
 

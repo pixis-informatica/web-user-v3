@@ -1759,7 +1759,7 @@ window.guardarAjustesSEO = async function(event) {
 
 // ── NAVEGACIÓN ENTRE PESTAÑAS DE AJUSTES (BLOQUE 2) ──
 window.switchAjustesTab = function(tabName) {
-  const tabs = ['storage', 'garantia', 'seo', 'seguridad'];
+  const tabs = ['storage', 'garantia', 'seo', 'seguridad', 'reserva'];
   tabs.forEach(t => {
     const btn = document.getElementById('tabBtn' + t.charAt(0).toUpperCase() + t.slice(1));
     const content = document.getElementById('tabContent' + t.charAt(0).toUpperCase() + t.slice(1));
@@ -1774,6 +1774,8 @@ window.switchAjustesTab = function(tabName) {
 
   if (tabName === 'storage') {
     cargarStorageStats();
+  } else if (tabName === 'reserva') {
+    cargarConfigReservaAdmin();
   }
 };
 
@@ -1839,5 +1841,69 @@ window.ejecutarLimpiezaDisco = async function() {
       msg.style.color = '#f87171';
       msg.textContent = '❌ Error de conexión con el servidor.';
     }
+  }
+};
+
+// ── CONFIGURACIÓN DE TIEMPOS DE RESERVA Y PAGOS (PESTAÑA 5) ──
+
+window.cargarConfigReservaAdmin = async function() {
+  try {
+    const res = await fetch('/api/admin/settings/reservation');
+    if (!res.ok) return;
+    const data = await res.json();
+    if (!data.ok) return;
+
+    const transfValor = document.getElementById('reservaTransfValor');
+    const transfUnidad = document.getElementById('reservaTransfUnidad');
+    const efectivoValor = document.getElementById('reservaEfectivoValor');
+    const efectivoUnidad = document.getElementById('reservaEfectivoUnidad');
+    const timerMsg = document.getElementById('reservaTimerMsg');
+    const efectivoMsg = document.getElementById('reservaEfectivoMsg');
+
+    if (transfValor) transfValor.value = data.transf_valor || 60;
+    if (transfUnidad) transfUnidad.value = data.transf_unidad || 'minutos';
+    if (efectivoValor) efectivoValor.value = data.efectivo_valor || 1440;
+    if (efectivoUnidad) efectivoUnidad.value = data.efectivo_unidad || 'minutos';
+    if (timerMsg) timerMsg.value = data.timer_msg || '';
+    if (efectivoMsg) efectivoMsg.value = data.efectivo_msg || '';
+  } catch (e) {
+    console.error('Error al cargar config de reserva:', e);
+  }
+};
+
+window.guardarConfigReservaAdmin = async function() {
+  const btn = document.getElementById('btnGuardarReserva');
+  const msg = document.getElementById('reservaGuardarMsg');
+
+  if (btn) { btn.disabled = true; btn.textContent = '⏳ Guardando...'; }
+  if (msg) msg.style.display = 'none';
+
+  const transf_valor = document.getElementById('reservaTransfValor')?.value;
+  const transf_unidad = document.getElementById('reservaTransfUnidad')?.value;
+  const efectivo_valor = document.getElementById('reservaEfectivoValor')?.value;
+  const efectivo_unidad = document.getElementById('reservaEfectivoUnidad')?.value;
+  const timer_msg = document.getElementById('reservaTimerMsg')?.value;
+  const efectivo_msg = document.getElementById('reservaEfectivoMsg')?.value;
+
+  try {
+    const res = await fetch('/api/admin/settings/reservation', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ transf_valor, transf_unidad, efectivo_valor, efectivo_unidad, timer_msg, efectivo_msg })
+    });
+    const data = await res.json();
+
+    if (btn) { btn.disabled = false; btn.textContent = '💾 Guardar Configuración de Tiempos y Mensajes'; }
+
+    if (!res.ok) {
+      if (msg) { msg.style.display = 'inline'; msg.style.color = '#f87171'; msg.textContent = '❌ ' + (data.error || 'Error al guardar.'); }
+      return;
+    }
+
+    if (msg) { msg.style.display = 'inline'; msg.style.color = '#4ade80'; msg.textContent = '✅ ' + (data.message || 'Configuración guardada.'); }
+  } catch (e) {
+    console.error('Error al guardar config de reserva:', e);
+    if (btn) { btn.disabled = false; btn.textContent = '💾 Guardar Configuración de Tiempos y Mensajes'; }
+    if (msg) { msg.style.display = 'inline'; msg.style.color = '#f87171'; msg.textContent = '❌ Error de conexión.'; }
   }
 };

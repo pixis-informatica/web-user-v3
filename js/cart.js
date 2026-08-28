@@ -6291,7 +6291,7 @@ onPixisDOMReady(() => {
         // Transferencia: el cliente debe subir el comprobante para que el stock se descuente
         alert(`🎉 ¡Reserva registrada con éxito! Pedido #${data.orderId}.\nPor favor sube tu comprobante de pago para confirmar la reserva.`);
         if (typeof mostrarSeccionSubidaComprobante === 'function') {
-          mostrarSeccionSubidaComprobante(data.orderId, data.total);
+          mostrarSeccionSubidaComprobante(data.orderId, data.total, data.reservado_hasta);
         }
       } else {
         // Efectivo / Tarjeta: el admin confirma la reserva de stock, el cliente solo espera
@@ -6304,6 +6304,7 @@ onPixisDOMReady(() => {
   };
 
   let pixisHoldTimerInterval = null;
+  let pixisLiveTimerInterval = null;
 
   window.pixisCambiarModoAbono = function(modo) {
     const tabTransf = document.getElementById('tabModoTransferencia');
@@ -6381,20 +6382,24 @@ onPixisDOMReady(() => {
       // Resetear a modo transferencia por defecto
       pixisCambiarModoAbono('transferencia');
 
-      // Iniciar cuenta regresiva visual de 60 minutos (1 hora)
+      // Iniciar cuenta regresiva visual sincronizada con reservado_hasta real
       const clockEl = document.getElementById('compTimerHoldClock');
       if (clockEl) {
         if (pixisHoldTimerInterval) clearInterval(pixisHoldTimerInterval);
-        let segundosRestantes = 60 * 60; // 3600 segundos
+        // Si se pasó reservadoHasta (3er param), sincronizar; si no, fallback a 60 min
+        const finReserva = arguments[2] ? new Date(arguments[2]).getTime() : (Date.now() + 60 * 60 * 1000);
         const actualizarReloj = () => {
-          const m = Math.floor(segundosRestantes / 60);
+          const segundosRestantes = Math.max(0, Math.floor((finReserva - Date.now()) / 1000));
+          const h = Math.floor(segundosRestantes / 3600);
+          const m = Math.floor((segundosRestantes % 3600) / 60);
           const s = segundosRestantes % 60;
-          clockEl.textContent = `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+          clockEl.textContent = h > 0
+            ? `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`
+            : `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
           if (segundosRestantes <= 0) {
             clearInterval(pixisHoldTimerInterval);
             clockEl.textContent = '00:00 (Vencido)';
           }
-          segundosRestantes--;
         };
         actualizarReloj();
         pixisHoldTimerInterval = setInterval(actualizarReloj, 1000);
@@ -6413,6 +6418,76 @@ onPixisDOMReady(() => {
     }
     if (pixisHoldTimerInterval) clearInterval(pixisHoldTimerInterval);
   };
+
+  // ── FUNCIÓN: Elegir Efectivo en Local desde Mis Pedidos ──
+
+  window.pixisElegirEfectivoLocal = async function(orderId) {
+    let mensajeEfectivo = 'Tu pedido quedará registrado con el stock apartado. Debes retirar durante el día en horario comercial. Los precios pueden variar si no son abonados previamente.\n\n¿Confirmar retiro en efectivo?';
+    try {
+      const cfgRes = await fetch('/api/shop/reservation-config', { credentials: 'include' });
+      if (cfgRes.ok) {
+        const cfgData = await cfgRes.json();
+        if (cfgData.ok && cfgData.efectivo_msg) {
+          mensajeEfectivo = cfgData.efectivo_msg + '\n\n¿Confirmar retiro en efectivo?';
+        }
+      }
+    } catch (_) { /* usar default */ }
+
+    if (!confirm(mensajeEfectivo)) return;
+
+    try {
+      const res = await fetch(`/api/shop/orders/${orderId}/confirmar-retiro-efectivo`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include'
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        alert('⚠️ ' + (data.error || 'No se pudo confirmar el retiro en efectivo.'));
+        return;
+      }
+      alert('✅ ¡Excelente! Tu reserva quedó guardada.\n\nUno de nuestros vendedores se comunicará para confirmar y coordinar tu retiro durante el día en nuestro local.');
+      await cargarMisPedidos();
+    } catch (err) {
+      console.error('Error al confirmar retiro efectivo:', err);
+      alert('⚠️ Error de conexión al confirmar retiro en efectivo.');
+    }
+  };
+
+  // ── FUNCIÓN: Timers en vivo para todos los pedidos visibles ──
+
+  function iniciarLiveTimersPedidos() {
+    if (pixisLiveTimerInterval) clearInterval(pixisLiveTimerInterval);
+
+    const tick = () => {
+      const timerEls = document.querySelectorAll('[data-timer-end]');
+      if (timerEls.length === 0) {
+        clearInterval(pixisLiveTimerInterval);
+        pixisLiveTimerInterval = null;
+        return;
+      }
+      const ahora = Date.now();
+      timerEls.forEach(el => {
+        const fin = new Date(el.dataset.timerEnd).getTime();
+        const segs = Math.max(0, Math.floor((fin - ahora) / 1000));
+        const clockEl = el.querySelector('.timer-clock') || el;
+        if (segs <= 0) {
+          clockEl.textContent = 'VENCIDO';
+          clockEl.style.color = '#f87171';
+        } else {
+          const h = Math.floor(segs / 3600);
+          const m = Math.floor((segs % 3600) / 60);
+          const s = segs % 60;
+          clockEl.textContent = h > 0
+            ? `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`
+            : `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+        }
+      });
+    };
+
+    tick();
+    pixisLiveTimerInterval = setInterval(tick, 1000);
+  }
 
   window.handleComprobanteUpload = async function(event) {
     event.preventDefault();
@@ -6554,6 +6629,10 @@ onPixisDOMReady(() => {
     return '$' + Number(num).toLocaleString('es-AR', { minimumFractionDigits: 2 });
   }
 
+  function fmtFormaPagoAmigable() {
+    return 'Efectivo (en local) / Transferencia (Unicamente abonando por la web)';
+  }
+
   // ── Verificar sesión activa de cliente ──
 
   async function verificarSesionCliente() {
@@ -6677,13 +6756,15 @@ onPixisDOMReady(() => {
               onclick="event.stopPropagation()">
           </label>` : '';
 
-        // Desglose de forma de pago y cuotas transparente
+        // Desglose de forma de pago unificado
         let formaPagoInfo = order.forma_pago || 'N/A';
         let avisoPendienteTag = '';
 
         if (order.forma_pago === 'tarjeta' && order.cuotas && order.cuotas > 0) {
           const valorCuota = order.total / order.cuotas;
           formaPagoInfo = `Tarjeta (${order.cuotas} cuotas de ${fmtPrecio(valorCuota)})`;
+        } else {
+          formaPagoInfo = fmtFormaPagoAmigable();
         }
 
         if (order.estado === 'pendiente_revision') {
@@ -6708,6 +6789,31 @@ onPixisDOMReady(() => {
             </div>`;
         }
 
+        // Timer en vivo para pedidos pendientes de transferencia
+        const timerVisible = order.estado === 'pendiente_revision' && order.forma_pago === 'transferencia' && order.reservado_hasta;
+        const timerHtml = timerVisible
+          ? `<div class="pedido-timer-banner" data-timer-order-id="${order.id}" data-timer-end="${order.reservado_hasta}">
+               <i class="fas fa-hourglass-half"></i>
+               <span class="timer-msg">⏳ Tiempo restante:</span>
+               <strong class="timer-clock">--:--</strong>
+             </div>`
+          : '';
+
+        // Botones de elección de pago (solo si pendiente + transferencia + sin comprobante)
+        const puedeElegirPago = order.estado === 'pendiente_revision'
+          && order.forma_pago === 'transferencia'
+          && (!order.comprobantes || order.comprobantes.length === 0);
+        const botonesAccion = puedeElegirPago
+          ? `<div class="pedido-acciones-pago" onclick="event.stopPropagation()">
+               <button class="btn-accion-transf" onclick="abrirModalComprobanteDesde(${order.id}, '${totalFmt}')">
+                 🏛️ Transferencia Web
+               </button>
+               <button class="btn-accion-efectivo" onclick="pixisElegirEfectivoLocal(${order.id})">
+                 💵 Efectivo en Local
+               </button>
+             </div>`
+          : '';
+
         return `
           <div class="pedido-card" onclick="verDetallePedido(${order.id})" role="button" tabindex="0"
                onkeydown="if(event.key==='Enter') verDetallePedido(${order.id})">
@@ -6717,8 +6823,11 @@ onPixisDOMReady(() => {
               <span class="pedido-card-date">${fechaFmt}</span>
               ${checkboxHtml}
             </div>
-            <div class="pedido-card-total">Total: <strong>${totalFmt}</strong> — ${formaPagoInfo}</div>
+            <div class="pedido-card-total">Total: <strong>${totalFmt}</strong></div>
+            <div class="pedido-card-pago">Forma de pago: <span>${formaPagoInfo}</span></div>
+            ${timerHtml}
             ${avisoPendienteTag}
+            ${botonesAccion}
             ${compTag}
           </div>`;
       }).join('');
@@ -6731,6 +6840,8 @@ onPixisDOMReady(() => {
             🗑 Eliminar seleccionados (0)
           </button>
         </div>`;
+
+      iniciarLiveTimersPedidos();
 
     } catch (err) {
       console.error('[MisPedidos] Error:', err);
@@ -6840,7 +6951,7 @@ onPixisDOMReady(() => {
 
       // Banner y desglose detallado de cuotas
       let avisoPendienteBanner = '';
-      let formaPagoDetalleStr = o.forma_pago || '—';
+      let formaPagoDetalleStr = (o.forma_pago === 'tarjeta') ? (o.forma_pago || '—') : fmtFormaPagoAmigable();
       let desgloseFinanciacionHtml = '';
 
       if (o.forma_pago === 'tarjeta' && o.cuotas && o.cuotas > 0) {
@@ -6876,9 +6987,35 @@ onPixisDOMReady(() => {
         }
       }
 
+      // Timer en vivo para el modal de detalle
+      const detalleTimerVisible = o.estado === 'pendiente_revision' && o.forma_pago === 'transferencia' && o.reservado_hasta;
+      const detalleTimerHtml = detalleTimerVisible
+        ? `<div class="pedido-timer-banner" id="detalleTimerBanner" data-timer-end="${o.reservado_hasta}" style="margin-bottom:12px;">
+             <i class="fas fa-hourglass-half"></i>
+             <span class="timer-msg">⏳ Tiempo restante:</span>
+             <strong id="detalleTimerClock" class="timer-clock">--:--</strong>
+           </div>`
+        : '';
+
+      // Botones de pago en el detalle
+      const detallePuedeElegir = o.estado === 'pendiente_revision'
+        && o.forma_pago === 'transferencia'
+        && (!o.comprobantes || o.comprobantes.length === 0);
+      const detalleBotonesHtml = detallePuedeElegir
+        ? `<div class="pedido-acciones-pago" style="margin-top:14px;">
+             <button class="btn-accion-transf" onclick="abrirModalComprobanteDesde(${o.id}, '${fmtPrecio(o.total)}')">
+               🏛️ Transferencia Web
+             </button>
+             <button class="btn-accion-efectivo" onclick="pixisElegirEfectivoLocal(${o.id})">
+               💵 Efectivo en Local
+             </button>
+           </div>`
+        : '';
+
       contenido.innerHTML = `
         ${badgeHtml}
         <br>
+        ${detalleTimerHtml}
         ${reservaAlert}
         ${motivo}
         ${avisoPendienteBanner}
@@ -6901,7 +7038,11 @@ onPixisDOMReady(() => {
           <tbody>${itemsRows}</tbody>
         </table>
         ${compsList}
+        ${detalleBotonesHtml}
         ${btnComp}`;
+
+      // Re-iniciar timers para que el del detalle también se actualice
+      iniciarLiveTimersPedidos();
 
     } catch (err) {
       console.error('[DetallePedido] Error:', err);
