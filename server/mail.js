@@ -276,14 +276,14 @@ async function enviarComprobanteRecibido(email, order) {
   return sendMail(email, `📎 Comprobante recibido — Pedido #${order.id}`, html);
 }
 
-// Pedido aprobado/reservado
+// Pedido aprobado/reservado — Compra Realizada
 async function enviarPedidoReservado(email, order) {
-  const html = wrapHtml('✅ Pedido Aprobado y Reservado', `
-    <p>¡Excelente! Tu pedido fue aprobado y los productos están reservados a tu nombre.</p>
+  const html = wrapHtml('🛍️ Compra Realizada, Tus productos están listos para que los pases a retirar', `
+    <p>¡Excelente! Tu compra fue confirmada con éxito y tus productos ya están listos para que los pases a retirar por nuestra sucursal. 🛍️✨</p>
     ${generarResumenPedidoHTML(order)}
     ${generarBloqueGarantiaHTML()}
   `);
-  return sendMail(email, `✅ Pedido #${order.id} aprobado y reservado — Pixis Informática`, html);
+  return sendMail(email, `🛍️ Compra Realizada — Pedido #${order.id} listo para retirar — Pixis Informática`, html);
 }
 
 // Pedido listo para retirar en local

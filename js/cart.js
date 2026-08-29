@@ -6608,7 +6608,7 @@ onPixisDOMReady(() => {
   const ESTADO_LABELS = {
     pendiente_revision: { texto: 'Pendiente ⏳', cls: 'estado-pendiente'  },
     pendiente:   { texto: 'Pendiente de pago',    cls: 'estado-pendiente'  },
-    reservado:   { texto: 'Reservado ✔',          cls: 'estado-reservado'  },
+    reservado:   { texto: 'Reservado, listo para retirar', cls: 'estado-reservado'  },
     completado:  { texto: 'Entregado 🎉',          cls: 'estado-completado' },
     rechazado:   { texto: 'Rechazado ✖',          cls: 'estado-rechazado'  },
     vencido:     { texto: 'Reserva vencida ⏰',    cls: 'estado-vencido'    },
@@ -6744,13 +6744,12 @@ onPixisDOMReady(() => {
         let { texto: estadoTexto, cls: estadoCls } = ESTADO_LABELS[order.estado] || { texto: order.estado, cls: '' };
         
         if (order.estado === 'reservado') {
-          if (order.forma_pago === 'transferencia') {
-            const tieneCompSinRevisar = order.comprobantes && order.comprobantes.some(c => !c.revisado_en);
-            if (tieneCompSinRevisar) {
-              estadoTexto = "Reservado, pendiente a comprobar el pago realizado";
-            } else {
-              estadoTexto = "Reservado, listo para retirar";
-            }
+          const tieneCompSinRevisar = order.forma_pago === 'transferencia'
+            && order.comprobantes && order.comprobantes.some(c => !c.revisado_en);
+          if (tieneCompSinRevisar) {
+            estadoTexto = "Reservado, pendiente a comprobar el pago realizado";
+          } else {
+            estadoTexto = "Reservado, listo para retirar";
           }
         }
 
@@ -6892,21 +6891,8 @@ onPixisDOMReady(() => {
       }
       const o = data.order;
 
-      // Alerta de tiempo restante si está reservado
+      // Alerta de tiempo restante (eliminada para pedidos ya reservados/abonados)
       let reservaAlert = '';
-      if (o.estado === 'reservado' && o.reservado_hasta) {
-        const msRestantes = new Date(o.reservado_hasta) - Date.now();
-        if (msRestantes > 0) {
-          const horas   = Math.floor(msRestantes / 3600000);
-          const minutos = Math.floor((msRestantes % 3600000) / 60000);
-          reservaAlert = `
-            <div class="pedido-vencimiento-alert">
-              <i class="fas fa-clock"></i>
-              Reserva vigente por <strong>${horas}h ${minutos}min</strong>.
-              Enviá tu comprobante antes de que expire.
-            </div>`;
-        }
-      }
 
       // Tabla de ítems con precio real adaptado al medio de pago / cuotas (retrocompatible)
       const sumaItemsBase = (o.items || []).reduce((acc, it) => acc + ((it.precio_unitario_snapshot || 0) * (it.cantidad || 1)), 0);
@@ -6954,10 +6940,11 @@ onPixisDOMReady(() => {
             <i class="fas fa-times-circle"></i> <strong>Motivo del rechazo:</strong> ${o.motivo_rechazo}
           </div>` : '';
 
-      // Badge de estado personalizado para transferencias
+      // Badge de estado personalizado para pedidos
       let badgeHtml = fmtEstado(o.estado);
-      if (o.estado === 'reservado' && o.forma_pago === 'transferencia') {
-        const tieneCompSinRevisar = o.comprobantes && o.comprobantes.some(c => !c.revisado_en);
+      if (o.estado === 'reservado') {
+        const tieneCompSinRevisar = o.forma_pago === 'transferencia'
+          && o.comprobantes && o.comprobantes.some(c => !c.revisado_en);
         const texto = tieneCompSinRevisar
           ? "Reservado, pendiente a comprobar el pago realizado"
           : "Reservado, listo para retirar";
