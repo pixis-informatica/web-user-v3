@@ -470,7 +470,7 @@ function renderOrders() {
         
         <div class="order-meta">
           <h4>Detalles de Entrega y Pago:</h4>
-          <div class="info-item"><span>Entrega:</span> ${order.entrega === 'envio' ? `Envío a domicilio` : `Retiro por sucursal`}</div>
+          <div class="info-item"><span>Entrega:</span> ${(order.forma_pago === 'efectivo' || order.entrega === 'retiro') ? 'Cliente Retira en nuestra Sucursal' : (order.entrega === 'envio' ? 'Envío a domicilio, Pendiente a Consultar costos de envío.' : (order.entrega || '—'))}</div>
           ${order.direccion ? `<div class="info-item"><span>Dirección:</span> ${order.direccion}</div>` : ''}
           <div class="info-item"><span>Provincia:</span> ${order.usuario?.provincia || '—'}</div>
           <div class="info-item"><span>Localidad:</span> ${order.usuario?.localidad || '—'}</div>
@@ -608,11 +608,19 @@ function switchMainTab(tab) {
   }
 
   // Control de visibilidad inteligente del botón Reset Total Pedidos (Solo visible si estamos DENTRO de la pestaña Ajustes)
+  const btnFavicon = document.getElementById('btnFaviconModal');
   if (btnReset) {
     if (tab === 'ajustes' && ajustesUnlocked) {
       btnReset.style.display = 'inline-flex';
     } else {
       btnReset.style.display = 'none';
+    }
+  }
+  if (btnFavicon) {
+    if (tab === 'ajustes' && ajustesUnlocked) {
+      btnFavicon.style.display = 'inline-flex';
+    } else {
+      btnFavicon.style.display = 'none';
     }
   }
 
@@ -1907,3 +1915,185 @@ window.guardarConfigReservaAdmin = async function() {
     if (msg) { msg.style.display = 'inline'; msg.style.color = '#f87171'; msg.textContent = '❌ Error de conexión.'; }
   }
 };
+
+// =====================================================================
+// ── GESTIÓN DE ÍCONOS DE PESTAÑA (FAVICONS) ──────────────────────────
+// =====================================================================
+let faviconConfigState = {
+  slot1: null,
+  slot2: null,
+  web_assigned: 'default',
+  admin_assigned: 'default'
+};
+
+window.abrirModalFaviconManager = async function() {
+  const modal = document.getElementById('modalFaviconManager');
+  if (!modal) return;
+  modal.style.display = 'flex';
+  await cargarFaviconConfigAdmin();
+};
+
+window.cerrarModalFaviconManager = function() {
+  const modal = document.getElementById('modalFaviconManager');
+  if (modal) modal.style.display = 'none';
+  const msg = document.getElementById('msgFaviconSave');
+  if (msg) msg.style.display = 'none';
+};
+
+window.cargarFaviconConfigAdmin = async function() {
+  try {
+    const res = await fetch('/api/shop/favicon-config');
+    const data = await res.json();
+    if (data && data.ok) {
+      faviconConfigState = data;
+      renderFaviconUI();
+      if (data.admin_favicon) {
+        aplicarFaviconEnNavegador(data.admin_favicon);
+      }
+    }
+  } catch (err) {
+    console.error('Error al cargar config de favicons:', err);
+  }
+};
+
+function renderFaviconUI() {
+  const defaultIcon = '../img/logo_pixis.png';
+  
+  // Slot 1
+  const prev1 = document.getElementById('previewSlot1');
+  const badge1 = document.getElementById('badgeSlot1');
+  if (faviconConfigState.slots && faviconConfigState.slots.slot1) {
+    if (prev1) { prev1.src = faviconConfigState.slots.slot1.url; prev1.style.opacity = '1'; }
+    if (badge1) { badge1.textContent = 'Activo'; badge1.style.background = 'rgba(56,189,248,0.2)'; badge1.style.color = '#38bdf8'; }
+  } else {
+    if (prev1) { prev1.src = defaultIcon; prev1.style.opacity = '0.35'; }
+    if (badge1) { badge1.textContent = 'Vacío'; badge1.style.background = 'rgba(255,255,255,0.1)'; badge1.style.color = '#aaa'; }
+  }
+
+  // Slot 2
+  const prev2 = document.getElementById('previewSlot2');
+  const badge2 = document.getElementById('badgeSlot2');
+  if (faviconConfigState.slots && faviconConfigState.slots.slot2) {
+    if (prev2) { prev2.src = faviconConfigState.slots.slot2.url; prev2.style.opacity = '1'; }
+    if (badge2) { badge2.textContent = 'Activo'; badge2.style.background = 'rgba(168,85,247,0.2)'; badge2.style.color = '#c084fc'; }
+  } else {
+    if (prev2) { prev2.src = defaultIcon; prev2.style.opacity = '0.35'; }
+    if (badge2) { badge2.textContent = 'Vacío'; badge2.style.background = 'rgba(255,255,255,0.1)'; badge2.style.color = '#aaa'; }
+  }
+
+  // Selects
+  const selWeb = document.getElementById('selectFaviconWeb');
+  const selAdmin = document.getElementById('selectFaviconAdmin');
+  if (selWeb) selWeb.value = faviconConfigState.web_assigned || 'default';
+  if (selAdmin) selAdmin.value = faviconConfigState.admin_assigned || 'default';
+
+  actualizarPreviewsPestanas();
+}
+
+window.actualizarPreviewsPestanas = function() {
+  const defaultIcon = '../img/logo_pixis.png';
+  const selWeb = document.getElementById('selectFaviconWeb')?.value || 'default';
+  const selAdmin = document.getElementById('selectFaviconAdmin')?.value || 'default';
+
+  const mockWeb = document.getElementById('tabMockWebIcon');
+  const mockAdmin = document.getElementById('tabMockAdminIcon');
+
+  let urlWeb = defaultIcon;
+  if (selWeb === 'slot1' && faviconConfigState.slots?.slot1) urlWeb = faviconConfigState.slots.slot1.url;
+  else if (selWeb === 'slot2' && faviconConfigState.slots?.slot2) urlWeb = faviconConfigState.slots.slot2.url;
+
+  let urlAdmin = defaultIcon;
+  if (selAdmin === 'slot1' && faviconConfigState.slots?.slot1) urlAdmin = faviconConfigState.slots.slot1.url;
+  else if (selAdmin === 'slot2' && faviconConfigState.slots?.slot2) urlAdmin = faviconConfigState.slots.slot2.url;
+
+  if (mockWeb) mockWeb.src = urlWeb;
+  if (mockAdmin) mockAdmin.src = urlAdmin;
+};
+
+window.subirFaviconSlot = async function(slot, inputEl) {
+  if (!inputEl.files || inputEl.files.length === 0) return;
+  const file = inputEl.files[0];
+
+  const formData = new FormData();
+  formData.append('slot', slot);
+  formData.append('file', file);
+
+  try {
+    const res = await fetch('/api/admin/favicons/upload', {
+      method: 'POST',
+      body: formData
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      alert('⚠️ ' + (data.error || 'Error al subir el ícono.'));
+      return;
+    }
+    inputEl.value = '';
+    await cargarFaviconConfigAdmin();
+  } catch (err) {
+    console.error('Error al subir favicon:', err);
+    alert('⚠️ Error de conexión al subir la imagen.');
+  }
+};
+
+window.eliminarFaviconSlot = async function(slot) {
+  if (!confirm(`¿Eliminar de forma permanente la imagen de ${slot === 'slot1' ? 'Ícono 1' : 'Ícono 2'} y liberar espacio en disco?`)) return;
+
+  try {
+    const res = await fetch(`/api/admin/favicons/${slot}`, {
+      method: 'DELETE'
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      alert('⚠️ ' + (data.error || 'No se pudo eliminar el ícono.'));
+      return;
+    }
+    await cargarFaviconConfigAdmin();
+  } catch (err) {
+    console.error('Error al eliminar favicon:', err);
+    alert('⚠️ Error de conexión al eliminar.');
+  }
+};
+
+window.guardarFaviconConfigAdmin = async function() {
+  const web_assigned = document.getElementById('selectFaviconWeb')?.value || 'default';
+  const admin_assigned = document.getElementById('selectFaviconAdmin')?.value || 'default';
+  const btn = document.getElementById('btnGuardarFaviconConfig');
+  const msg = document.getElementById('msgFaviconSave');
+
+  if (btn) { btn.disabled = true; btn.textContent = 'Guardando...'; }
+
+  try {
+    const res = await fetch('/api/admin/favicons/config', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ web_assigned, admin_assigned })
+    });
+    const data = await res.json();
+
+    if (btn) { btn.disabled = false; btn.textContent = '💾 Guardar Asignaciones'; }
+
+    if (!res.ok) {
+      if (msg) { msg.style.display = 'inline'; msg.style.color = '#f87171'; msg.textContent = '❌ ' + (data.error || 'Error al guardar.'); }
+      return;
+    }
+
+    if (msg) { msg.style.display = 'inline'; msg.style.color = '#4ade80'; msg.textContent = '✅ ' + (data.message || 'Asignaciones guardadas.'); }
+    await cargarFaviconConfigAdmin();
+  } catch (err) {
+    console.error('Error al guardar asignaciones de favicon:', err);
+    if (btn) { btn.disabled = false; btn.textContent = '💾 Guardar Asignaciones'; }
+    if (msg) { msg.style.display = 'inline'; msg.style.color = '#f87171'; msg.textContent = '❌ Error de conexión.'; }
+  }
+};
+
+function aplicarFaviconEnNavegador(url) {
+  if (!url) return;
+  const f = document.getElementById('adminFavicon');
+  const s = document.getElementById('adminShortcutIcon');
+  if (f) f.href = url;
+  if (s) s.href = url;
+}
+
+// Inicializar favicon de admin al cargar panel
+cargarFaviconConfigAdmin();

@@ -6451,6 +6451,12 @@ onPixisDOMReady(() => {
       }
       alert('✅ ¡Excelente! Tu reserva quedó guardada.\n\nUno de nuestros vendedores se comunicará para confirmar y coordinar tu retiro durante el día en nuestro local.');
       await cargarMisPedidos();
+      const vistaDetalle = document.getElementById('vistaDetallePedido');
+      if (vistaDetalle && vistaDetalle.style.display !== 'none') {
+        if (typeof verDetallePedido === 'function') {
+          verDetallePedido(orderId);
+        }
+      }
     } catch (err) {
       console.error('Error al confirmar retiro efectivo:', err);
       alert('⚠️ Error de conexión al confirmar retiro en efectivo.');
@@ -6633,6 +6639,13 @@ onPixisDOMReady(() => {
 
   function fmtFormaPagoAmigable() {
     return 'Efectivo (en local) / Transferencia (Unicamente abonando por la web)';
+  }
+
+  function fmtTipoEntrega(entrega, forma_pago) {
+    if (forma_pago === 'efectivo' || entrega === 'retiro') {
+      return 'Cliente Retira en nuestra Sucursal';
+    }
+    return entrega === 'envio' ? 'Envío a domicilio, Pendiente a Consultar costos de envío.' : (entrega || '—');
   }
 
   // ── Verificar sesión activa de cliente ──
@@ -7025,7 +7038,7 @@ onPixisDOMReady(() => {
           Fecha: <span>${fmtFecha(o.creado_en)}</span><br>
           Forma de pago: <span>${formaPagoDetalleStr}</span><br>
           ${desgloseFinanciacionHtml}
-          Tipo de entrega: <span>${o.entrega || '—'}</span><br>
+          Tipo de entrega: <span>${fmtTipoEntrega(o.entrega, o.forma_pago)}</span><br>
           Total del pedido: <span style="color:#f5c518;font-weight:700;">${fmtPrecio(o.total)}</span>
         </div>
         <table class="pedido-items-table">

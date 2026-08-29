@@ -959,6 +959,7 @@ app.patch('/api/shop/orders/:id/confirmar-retiro-efectivo', verifyCustomerToken,
       where: { id: orderId },
       data: {
         forma_pago: 'efectivo',
+        entrega: 'retiro',
         reservado_hasta: limiteRetiro24h
       }
     });
@@ -1590,7 +1591,7 @@ app.get('/api/admin/orders/:id/export-pxgres', async (req, res) => {
       monto_descuento: montoDescuento,
       monto_efectivo: montoEfectivo,
       monto_transferencia: montoTransfTarjeta,
-      entrega: order.entrega === 'envio' ? 'Envío a domicilio' : 'Retiro por sucursal',
+      entrega: (order.forma_pago === 'efectivo' || order.entrega === 'retiro') ? 'Cliente Retira en nuestra Sucursal' : (order.entrega === 'envio' ? 'Envío a domicilio, Pendiente a Consultar costos de envío.' : 'Cliente Retira en nuestra Sucursal'),
       forma_pago: (order.forma_pago || 'efectivo').toUpperCase(),
       cuotas: order.cuotas || 1,
       total: order.total,
@@ -3453,6 +3454,187 @@ app.get('/api/admin/settings/reservation', verifyAdminToken, async (req, res) =>
   } catch (e) {
     console.error('Error al obtener config de reserva (admin):', e);
     res.status(500).json({ error: 'Error interno del servidor.' });
+  }
+});
+
+// ── GESTIÓN DE FAVICONS / ÍCONOS DE PESTAÑA CON DESTRUCCIÓN PERMANENTE (CERO BASURA) ──
+const FAVICONS_DIR = path.join(__dirname, 'img', 'favicons');
+
+function ensureFaviconsDir() {
+  if (!fs.existsSync(FAVICONS_DIR)) {
+    fs.mkdirSync(FAVICONS_DIR, { recursive: true });
+  }
+}
+
+function destruirArchivosSlot(slot) {
+  ensureFaviconsDir();
+  try {
+    const files = fs.readdirSync(FAVICONS_DIR);
+    for (const f of files) {
+      if (f.startsWith(`favicon_${slot}.`)) {
+        const fullPath = path.join(FAVICONS_DIR, f);
+        try { fs.unlinkSync(fullPath); } catch (_) {}
+      }
+    }
+  } catch (_) {}
+}
+
+async function getFaviconConfigDB() {
+  try {
+    const cfg = await prisma.configGlobal.findUnique({ where: { clave: 'favicon_config' } });
+    if (cfg && cfg.valor) {
+      return JSON.parse(cfg.valor);
+    }
+  } catch (_) {}
+  return {
+    slot1: null,
+    slot2: null,
+    web_assigned: 'default',
+    admin_assigned: 'default'
+  };
+}
+
+async function saveFaviconConfigDB(config) {
+  await prisma.configGlobal.upsert({
+    where: { clave: 'favicon_config' },
+    update: { valor: JSON.stringify(config) },
+    create: { clave: 'favicon_config', valor: JSON.stringify(config) }
+  });
+}
+
+// GET /api/shop/favicon-config (Público)
+app.get('/api/shop/favicon-config', async (req, res) => {
+  try {
+    const cfg = await getFaviconConfigDB();
+    const defaultIcon = '/img/logo_pixis.png';
+    const web_favicon = cfg.web_assigned === 'slot1' && cfg.slot1 ? cfg.slot1.url :
+                        cfg.web_assigned === 'slot2' && cfg.slot2 ? cfg.slot2.url : defaultIcon;
+    const admin_favicon = cfg.admin_assigned === 'slot1' && cfg.slot1 ? cfg.slot1.url :
+                         cfg.admin_assigned === 'slot2' && cfg.slot2 ? cfg.slot2.url : defaultIcon;
+
+    res.json({
+      ok: true,
+      web_favicon,
+      admin_favicon,
+      slots: {
+        slot1: cfg.slot1,
+        slot2: cfg.slot2
+      },
+      web_assigned: cfg.web_assigned || 'default',
+      admin_assigned: cfg.admin_assigned || 'default'
+    });
+  } catch (e) {
+    console.error('Error al obtener favicon config:', e);
+    res.json({ ok: true, web_favicon: '/img/logo_pixis.png', admin_favicon: '/img/logo_pixis.png' });
+  }
+});
+
+// Configuración de Multer para Favicons
+const storageFavicons = multer.diskStorage({
+  destination: (req, file, cb) => {
+    ensureFaviconsDir();
+    cb(null, FAVICONS_DIR);
+  },
+  filename: (req, file, cb) => {
+    const slot = req.body.slot === 'slot2' ? 'slot2' : 'slot1';
+    const ext = path.extname(file.originalname).toLowerCase() || '.png';
+    destruirArchivosSlot(slot);
+    cb(null, `favicon_${slot}${ext}`);
+  }
+});
+
+const uploadFaviconMulter = multer({
+  storage: storageFavicons,
+  limits: { fileSize: 4 * 1024 * 1024 }, // 4MB máximo para favicon
+  fileFilter: (req, file, cb) => {
+    const allowed = ['.png', '.ico', '.webp', '.jpg', '.jpeg', '.svg'];
+    const ext = path.extname(file.originalname).toLowerCase();
+    if (allowed.includes(ext)) {
+      cb(null, true);
+    } else {
+      cb(new Error('Formato no permitido. Solo se aceptan PNG, ICO, WEBP, JPG o SVG.'));
+    }
+  }
+});
+
+// POST /api/admin/favicons/upload (Subir o reemplazar ícono en Slot 1 o Slot 2)
+app.post('/api/admin/favicons/upload', verifyAdminToken, (req, res) => {
+  uploadFaviconMulter.single('file')(req, res, async (err) => {
+    if (err) {
+      return res.status(400).json({ error: err.message || 'Error al subir la imagen.' });
+    }
+    if (!req.file) {
+      return res.status(400).json({ error: 'No se envió ningún archivo de imagen.' });
+    }
+
+    try {
+      const slot = req.body.slot === 'slot2' ? 'slot2' : 'slot1';
+      const filename = req.file.filename;
+      const fileUrl = `/img/favicons/${filename}?v=${Date.now()}`;
+
+      const cfg = await getFaviconConfigDB();
+      cfg[slot] = {
+        url: fileUrl,
+        filename: filename,
+        updated_at: new Date().toISOString()
+      };
+
+      // Si no había asignación previa, asignar por defecto este slot
+      if (slot === 'slot1' && cfg.web_assigned === 'default') cfg.web_assigned = 'slot1';
+
+      await saveFaviconConfigDB(cfg);
+
+      res.json({
+        ok: true,
+        message: `Ícono guardado exitosamente en ${slot === 'slot1' ? 'Ícono 1' : 'Ícono 2'}.`,
+        slot,
+        url: fileUrl
+      });
+    } catch (e) {
+      console.error('Error al registrar favicon:', e);
+      res.status(500).json({ error: 'Error interno al guardar la configuración.' });
+    }
+  });
+});
+
+// POST /api/admin/favicons/config (Guardar asignaciones de íconos para Web y Admin)
+app.post('/api/admin/favicons/config', verifyAdminToken, async (req, res) => {
+  try {
+    const { web_assigned, admin_assigned } = req.body;
+    const cfg = await getFaviconConfigDB();
+
+    if (['slot1', 'slot2', 'default'].includes(web_assigned)) {
+      cfg.web_assigned = web_assigned;
+    }
+    if (['slot1', 'slot2', 'default'].includes(admin_assigned)) {
+      cfg.admin_assigned = admin_assigned;
+    }
+
+    await saveFaviconConfigDB(cfg);
+    res.json({ ok: true, message: 'Asignaciones de íconos guardadas con éxito.' });
+  } catch (e) {
+    console.error('Error al guardar asignaciones de favicons:', e);
+    res.status(500).json({ error: 'Error interno del servidor.' });
+  }
+});
+
+// DELETE /api/admin/favicons/:slot (Eliminar ícono y destruir archivo físico)
+app.delete('/api/admin/favicons/:slot', verifyAdminToken, async (req, res) => {
+  try {
+    const slot = req.params.slot === 'slot2' ? 'slot2' : 'slot1';
+    destruirArchivosSlot(slot);
+
+    const cfg = await getFaviconConfigDB();
+    cfg[slot] = null;
+
+    if (cfg.web_assigned === slot) cfg.web_assigned = 'default';
+    if (cfg.admin_assigned === slot) cfg.admin_assigned = 'default';
+
+    await saveFaviconConfigDB(cfg);
+    res.json({ ok: true, message: `Ícono de ${slot === 'slot1' ? 'Ícono 1' : 'Ícono 2'} eliminado y archivo destruido.` });
+  } catch (e) {
+    console.error('Error al eliminar favicon:', e);
+    res.status(500).json({ error: 'Error interno al eliminar archivo.' });
   }
 });
 

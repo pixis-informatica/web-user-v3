@@ -4,6 +4,20 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>PIXIS — Panel de Ventas</title>
+  <link rel="icon" id="adminFavicon" type="image/png" href="../img/logo_pixis.png">
+  <link rel="shortcut icon" id="adminShortcutIcon" href="../img/logo_pixis.png">
+  <script>
+    (function(){
+      fetch('/api/shop/favicon-config')
+        .then(function(r){ return r.json(); })
+        .then(function(d){
+          if (d && d.ok && d.admin_favicon) {
+            var f = document.getElementById('adminFavicon'); if(f) f.href = d.admin_favicon;
+            var s = document.getElementById('adminShortcutIcon'); if(s) s.href = d.admin_favicon;
+          }
+        }).catch(function(){});
+    })();
+  </script>
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
   <link rel="stylesheet" href="style.css">
@@ -175,6 +189,7 @@
         <button class="main-tab-btn" id="mainTab-ajustes" onclick="switchMainTab('ajustes')">⚙️ Ajustes</button>
         <button class="main-tab-btn" id="mainTab-cupones" onclick="switchMainTab('cupones')" style="display: none; background: rgba(168, 85, 247, 0.15); color: #c084fc; border: 1px solid rgba(168, 85, 247, 0.4);">🎟️ Cupones</button>
         <button type="button" id="btnResetTotalPedidos" class="main-tab-btn btn-reset-total-pedidos" onclick="confirmarResetearTotalPedidos()" style="display: none; background: rgba(245, 158, 11, 0.15); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.35);" title="Resetear a 0 el contador acumulado de Total Pedidos Web">🔄 Resetear Total Pedidos</button>
+        <button type="button" id="btnFaviconModal" class="main-tab-btn" onclick="abrirModalFaviconManager()" style="display: none; background: rgba(56, 189, 248, 0.15); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.35);" title="Personalizar íconos y logos de las pestañas del navegador (Favicons)">🖼️ Logos de Pestaña</button>
       </div>
     </div>
 
@@ -749,6 +764,110 @@
           📧 ¿Perdiste tu 2FA? Enviar código de emergencia a mi email
         </button>
         <div id="gateEmergencyMsg" style="display: none; margin-top: 10px; padding: 10px; border-radius: 8px; font-size: 0.82rem; text-align: center;"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── MODAL ADMINISTRADOR DE ÍCONOS DE PESTAÑA (FAVICONS) ── -->
+  <div id="modalFaviconManager" class="modal-container" style="display: none; z-index: 999999;">
+    <div class="modal-overlay" onclick="cerrarModalFaviconManager()"></div>
+    <div class="modal-content" style="max-width: 650px; background: #0d0218; border: 1.5px solid #38bdf8; box-shadow: 0 0 35px rgba(56, 189, 248, 0.25); border-radius: 14px; padding: 24px; color: #fff;">
+      <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 14px; margin-bottom: 18px;">
+        <h3 style="margin: 0; color: #38bdf8; font-family: 'Orbitron', sans-serif; font-size: 1.2rem; display: flex; align-items: center; gap: 8px;">
+          🖼️ Íconos y Logos de Pestaña (Favicons)
+        </h3>
+        <button type="button" onclick="cerrarModalFaviconManager()" style="background: none; border: none; color: #aaa; font-size: 1.5rem; cursor: pointer;">&times;</button>
+      </div>
+
+      <p style="font-size: 0.85rem; color: #cbd5e1; margin-bottom: 18px; line-height: 1.5;">
+        Subí hasta <strong>2 íconos/logos</strong> para usar en las pestañas del navegador. Podés elegir cuál se mostrará a los clientes en la tienda web y cuál en el Panel de Ventas. Las imágenes anteriores se <strong>destruyen de forma permanente</strong> al reemplazarlas.
+      </p>
+
+      <!-- SECCIÓN 1: SLOTS DE ÍCONOS -->
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 22px;">
+        <!-- SLOT 1 -->
+        <div style="background: rgba(255,255,255,0.03); border: 1px solid rgba(56,189,248,0.3); border-radius: 10px; padding: 14px; text-align: center;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+            <strong style="color: #38bdf8; font-size: 0.88rem; font-family: 'Orbitron';">ÍCONO 1</strong>
+            <span id="badgeSlot1" style="font-size: 0.72rem; padding: 2px 6px; border-radius: 4px; background: rgba(255,255,255,0.1); color: #aaa;">Vacío</span>
+          </div>
+          <div style="width: 70px; height: 70px; margin: 0 auto 12px; background: #000; border: 1px dashed rgba(255,255,255,0.2); border-radius: 8px; display: flex; align-items: center; justify-content: center; overflow: hidden;">
+            <img id="previewSlot1" src="../img/logo_pixis.png" alt="Slot 1" style="max-width: 54px; max-height: 54px; object-fit: contain;">
+          </div>
+          <div style="display: flex; gap: 6px; justify-content: center;">
+            <label style="flex: 1; padding: 7px 10px; background: rgba(56,189,248,0.2); border: 1px solid #38bdf8; color: #fff; border-radius: 6px; font-size: 0.78rem; font-weight: 700; cursor: pointer; text-align: center;">
+              📁 Subir / Cambiar
+              <input type="file" id="fileSlot1" accept="image/png,image/x-icon,image/jpeg,image/webp,image/svg+xml" style="display: none;" onchange="subirFaviconSlot('slot1', this)">
+            </label>
+            <button type="button" id="btnDeleteSlot1" onclick="eliminarFaviconSlot('slot1')" style="padding: 7px 10px; background: rgba(239,68,68,0.15); border: 1px solid #ef4444; color: #f87171; border-radius: 6px; font-size: 0.78rem; cursor: pointer;" title="Eliminar ícono">🗑️</button>
+          </div>
+        </div>
+
+        <!-- SLOT 2 -->
+        <div style="background: rgba(255,255,255,0.03); border: 1px solid rgba(168,85,247,0.3); border-radius: 10px; padding: 14px; text-align: center;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+            <strong style="color: #c084fc; font-size: 0.88rem; font-family: 'Orbitron';">ÍCONO 2</strong>
+            <span id="badgeSlot2" style="font-size: 0.72rem; padding: 2px 6px; border-radius: 4px; background: rgba(255,255,255,0.1); color: #aaa;">Vacío</span>
+          </div>
+          <div style="width: 70px; height: 70px; margin: 0 auto 12px; background: #000; border: 1px dashed rgba(255,255,255,0.2); border-radius: 8px; display: flex; align-items: center; justify-content: center; overflow: hidden;">
+            <img id="previewSlot2" src="../img/logo_pixis.png" alt="Slot 2" style="max-width: 54px; max-height: 54px; object-fit: contain; opacity: 0.4;">
+          </div>
+          <div style="display: flex; gap: 6px; justify-content: center;">
+            <label style="flex: 1; padding: 7px 10px; background: rgba(168,85,247,0.2); border: 1px solid #a855f7; color: #fff; border-radius: 6px; font-size: 0.78rem; font-weight: 700; cursor: pointer; text-align: center;">
+              📁 Subir / Cambiar
+              <input type="file" id="fileSlot2" accept="image/png,image/x-icon,image/jpeg,image/webp,image/svg+xml" style="display: none;" onchange="subirFaviconSlot('slot2', this)">
+            </label>
+            <button type="button" id="btnDeleteSlot2" onclick="eliminarFaviconSlot('slot2')" style="padding: 7px 10px; background: rgba(239,68,68,0.15); border: 1px solid #ef4444; color: #f87171; border-radius: 6px; font-size: 0.78rem; cursor: pointer;" title="Eliminar ícono">🗑️</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- SECCIÓN 2: ASIGNACIÓN Y VISTAS PREVIAS DE PESTAÑAS -->
+      <div style="background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.1); border-radius: 10px; padding: 16px; margin-bottom: 20px;">
+        <h4 style="margin: 0 0 12px 0; color: var(--gold); font-size: 0.9rem; font-family: 'Orbitron';">🎯 Asignación a Pestañas del Navegador:</h4>
+        
+        <!-- Asignación Web -->
+        <div style="margin-bottom: 14px;">
+          <label style="display: block; font-size: 0.82rem; color: #e2e8f0; margin-bottom: 6px; font-weight: 600;">
+            🌐 Pestaña de la Tienda Web (Clientes):
+          </label>
+          <select id="selectFaviconWeb" onchange="actualizarPreviewsPestanas()" style="width: 100%; padding: 8px 12px; border-radius: 6px; background: #170929; border: 1px solid #38bdf8; color: #fff; font-size: 0.85rem;">
+            <option value="default">Logo Original Pixis (Por Defecto)</option>
+            <option value="slot1">Ícono 1</option>
+            <option value="slot2">Ícono 2</option>
+          </select>
+          <!-- Mockup Pestaña Web -->
+          <div style="margin-top: 8px; background: #202124; border-radius: 6px 6px 0 0; padding: 6px 12px; display: inline-flex; align-items: center; gap: 8px; border: 1px solid #333; max-width: 100%;">
+            <img id="tabMockWebIcon" src="../img/logo_pixis.png" alt="icon" style="width: 16px; height: 16px; object-fit: contain;">
+            <span style="font-size: 0.75rem; color: #e8eaed; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 320px;">Pixis Informática | Especialistas N°1 en Santiago del Estero...</span>
+          </div>
+        </div>
+
+        <!-- Asignación Admin -->
+        <div>
+          <label style="display: block; font-size: 0.82rem; color: #e2e8f0; margin-bottom: 6px; font-weight: 600;">
+            ⚙️ Pestaña del Panel de Ventas (Admin):
+          </label>
+          <select id="selectFaviconAdmin" onchange="actualizarPreviewsPestanas()" style="width: 100%; padding: 8px 12px; border-radius: 6px; background: #170929; border: 1px solid #a855f7; color: #fff; font-size: 0.85rem;">
+            <option value="default">Logo Original Pixis (Por Defecto)</option>
+            <option value="slot1">Ícono 1</option>
+            <option value="slot2">Ícono 2</option>
+          </select>
+          <!-- Mockup Pestaña Admin -->
+          <div style="margin-top: 8px; background: #202124; border-radius: 6px 6px 0 0; padding: 6px 12px; display: inline-flex; align-items: center; gap: 8px; border: 1px solid #333; max-width: 100%;">
+            <img id="tabMockAdminIcon" src="../img/logo_pixis.png" alt="icon" style="width: 16px; height: 16px; object-fit: contain;">
+            <span style="font-size: 0.75rem; color: #e8eaed; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 320px;">PIXIS — Panel de Ventas</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Acciones del Modal -->
+      <div style="display: flex; justify-content: space-between; align-items: center;">
+        <span id="msgFaviconSave" style="font-size: 0.82rem; font-weight: 600; display: none;"></span>
+        <div style="display: flex; gap: 10px; margin-left: auto;">
+          <button type="button" onclick="cerrarModalFaviconManager()" style="padding: 10px 16px; background: #333; color: #fff; border: none; border-radius: 8px; cursor: pointer; font-size: 0.85rem;">Cerrar</button>
+          <button type="button" id="btnGuardarFaviconConfig" onclick="guardarFaviconConfigAdmin()" style="padding: 10px 20px; background: linear-gradient(135deg, #38bdf8, #a855f7); color: #000; font-weight: 800; border: none; border-radius: 8px; cursor: pointer; font-size: 0.85rem; font-family: 'Orbitron';">💾 Guardar Asignaciones</button>
+        </div>
       </div>
     </div>
   </div>

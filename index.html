@@ -24,13 +24,29 @@
     <title>Pixis Informática | Especialistas N°1 en Santiago del Estero en Reparaciones y Servicio Técnico</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <!-- Favicon Oficial para Google Search y Dispositivos -->
-    <link rel="icon" type="image/png" sizes="32x32" href="/img/logo_pixis.png">
-    <link rel="icon" type="image/png" sizes="48x48" href="/img/logo_pixis.png">
-    <link rel="icon" type="image/png" sizes="192x192" href="/img/logo_pixis.png">
-    <link rel="apple-touch-icon" sizes="180x180" href="/img/logo_pixis.png">
-    <link rel="shortcut icon" href="/img/logo_pixis.png">
+    <!-- Favicon Oficial Dinámico para Google Search y Dispositivos -->
+    <link rel="icon" id="dynamicFavicon" type="image/png" sizes="32x32" href="/img/logo_pixis.png">
+    <link rel="icon" id="dynamicFavicon48" type="image/png" sizes="48x48" href="/img/logo_pixis.png">
+    <link rel="icon" id="dynamicFavicon192" type="image/png" sizes="192x192" href="/img/logo_pixis.png">
+    <link rel="apple-touch-icon" id="dynamicAppleIcon" sizes="180x180" href="/img/logo_pixis.png">
+    <link rel="shortcut icon" id="dynamicShortcutIcon" href="/img/logo_pixis.png">
     <link rel="manifest" href="/site.webmanifest">
+    <script>
+      (function(){
+        fetch('/api/shop/favicon-config')
+          .then(function(r){ return r.json(); })
+          .then(function(d){
+            if (d && d.ok && d.web_favicon) {
+              var u = d.web_favicon;
+              var f = document.getElementById('dynamicFavicon'); if(f) f.href = u;
+              var f48 = document.getElementById('dynamicFavicon48'); if(f48) f48.href = u;
+              var f192 = document.getElementById('dynamicFavicon192'); if(f192) f192.href = u;
+              var a = document.getElementById('dynamicAppleIcon'); if(a) a.href = u;
+              var s = document.getElementById('dynamicShortcutIcon'); if(s) s.href = u;
+            }
+          }).catch(function(){});
+      })();
+    </script>
 
     <!-- Metadatos dinámicos para redes sociales (Pixis Inyecta aquí) -->
     <meta property="og:type" content="website">

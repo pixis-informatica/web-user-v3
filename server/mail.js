@@ -122,9 +122,11 @@ function generarResumenPedidoHTML(order) {
   }
 
   // Tipo de entrega
-  const entregaTexto = order.entrega === 'envio'
-    ? `📦 Envío a domicilio${order.direccion ? ': ' + order.direccion : ''}`
-    : '🏪 Retiro en local — Pixis Informática';
+  const entregaTexto = (order.forma_pago === 'efectivo' || order.entrega === 'retiro')
+    ? '🏪 Cliente Retira en nuestra Sucursal — Pixis Informática'
+    : (order.entrega === 'envio'
+      ? `📦 Envío a domicilio, Pendiente a Consultar costos de envío.${order.direccion ? ' (' + order.direccion + ')' : ''}`
+      : '🏪 Cliente Retira en nuestra Sucursal — Pixis Informática');
 
   return `
     <div style="margin: 20px 0; border: 1px solid rgba(255,255,255,0.12); border-radius: 12px; overflow: hidden;">
