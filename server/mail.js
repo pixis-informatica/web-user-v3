@@ -276,14 +276,42 @@ async function enviarComprobanteRecibido(email, order) {
   return sendMail(email, `📎 Comprobante recibido — Pedido #${order.id}`, html);
 }
 
-// Pedido aprobado/reservado — Compra Realizada
+// Pedido aprobado/reservado — Compra Realizada o Reserva en Efectivo
 async function enviarPedidoReservado(email, order) {
-  const html = wrapHtml('🛍️ Compra Realizada, Tus productos están listos para que los pases a retirar', `
-    <p>¡Excelente! Tu compra fue confirmada con éxito y tus productos ya están listos para que los pases a retirar por nuestra sucursal. 🛍️✨</p>
+  const esEfectivo = order.forma_pago === 'efectivo';
+
+  let titulo = '';
+  let cuerpoIntro = '';
+  let asunto = '';
+
+  if (esEfectivo) {
+    titulo = '📦 Tus productos ya fueron reservados';
+    cuerpoIntro = `
+      <p>¡Excelente! Tus productos ya fueron reservados. Tenés que pasar por nuestro local a abonar tu compra para poder finalizar tu pedido.</p>
+      <div style="background: rgba(245, 158, 11, 0.12); border: 1px solid rgba(245, 158, 11, 0.35); border-left: 4px solid #f59e0b; padding: 14px 16px; border-radius: 8px; margin: 16px 0;">
+        <p style="margin: 0; color: #fbbf24; font-size: 13px; font-weight: 700;">
+          ⚠️ Aviso Importante sobre tu Reserva:
+        </p>
+        <p style="margin: 6px 0 0 0; color: #e2e8f0; font-size: 12px; line-height: 1.5;">
+          Recordá que debés abonar y retirar tu pedido en el transcurso del día dentro de nuestro horario de atención comercial. En caso contrario, la reserva será cancelada y el stock será liberado nuevamente a la plataforma.
+        </p>
+      </div>
+    `;
+    asunto = `📦 Tus productos ya fueron reservados — Pedido #${order.id} — Pixis Informática`;
+  } else {
+    titulo = '🛍️ Compra Realizada, Tus productos están listos para que los pases a retirar';
+    cuerpoIntro = `
+      <p>¡Excelente! Tu compra fue confirmada con éxito y tus productos ya están listos para que los pases a retirar por nuestra sucursal. 🛍️✨</p>
+    `;
+    asunto = `🛍️ Compra Realizada — Pedido #${order.id} listo para retirar — Pixis Informática`;
+  }
+
+  const html = wrapHtml(titulo, `
+    ${cuerpoIntro}
     ${generarResumenPedidoHTML(order)}
     ${generarBloqueGarantiaHTML()}
   `);
-  return sendMail(email, `🛍️ Compra Realizada — Pedido #${order.id} listo para retirar — Pixis Informática`, html);
+  return sendMail(email, asunto, html);
 }
 
 // Pedido listo para retirar en local
