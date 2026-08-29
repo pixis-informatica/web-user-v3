@@ -3,12 +3,10 @@
 #  Este archivo le dice al servidor qué puede cachear y qué no.
 # ================================================================
 
-# --- Desactivar LiteSpeed Cache para archivos de datos dinámicos ---
-# LiteSpeed (motor de Hostinger) tiene su propio sistema de caché
-# que ignora las directivas estándar de mod_headers/mod_expires.
-# Estas directivas lo desactivan explícitamente para JSON y HTML.
+# --- Desactivar LiteSpeed Cache para archivos dinámicos y API ---
 <IfModule LiteSpeed>
-    CacheDisable public /data/
+    CacheDisable public /
+    CacheDisable private /
     CacheLookup off
 </IfModule>
 
@@ -58,10 +56,11 @@
 
     # Archivos JSON: NUNCA cachear (ÚLTIMA regla = mayor prioridad en Apache)
     <FilesMatch "\.json$">
-        Header set Cache-Control "no-cache, no-store, must-revalidate"
+        Header set Cache-Control "private, no-cache, no-store, must-revalidate, max-age=0"
         Header set Pragma "no-cache"
         Header set Expires "0"
-        Header set X-LiteSpeed-Cache-Control "no-cache"
+        Header set X-LiteSpeed-Cache-Control "no-cache, no-store, private"
+        Header set Vary "Cookie, Authorization, Accept-Encoding"
     </FilesMatch>
 
 </IfModule>

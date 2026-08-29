@@ -5718,7 +5718,7 @@ onPixisDOMReady(() => {
 
   async function checkSession() {
     try {
-      const res = await fetch('/api/shop/me');
+      const res = await fetch('/api/shop/me', { credentials: 'include', cache: 'no-store' });
       const data = await res.json();
       
       const btnLogin = document.getElementById('btn-client-login');
@@ -5883,6 +5883,8 @@ onPixisDOMReady(() => {
     try {
       const res = await fetch('/api/shop/login', {
         method: 'POST',
+        credentials: 'include',
+        cache: 'no-store',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password })
       });
@@ -5944,6 +5946,8 @@ onPixisDOMReady(() => {
     try {
       const res = await fetch('/api/shop/register', {
         method: 'POST',
+        credentials: 'include',
+        cache: 'no-store',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ nombre, email, telefono, password, acepta_marketing, direccion, numero, barrio, provincia, localidad, codigo_postal })
       });
@@ -5966,6 +5970,8 @@ onPixisDOMReady(() => {
 
       const loginRes = await fetch('/api/shop/login', {
         method: 'POST',
+        credentials: 'include',
+        cache: 'no-store',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password })
       });
@@ -7206,7 +7212,7 @@ onPixisDOMReady(() => {
 
     // Pre-poblar campos con los datos actuales desde la API
     try {
-      const res = await fetch('/api/shop/me', { credentials: 'include' });
+      const res = await fetch('/api/shop/me', { credentials: 'include', cache: 'no-store' });
       if (res.ok) {
         const data = await res.json();
         const u = data.user || {};
@@ -7482,10 +7488,10 @@ onPixisDOMReady(() => {
     };
 
     // Heartbeat para marcar clientes online en tiempo real
-    fetch('/api/shop/me').catch(function() {});
+    fetch('/api/shop/me', { credentials: 'include', cache: 'no-store' }).catch(function() {});
     setInterval(function() {
       if (document.visibilityState === 'visible') {
-        fetch('/api/shop/me').catch(function() {});
+        fetch('/api/shop/me', { credentials: 'include', cache: 'no-store' }).catch(function() {});
       }
     }, 30000);
 
