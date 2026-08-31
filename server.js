@@ -1032,6 +1032,10 @@ app.post('/api/shop/orders', verifyCustomerToken, async (req, res) => {
     let cuponCodigoFinal = null;
 
     if (cupon_codigo && typeof cupon_codigo === 'string' && cupon_codigo.trim().length > 0) {
+      if (forma_pago === 'tarjeta') {
+        return res.status(400).json({ error: 'Cupón de pago excluido para cobros con tarjetas de crédito.' });
+      }
+
       const code = cupon_codigo.trim().toUpperCase();
       const cupon = await prisma.cupon.findUnique({ where: { codigo: code } });
 

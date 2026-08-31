@@ -574,10 +574,12 @@ pagoTransferencia?.addEventListener('change', () => {
       transferenciaInfo.style.display = "block";
     }
   }
+  renderCart();
 });
 
 pagoTarjeta?.addEventListener('change', () => {
   actualizarAvisoMetodoPagoCarrito();
+  renderCart();
 });
 
 /* =========================
@@ -769,8 +771,29 @@ function renderCart() {
   const valDesc = document.getElementById('valDescuentoCheckout');
   const lblDesc = document.getElementById('lblDescuentoCheckout');
   const msgBox = document.getElementById('msgCuponCheckout');
+  const btnRemoverCupon = document.getElementById('btnRemoverCuponCheckout');
 
-  if (window.cuponAplicadoCheckout && totalFinal > 0) {
+  if (btnRemoverCupon) {
+    btnRemoverCupon.style.display = window.cuponAplicadoCheckout ? 'inline-block' : 'none';
+  }
+
+  if (esTarjeta) {
+    // 💳 Tarjeta de Crédito: Cupones totalmente excluidos
+    if (rowSub) rowSub.style.display = 'none';
+    if (rowDesc) rowDesc.style.display = 'none';
+    cartTotal.textContent = `$${totalFinal.toLocaleString('es-AR')}`;
+
+    const inputCuponVal = document.getElementById('inputCuponCheckout')?.value?.trim();
+    if (inputCuponVal || window.cuponAplicadoCheckout) {
+      if (msgBox) {
+        msgBox.style.display = 'block';
+        msgBox.style.background = 'rgba(234, 179, 8, 0.15)';
+        msgBox.style.color = '#facc15';
+        msgBox.style.border = '1px solid rgba(234, 179, 8, 0.3)';
+        msgBox.textContent = '⚠️ Cupón de pago excluido para cobros con tarjetas de crédito.';
+      }
+    }
+  } else if (window.cuponAplicadoCheckout && totalFinal > 0) {
     const c = window.cuponAplicadoCheckout;
     const subtotalBruto = totalFinal;
 
@@ -804,6 +827,14 @@ function renderCart() {
       if (valDesc) { valDesc.textContent = `-$${montoDescuento.toLocaleString('es-AR')}`; }
 
       cartTotal.textContent = `$${totalConDescuento.toLocaleString('es-AR')}`;
+
+      if (msgBox) {
+        msgBox.style.display = 'block';
+        msgBox.style.background = 'rgba(34, 197, 94, 0.15)';
+        msgBox.style.color = '#4ade80';
+        msgBox.style.border = '1px solid rgba(34, 197, 94, 0.3)';
+        msgBox.textContent = c.mensaje || '🎉 ¡Cupón aplicado correctamente!';
+      }
     }
   } else {
     if (rowSub) rowSub.style.display = 'none';
@@ -6228,7 +6259,17 @@ onPixisDOMReady(() => {
     const cuotas = forma_pago === 'tarjeta' ? parseInt(selectCuotas.value, 10) : null;
     
     try {
-      const cupon_codigo = window.cuponAplicadoCheckout ? window.cuponAplicadoCheckout.codigo : null;
+      const subtotalActual = cart.reduce((acc, item) => {
+        const pl = parseFloat(item.priceLocal) || parseFloat(item.price) || 0;
+        return acc + (pl * item.qty);
+      }, 0);
+
+      const cuponEsValido = forma_pago !== 'tarjeta'
+        && window.cuponAplicadoCheckout
+        && (!window.cuponAplicadoCheckout.monto_minimo || subtotalActual >= window.cuponAplicadoCheckout.monto_minimo);
+
+      const cupon_codigo = cuponEsValido ? window.cuponAplicadoCheckout.codigo : null;
+
       const res = await fetch('/api/shop/orders', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -7124,6 +7165,30 @@ onPixisDOMReady(() => {
   // Limpiar cualquier cupón huérfano de sesiones previas en localStorage
   try { localStorage.removeItem('cuponAplicado'); } catch(_) {}
 
+  window.removerCuponCheckout = function (limpiarInput = true) {
+    window.cuponAplicadoCheckout = null;
+    try { localStorage.removeItem('cuponAplicado'); } catch(_) {}
+    const input = document.getElementById('inputCuponCheckout');
+    const msgBox = document.getElementById('msgCuponCheckout');
+    const btnRemover = document.getElementById('btnRemoverCuponCheckout');
+    if (limpiarInput && input) input.value = '';
+    if (msgBox) {
+      msgBox.style.display = 'none';
+      msgBox.textContent = '';
+    }
+    if (btnRemover) btnRemover.style.display = 'none';
+    renderCart();
+  };
+
+  window.onInputCuponCheckoutChange = function (val) {
+    const clean = (val || '').trim();
+    if (!clean) {
+      window.removerCuponCheckout(false);
+    } else if (window.cuponAplicadoCheckout && window.cuponAplicadoCheckout.codigo !== clean.toUpperCase()) {
+      window.removerCuponCheckout(false);
+    }
+  };
+
   window.validarAplicarCuponCheckout = async function () {
     const input = document.getElementById('inputCuponCheckout');
     const msgBox = document.getElementById('msgCuponCheckout');
@@ -7136,6 +7201,19 @@ onPixisDOMReady(() => {
       msgBox.style.color = '#f87171';
       msgBox.style.border = '1px solid rgba(239, 68, 68, 0.3)';
       msgBox.textContent = '⚠️ Ingresá un código de cupón.';
+      window.removerCuponCheckout(false);
+      return;
+    }
+
+    // ── 0. EXCLUSIÓN DE CUPONES PARA COBROS CON TARJETA DE CRÉDITO ──
+    const esTarjetaLocal = Boolean(document.getElementById('pagoTarjetaVisual')?.checked);
+    if (esTarjetaLocal) {
+      msgBox.style.display = 'block';
+      msgBox.style.background = 'rgba(234, 179, 8, 0.15)';
+      msgBox.style.color = '#facc15';
+      msgBox.style.border = '1px solid rgba(234, 179, 8, 0.3)';
+      msgBox.textContent = '⚠️ Cupón de pago excluido para cobros con tarjetas de crédito.';
+      window.removerCuponCheckout(false);
       return;
     }
 
@@ -7155,6 +7233,7 @@ onPixisDOMReady(() => {
       msgBox.style.color = '#f87171';
       msgBox.style.border = '1px solid rgba(239, 68, 68, 0.3)';
       msgBox.textContent = '❌ Error de conexión al validar el cupón.';
+      window.removerCuponCheckout(false);
       return;
     }
 
@@ -7165,13 +7244,29 @@ onPixisDOMReady(() => {
       msgBox.style.color = '#f87171';
       msgBox.style.border = '1px solid rgba(239, 68, 68, 0.3)';
       msgBox.textContent = data.error || '⚠️ Código de cupón no válido o expirado.';
+      window.removerCuponCheckout(false);
+      return;
+    }
+
+    // ── 3. VALIDAR COMPRA MÍNIMA CON RESPECTO AL SUBTOTAL ACTUAL ──
+    const subtotalActual = cart.reduce((acc, item) => {
+      const pl = parseFloat(item.priceLocal) || parseFloat(item.price) || 0;
+      return acc + (pl * item.qty);
+    }, 0);
+
+    if (data.monto_minimo > 0 && subtotalActual < data.monto_minimo) {
+      msgBox.style.background = 'rgba(234, 179, 8, 0.15)';
+      msgBox.style.color = '#facc15';
+      msgBox.style.border = '1px solid rgba(234, 179, 8, 0.3)';
+      msgBox.textContent = `⚠️ Este cupón requiere una compra mínima de $${data.monto_minimo.toLocaleString('es-AR')}.`;
+      // Limpiar cupón activo para NO bloquear la compra si el cliente avanza a precio normal
       window.cuponAplicadoCheckout = null;
       try { localStorage.removeItem('cuponAplicado'); } catch(_) {}
       renderCart();
       return;
     }
 
-    // ── 3. ÉXITO — guardar y refrescar ──
+    // ── 4. ÉXITO — guardar y refrescar ──
     window.cuponAplicadoCheckout = data;
     try { localStorage.setItem('cuponAplicado', JSON.stringify(data)); } catch(_) {}
     msgBox.style.background = 'rgba(34, 197, 94, 0.15)';
