@@ -1604,6 +1604,9 @@ window.openProductModal = function (card, pushToHistory = true) {
   if (typeof window.closePixisMenu === 'function') {
     window.closePixisMenu();
   }
+  if (typeof window.ocultarLaterales === 'function') {
+    window.ocultarLaterales();
+  }
   window._pixisLastActiveProduct = card.dataset.pixisSlug || card.dataset.pixisId || card.dataset.title.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
   modal.classList.add('active');
   document.body.classList.add('product-page-active');
@@ -1891,6 +1894,15 @@ function closeModal(fromHistory = false) {
   document.body.style.overflow = '';
   document.body.style.overflowY = '';
   document.documentElement.style.overflowY = '';
+
+  // Restaurar laterales según la vista de destino activa
+  const catalogoEl = document.getElementById('catalogo-completo');
+  const nuevosIngresosEl = document.getElementById('nuevosIngresosSection');
+  if (catalogoEl && catalogoEl.style.display !== 'none') {
+    if (typeof window.mostrarLaterales === 'function') window.mostrarLaterales();
+  } else if (nuevosIngresosEl && nuevosIngresosEl.style.display !== 'none') {
+    if (typeof window.renderFanpageLaterals === 'function') window.renderFanpageLaterals();
+  }
 
   // Limpiar inline styles que se pusieron al abrir la página de producto
   const modalEl = document.getElementById('modalProduct');
@@ -2579,6 +2591,15 @@ window.syncAppStateFromUrl = function(fromHistory = false) {
 
         // Si el modal de producto estaba abierto y ahora se cerró (no hay prodSlug)
         if (wasShowingProduct && !prodSlug) {
+            // Restaurar laterales según la vista de destino
+            const catalogoEl = document.getElementById('catalogo-completo');
+            const nuevosIngresosEl = document.getElementById('nuevosIngresosSection');
+            if (catalogoEl && catalogoEl.style.display !== 'none') {
+                if (typeof window.mostrarLaterales === 'function') window.mostrarLaterales();
+            } else if (nuevosIngresosEl && nuevosIngresosEl.style.display !== 'none') {
+                if (typeof window.renderFanpageLaterals === 'function') window.renderFanpageLaterals();
+            }
+
             if (window._pixisPreModalScrollY !== undefined) {
                 const savedScrollY = window._pixisPreModalScrollY;
                 const searchInp = document.getElementById('searchInput');
@@ -5818,7 +5839,8 @@ onPixisDOMReady(() => {
   window.checkSession = checkSession;
   checkSession();
 
-  window.openClientAuthModal = function() {
+  window.openClientAuthModal = function(fromCheckout = false) {
+    window._isCheckoutAuthFlow = (fromCheckout === true);
     const modal = document.getElementById('modalClientAuth');
     if (modal) {
       modal.style.display = 'flex';
@@ -5957,7 +5979,12 @@ onPixisDOMReady(() => {
       
       setTimeout(() => {
         closeClientAuthModal();
-        realizarReservaOnline();
+        if (window._isCheckoutAuthFlow && Array.isArray(cart) && cart.length > 0) {
+          window._isCheckoutAuthFlow = false;
+          realizarReservaOnline();
+        } else {
+          window._isCheckoutAuthFlow = false;
+        }
       }, 1000);
     } catch (e) {
       showAuthError('Error al conectar con el servidor.');
@@ -6031,7 +6058,12 @@ onPixisDOMReady(() => {
         
         setTimeout(() => {
           closeClientAuthModal();
-          realizarReservaOnline();
+          if (window._isCheckoutAuthFlow && Array.isArray(cart) && cart.length > 0) {
+            window._isCheckoutAuthFlow = false;
+            realizarReservaOnline();
+          } else {
+            window._isCheckoutAuthFlow = false;
+          }
         }, 1000);
       } else {
         showAuthSuccess('Registro exitoso. Iniciá sesión ahora.');
@@ -6079,7 +6111,12 @@ onPixisDOMReady(() => {
       
       setTimeout(() => {
         closeClientAuthModal();
-        realizarReservaOnline();
+        if (window._isCheckoutAuthFlow && Array.isArray(cart) && cart.length > 0) {
+          window._isCheckoutAuthFlow = false;
+          realizarReservaOnline();
+        } else {
+          window._isCheckoutAuthFlow = false;
+        }
       }, 1500);
     } catch (e) {
       showAuthError('Error al conectar con el servidor.');
@@ -6230,7 +6267,7 @@ onPixisDOMReady(() => {
       
       const loggedIn = await checkSession();
       if (!loggedIn) {
-        openClientAuthModal();
+        openClientAuthModal(true);
         return;
       }
       
@@ -6239,6 +6276,10 @@ onPixisDOMReady(() => {
   }
 
   async function realizarReservaOnline() {
+    if (!Array.isArray(cart) || cart.length === 0) {
+      console.warn('Pixis: Intento de reserva con carrito vacío bloqueado preventivamente.');
+      return;
+    }
     const items = cart.map(i => ({ name: i.name, qty: i.qty }));
     try {
       const preCheck = await fetch(`/api/shop/stock/check?items=${encodeURIComponent(JSON.stringify(items))}`);

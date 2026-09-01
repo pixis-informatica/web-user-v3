@@ -6861,10 +6861,20 @@ body:has(#toggle-cart:checked) {
    INTEGRACIÓN VISTA DE PRODUCTO COMO PÁGINA ACTIVA
    ══════════════════════════════════════════════════════════════ */
 
-/* Ocultar secciones del catálogo cuando se visualiza un producto */
+/* Ocultar secciones del catálogo y laterales cuando se visualiza un producto */
 body.product-page-active section.destacados,
 body.product-page-active #catalogo-completo,
+body.product-page-active #catalogLayoutContainer,
+body.product-page-active .catalog-layout-container,
+body.product-page-active .lateral-column,
+body.product-page-active #lateralBannersCol,
+body.product-page-active #lateralReelsCol,
 body.product-page-active #nuevosIngresosSection,
+body.product-page-active #nuevosIngresosBannerWrapper,
+body.product-page-active .nuevos-ingresos-banner-wrapper,
+body.product-page-active .fanpage-lateral-col,
+body.product-page-active #fanpageLateralLeft,
+body.product-page-active #fanpageLateralRight,
 body.product-page-active #reelsSection,
 body.product-page-active #aprendeSection,
 body.product-page-active #dynamic-catalog-container,

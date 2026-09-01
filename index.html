@@ -295,7 +295,8 @@
                 </button>
                 <script>
                 // Definición garantizada e inmediata de la lógica de visualización del modal
-                window.openClientAuthModal = function() {
+                window.openClientAuthModal = function(fromCheckout) {
+                  window._isCheckoutAuthFlow = (fromCheckout === true);
                   var m = document.getElementById('modalClientAuth');
                   if (m) {
                     m.style.display = 'flex';
