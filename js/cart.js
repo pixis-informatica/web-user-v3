@@ -2353,6 +2353,8 @@ window.reinicializarFiltrosYToggles = function() {
       viewBtn.addEventListener('click', () => {
         const isNowList = productos.classList.toggle('view-list');
         viewBtn.classList.toggle('active', isNowList);
+        const lbl = viewBtn.querySelector('.btn-view-label');
+        if (lbl) lbl.textContent = isNowList ? 'Vista lista' : 'Vista cuadrícula';
       });
     }
   });
@@ -2806,6 +2808,7 @@ window.ejecutarFiltroBanner = function(filtro, textoVisible, bannerId = null, fr
   }
 
   sf.value = textoVisible;
+  if (typeof window.mostrarLaterales === 'function') window.mostrarLaterales();
   sf.dispatchEvent(new Event('input'));
 
   setTimeout(() => {
@@ -2971,6 +2974,7 @@ searchInput.addEventListener('input', (e) => {
     if (document.getElementById("reelsSection")) document.getElementById("reelsSection").style.display = "none";
     if (document.getElementById("aprendeSection")) document.getElementById("aprendeSection").style.display = "none";
     if (catalogoCompletoUI) catalogoCompletoUI.style.display = 'block';
+    if (typeof window.mostrarLaterales === 'function') window.mostrarLaterales();
 
     // Mostrar todos los contenedores de productos para que las cards encontradas sean visibles
     document.querySelectorAll('.Gabinetes .productos').forEach(prodContainer => {
@@ -4432,6 +4436,7 @@ window.abrirCategoria = function(targetId, fromHistory = false) {
     const catalogoCompleto = document.getElementById("catalogo-completo");
     
     if (catalogoCompleto) catalogoCompleto.style.display = "block";
+    if (typeof window.mostrarLaterales === 'function') window.mostrarLaterales();
 
     // Ocupamos un barrido total para que no quede nada del inicio
     const selectoresPortada = [
@@ -4483,6 +4488,7 @@ window.abrirCategoria = function(targetId, fromHistory = false) {
       // 🔄 Resetear vista lista: al cambiar de categoría siempre empezar en modo grilla
       document.querySelectorAll('.productos.view-list').forEach(p => p.classList.remove('view-list'));
       document.querySelectorAll('.btn-view-toggle.active').forEach(btn => btn.classList.remove('active'));
+      document.querySelectorAll('.btn-view-label').forEach(lbl => lbl.textContent = 'Vista cuadrícula');
 
       // 🔥 Re-aplicar orden: sin stock al final cada vez que se abre una categoría
       pixisSinStockAlFinal();
@@ -4561,6 +4567,7 @@ window.goHome = function (fromHistory = false) {
 
   // Ocultar catálogo y resultados
   if (catalogo) catalogo.style.display = "none";
+  if (typeof window.ocultarLaterales === 'function') window.ocultarLaterales();
 
   // Mostrar Portada y Secciones Iniciales (Barrido Total)
   const selectoresPortada = [
@@ -4578,6 +4585,10 @@ window.goHome = function (fromHistory = false) {
       el.style.display = "";
     });
   });
+
+  if (typeof window.renderFanpageLaterals === 'function') {
+    window.renderFanpageLaterals();
+  }
 
   if (typeof tituloNuevos !== 'undefined' && tituloNuevos) {
     tituloNuevos.style.display = '';
@@ -7597,3 +7608,208 @@ onPixisDOMReady(() => {
   });
 
 })();
+
+/* ========================================================
+   MÓDULOS LATERALES: BANNERS (IZQ) Y REELS (DER) - DESKTOP
+   ======================================================== */
+window.mostrarLaterales = function() {
+  const bCol = document.getElementById('lateralBannersCol');
+  const rCol = document.getElementById('lateralReelsCol');
+  const site = window.PixisState?.state?.site || window.PixisEditor?.data?.site || {};
+  if (bCol && site.lateralBanners?.enabled && site.lateralBanners.items?.length > 0) {
+    bCol.style.display = '';
+  }
+  if (rCol && site.lateralReels?.enabled && site.lateralReels.items?.length > 0) {
+    rCol.style.display = '';
+  }
+};
+
+window.ocultarLaterales = function() {
+  const bCol = document.getElementById('lateralBannersCol');
+  const rCol = document.getElementById('lateralReelsCol');
+  if (bCol) bCol.style.display = 'none';
+  if (rCol) rCol.style.display = 'none';
+};
+
+window.parseReelEmbed = function(url, platform) {
+  if (!url) return '';
+  const u = url.trim();
+
+  // Direct MP4/WebM video
+  if (platform === 'mp4' || /\.(mp4|webm|ogg)$/i.test(u)) {
+    return `<video src="${u}" controls playsinline loop preload="metadata" style="width:100%;height:100%;object-fit:cover;"></video>`;
+  }
+
+  // YouTube Shorts / Video
+  const ytMatch = u.match(/(?:youtube\.com\/shorts\/|youtu\.be\/|youtube\.com\/watch\?v=)([a-zA-Z0-9_\-]+)/);
+  if (platform === 'youtube' || ytMatch) {
+    const vid = ytMatch ? ytMatch[1] : u;
+    return `<iframe src="https://www.youtube-nocookie.com/embed/${vid}?autoplay=0&loop=1&rel=0&modestbranding=1" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen loading="lazy" style="width:100%;height:100%;border:none;"></iframe>`;
+  }
+
+  // Instagram Reels
+  const igMatch = u.match(/instagram\.com\/(?:reel|p)\/([a-zA-Z0-9_\-]+)/);
+  if (platform === 'instagram' || igMatch) {
+    const igId = igMatch ? igMatch[1] : u;
+    return `<iframe src="https://www.instagram.com/reel/${igId}/embed" frameborder="0" scrolling="no" allowtransparency="true" loading="lazy" style="width:100%;height:100%;border:none;"></iframe>`;
+  }
+
+  // TikTok Video
+  const ttMatch = u.match(/tiktok\.com\/(?:@[^/]+\/video\/|v\/|embed\/)(\d+)/);
+  if (platform === 'tiktok' || ttMatch) {
+    const ttId = ttMatch ? ttMatch[1] : u;
+    return `<iframe src="https://www.tiktok.com/embed/v2/${ttId}" frameborder="0" allow="fullscreen" loading="lazy" style="width:100%;height:100%;border:none;"></iframe>`;
+  }
+
+  // Facebook Reel
+  if (platform === 'facebook' || /facebook\.com|fb\.watch/i.test(u)) {
+    const encoded = encodeURIComponent(u);
+    return `<iframe src="https://www.facebook.com/plugins/video.php?href=${encoded}&show_text=0" frameborder="0" allowfullscreen="true" allow="autoplay; clipboard-write; encrypted-media; picture-in-picture; web-share" loading="lazy" style="width:100%;height:100%;border:none;"></iframe>`;
+  }
+
+  // Fallback: Embed genérico iframe
+  return `<iframe src="${u}" frameborder="0" loading="lazy" style="width:100%;height:100%;border:none;"></iframe>`;
+};
+
+window.renderLateralBannersAndReels = function() {
+  const site = window.PixisState?.state?.site || window.PixisEditor?.data?.site || {};
+  const bCol = document.getElementById('lateralBannersCol');
+  const rCol = document.getElementById('lateralReelsCol');
+  const catalogo = document.getElementById('catalogo-completo');
+  const isCatalogOpen = catalogo && catalogo.style.display !== 'none';
+
+  // 1. Renderizar Banners Laterales (Izquierda)
+  if (bCol) {
+    const latB = site.lateralBanners;
+    if (latB && latB.enabled && Array.isArray(latB.items) && latB.items.length > 0) {
+      const count = parseInt(latB.count, 10) || latB.items.length;
+      const activeItems = latB.items.slice(0, count).filter(item => item && item.img);
+
+      if (activeItems.length > 0) {
+        bCol.innerHTML = activeItems.map((item, idx) => {
+          let clickAttr = '';
+          let hrefAttr = '#';
+
+          if (item.tipo === 'categoria' && item.target) {
+            clickAttr = `onclick="if(window.abrirCategoria){window.abrirCategoria('${item.target}'); return false;}"`;
+            hrefAttr = `#${item.target}`;
+          } else if (item.tipo === 'banner_promocional' && item.target) {
+            clickAttr = `onclick="if(window.abrirBannerLink){window.abrirBannerLink('${item.target}'); return false;}"`;
+            hrefAttr = `?banner=${item.target}`;
+          } else if (item.tipo === 'url' && item.target) {
+            hrefAttr = item.target;
+            clickAttr = 'target="_blank" rel="noopener noreferrer"';
+          } else {
+            clickAttr = 'onclick="return false;" style="cursor:default;"';
+          }
+
+          return `
+            <a href="${hrefAttr}" ${clickAttr} class="lateral-banner-card" title="${item.title || 'Banner Pixis'}">
+              <img src="${item.img}" alt="${item.title || 'Banner Pixis'}" loading="lazy">
+            </a>
+          `;
+        }).join('');
+
+        if (isCatalogOpen) bCol.style.display = '';
+      } else {
+        bCol.style.display = 'none';
+        bCol.innerHTML = '';
+      }
+    } else {
+      bCol.style.display = 'none';
+      bCol.innerHTML = '';
+    }
+  }
+
+  // 2. Renderizar Reels / Videos (Derecha)
+  if (rCol) {
+    const latR = site.lateralReels;
+    if (latR && latR.enabled && Array.isArray(latR.items) && latR.items.length > 0) {
+      const count = parseInt(latR.count, 10) || latR.items.length;
+      const activeItems = latR.items.slice(0, count).filter(item => item && item.url);
+
+      if (activeItems.length > 0) {
+        rCol.innerHTML = activeItems.map((item, idx) => {
+          const embedHtml = window.parseReelEmbed(item.url, item.platform);
+          return `
+            <div class="lateral-reel-card" title="${item.title || 'Reel Pixis'}">
+              ${embedHtml}
+            </div>
+          `;
+        }).join('');
+
+        if (isCatalogOpen) rCol.style.display = '';
+      } else {
+        rCol.style.display = 'none';
+        rCol.innerHTML = '';
+      }
+    } else {
+      rCol.style.display = 'none';
+      rCol.innerHTML = '';
+    }
+  }
+};
+
+// 3. Renderizar Banners Laterales en Portada / Nuevos Ingresos (Desktop)
+window.renderFanpageLaterals = function() {
+  const site = window.PixisState?.state?.site || window.PixisEditor?.data?.site || {};
+  const leftCol = document.getElementById('fanpageLateralLeft');
+  const rightCol = document.getElementById('fanpageLateralRight');
+  const fanpageSection = document.getElementById('nuevosIngresosSection');
+  const isFanpageOpen = fanpageSection && fanpageSection.style.display !== 'none';
+
+  const renderSideCard = (item, defaultTitle) => {
+    if (!item || !item.img) return '';
+    let clickAttr = '';
+    let hrefAttr = '#';
+
+    if (item.tipo === 'categoria' && item.target) {
+      clickAttr = `onclick="if(window.abrirCategoria){window.abrirCategoria('${item.target}'); return false;}"`;
+      hrefAttr = `#${item.target}`;
+    } else if (item.tipo === 'banner_promocional' && item.target) {
+      clickAttr = `onclick="if(window.abrirBannerLink){window.abrirBannerLink('${item.target}'); return false;}"`;
+      hrefAttr = `?banner=${item.target}`;
+    } else if (item.tipo === 'url' && item.target) {
+      hrefAttr = item.target;
+      clickAttr = 'target="_blank" rel="noopener noreferrer"';
+    } else {
+      clickAttr = 'onclick="return false;" style="cursor:default;"';
+    }
+
+    return `
+      <a href="${hrefAttr}" ${clickAttr} class="fanpage-lateral-card" title="${item.title || defaultTitle}">
+        <img src="${item.img}" alt="${item.title || defaultTitle}" loading="lazy">
+      </a>
+    `;
+  };
+
+  const fb = site.fanpageBanners;
+  if (fb && fb.enabled) {
+    if (leftCol) {
+      const leftHtml = renderSideCard(fb.left, 'Banner Nuevos Ingresos');
+      leftCol.innerHTML = leftHtml;
+      leftCol.style.display = (leftHtml && isFanpageOpen) ? '' : 'none';
+    }
+    if (rightCol) {
+      const rightHtml = renderSideCard(fb.right, 'Banner Nuevos Ingresos');
+      rightCol.innerHTML = rightHtml;
+      rightCol.style.display = (rightHtml && isFanpageOpen) ? '' : 'none';
+    }
+  } else {
+    if (leftCol) { leftCol.style.display = 'none'; leftCol.innerHTML = ''; }
+    if (rightCol) { rightCol.style.display = 'none'; rightCol.innerHTML = ''; }
+  }
+};
+
+// Inicializar al cargar el DOM si el catálogo o portada ya están abiertos
+if (typeof onPixisDOMReady === 'function') {
+  onPixisDOMReady(function () {
+    if (typeof window.renderLateralBannersAndReels === 'function') {
+      window.renderLateralBannersAndReels();
+    }
+    if (typeof window.renderFanpageLaterals === 'function') {
+      window.renderFanpageLaterals();
+    }
+  });
+}
+

@@ -57,6 +57,9 @@ window.PixisOverlay = (() => {
         <button class="editor-tool-btn" id="editorBtnDiseno" title="Diseño y personalización visual">
           <span class="btn-icon">🎨</span> Diseño
         </button>
+        <button class="editor-tool-btn" id="editorBtnBannersLaterales" title="Banners Laterales y Módulo de Reels">
+          <span class="btn-icon">🎯</span> Banners
+        </button>
         <button class="editor-tool-btn" id="editorBtnVentas" title="Gestión de Ventas y Finanzas">
           <span class="btn-icon">📊</span> Gestión de ventas
         </button>

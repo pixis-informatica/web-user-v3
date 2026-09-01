@@ -331,6 +331,7 @@ function bindTopbarEvents() {
   document.getElementById('editorBtnAdmin')?.addEventListener('click', openAdminConfigPanel);
   document.getElementById('editorBtnRGB')?.addEventListener('click', openRGBConfigPanel);
   document.getElementById('editorBtnDiseno')?.addEventListener('click', openDisenoConfigPanel);
+  document.getElementById('editorBtnBannersLaterales')?.addEventListener('click', openBannersLateralesPanel);
   document.getElementById('editorBtnVentas')?.addEventListener('click', () => {
     window.PixisOverlay.showToast('📊 Gestión de ventas — próximamente disponible', 'info', 3000);
   });
@@ -2855,7 +2856,11 @@ function openSiteDataPanel() {
         <span id="carouselTopArrow" style="font-size:10px; color:#b026ff; transition:transform .25s;">▼</span>
       </button>
       <div id="carouselTopAccordion" style="display:none; padding:12px 10px 10px;">
-        <div style="font-size:11px;color:#888;margin-bottom:10px;">Gestioná las imágenes rotativas de arriba de todo.</div>
+        <div style="font-size:11px;color:#888;margin-bottom:8px;">Gestioná las imágenes rotativas de arriba de todo.</div>
+        <div style="background:rgba(176,38,255,0.1);border:1px solid rgba(176,38,255,0.3);padding:8px 10px;border-radius:6px;font-size:11px;color:#d8b4fe;margin-bottom:12px;display:flex;align-items:center;gap:6px;">
+          <span>📐</span>
+          <div><strong>Medidas recomendadas:</strong> 1720 × 440 px (PC) | 800 × 600 px (Móvil)</div>
+        </div>
         <div id="carouselTopContainer">
           ${renderCarouselEditor(site.carouselTop || [], 'top')}
         </div>
@@ -2875,7 +2880,11 @@ function openSiteDataPanel() {
         <span id="carouselBottomArrow" style="font-size:10px; color:#00b4d8; transition:transform .25s;">▼</span>
       </button>
       <div id="carouselBottomAccordion" style="display:none; padding:12px 10px 10px;">
-        <div style="font-size:11px;color:#888;margin-bottom:10px;">Gestioná las imágenes rotativas que aparecen abajo.</div>
+        <div style="font-size:11px;color:#888;margin-bottom:8px;">Gestioná las imágenes rotativas que aparecen abajo.</div>
+        <div style="background:rgba(0,180,216,0.1);border:1px solid rgba(0,180,216,0.3);padding:8px 10px;border-radius:6px;font-size:11px;color:#90e0ef;margin-bottom:12px;display:flex;align-items:center;gap:6px;">
+          <span>📐</span>
+          <div><strong>Medidas recomendadas:</strong> 1180 × 440 px (Centro PC) | 800 × 600 px (Móvil)</div>
+        </div>
         <div id="carouselBottomContainer">
           ${renderCarouselEditor(site.carouselBottom || [], 'bottom')}
         </div>
@@ -5113,7 +5122,7 @@ window.PixisEditorAPI.triggerUpload = function(inputId, folder = 'img/uploads') 
     const file = fileInput.files[0];
     if (!file) return;
 
-    window.PixisOverlay.showToast('Optimizando y subiendo banner...', 'info');
+    window.PixisOverlay.showToast('Subiendo banner en calidad original...', 'info');
     
     try {
       // Normalizar nombre de archivo y forzar JPG
@@ -5121,15 +5130,10 @@ window.PixisEditorAPI.triggerUpload = function(inputId, folder = 'img/uploads') 
       const cleanName = file.name.split('.')[0].replace(/[^a-z0-9]/gi, '-').toLowerCase();
       const filename = `${cleanName}-${Date.now()}.${ext}`;
 
-      // Comprimir automáticamente antes de enviar
-      let compressedBlob = file;
-      if (window.PixisEditorAPI._compressImage) {
-        compressedBlob = await window.PixisEditorAPI._compressImage(file);
-      }
-
+      // Subida en calidad 100% original (sin compresión destructiva) para banners de máxima nitidez
       const res = await fetch(`/api/upload-image?folder=${folder}&filename=${filename}`, {
         method: 'POST',
-        body: compressedBlob
+        body: file
       });
       const json = await res.json();
       if (json.ok) {
@@ -5139,7 +5143,7 @@ window.PixisEditorAPI.triggerUpload = function(inputId, folder = 'img/uploads') 
           // Disparar evento input para refrescar posibles previews
           input.dispatchEvent(new Event('input', { bubbles: true }));
         }
-        window.PixisOverlay.showToast('✅ Banner subido y optimizado', 'success');
+        window.PixisOverlay.showToast('✅ Banner subido en calidad original', 'success');
       } else {
         throw new Error(json.error);
       }
@@ -5148,6 +5152,54 @@ window.PixisEditorAPI.triggerUpload = function(inputId, folder = 'img/uploads') 
     }
   };
   fileInput.click();
+};
+
+window.PixisEditorAPI._safeCleanupImages = async function(oldList, newList, contextType) {
+  if (!Array.isArray(oldList) || oldList.length === 0) return;
+  
+  // 1. Recolectar todas las URLs presentes en la nueva configuración
+  const newUrls = new Set();
+  (newList || []).forEach(item => {
+    if (item.imgPc) newUrls.add(item.imgPc.trim());
+    if (item.imgMobile) newUrls.add(item.imgMobile.trim());
+    if (item.img) newUrls.add(item.img.trim());
+  });
+
+  // 2. Recolectar todas las URLs protegidas en otras partes del sitio
+  const site = window.PixisState?.state?.site || PixisEditor.data.site || {};
+  const protectedUrls = new Set();
+  
+  // Otro carrusel
+  const otherCarousel = contextType === 'top' ? (site.carouselBottom || []) : (site.carouselTop || []);
+  otherCarousel.forEach(s => {
+    if (s.imgPc) protectedUrls.add(s.imgPc.trim());
+    if (s.imgMobile) protectedUrls.add(s.imgMobile.trim());
+  });
+
+  // Laterales fanpage
+  if (site.fanpageBanners?.left?.img) protectedUrls.add(site.fanpageBanners.left.img.trim());
+  if (site.fanpageBanners?.right?.img) protectedUrls.add(site.fanpageBanners.right.img.trim());
+
+  // Laterales catálogo
+  if (site.lateralBanners?.items) {
+    site.lateralBanners.items.forEach(it => { if (it?.img) protectedUrls.add(it.img.trim()); });
+  }
+
+  // 3. Eliminar únicamente huérfanas reales del disco
+  for (const old of oldList) {
+    const urlsToCheck = [old.imgPc, old.imgMobile, old.img].filter(Boolean);
+    for (const u of urlsToCheck) {
+      const cleanUrl = u.trim();
+      const isDynamicUpload = cleanUrl.startsWith('img/uploads/') || cleanUrl.startsWith('img/carrusel/');
+      if (isDynamicUpload && !newUrls.has(cleanUrl) && !protectedUrls.has(cleanUrl)) {
+        await fetch('/api/remove-image', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ url: cleanUrl })
+        }).catch(() => {});
+      }
+    }
+  }
 };
 
 window.PixisEditorAPI.saveCarousel = function(type) {
@@ -5167,11 +5219,15 @@ window.PixisEditorAPI.saveCarousel = function(type) {
   });
 
   const stateKey = type === 'top' ? 'carouselTop' : 'carouselBottom';
+  const oldSlides = window.PixisState?.state?.site?.[stateKey] || [];
   
   if (window.PixisState) {
     const siteData = { ...window.PixisState.state.site };
     siteData[stateKey] = slides;
     
+    // Autolimpieza segura en servidor Hostinger de imágenes viejas
+    window.PixisEditorAPI._safeCleanupImages(oldSlides, slides, type);
+
     window.PixisState.updateState({ type: 'site', path: [], value: siteData })
       .then(saved => {
         window.PixisOverlay.showToast(saved ? `✅ Carrusel ${type === 'top' ? 'Superior' : 'Inferior'} actualizado` : '📥 Guardado localmente', 'success');
@@ -6729,4 +6785,536 @@ function applyColorToSelected(colorOrGradient, isGradient) {
   
   saveElementStyles(el);
   window.PixisOverlay.showToast('🎨 Color aplicado', 'success', 1000);
+}
+
+/* ────────────────────────────────────────────────────────
+   PANEL: BANNERS LATERALES Y MÓDULO DE REELS (DESKTOP PC)
+──────────────────────────────────────────────────────── */
+function openBannersLateralesPanel() {
+  const site = PixisEditor.data.site || {};
+  if (!site.lateralBanners) {
+    site.lateralBanners = { enabled: false, count: 2, items: [] };
+  }
+  if (!site.lateralReels) {
+    site.lateralReels = { enabled: false, count: 1, items: [] };
+  }
+  if (!site.fanpageBanners) {
+    site.fanpageBanners = { enabled: false, left: { img: '', title: '', tipo: 'categoria', target: '' }, right: { img: '', title: '', tipo: 'categoria', target: '' } };
+  }
+
+  const latBanners = site.lateralBanners;
+  const latReels = site.lateralReels;
+  const fanpageBanners = site.fanpageBanners;
+
+  // Obtener categorías disponibles para vincular
+  const cats = [];
+  if (window.PixisState && window.PixisState.state && Array.isArray(window.PixisState.state.categories)) {
+    window.PixisState.state.categories.forEach(c => {
+      if (c && c.id) cats.push({ id: c.id, name: c.name || c.id });
+    });
+  }
+  if (cats.length === 0) {
+    document.querySelectorAll('#catalogo-completo h3.categoria').forEach(h3 => {
+      if (h3.id) cats.push({ id: h3.id, name: h3.textContent.trim() || h3.id });
+    });
+  }
+
+  // Obtener banners promocionales disponibles
+  const promoBanners = [];
+  const bData = window._bannerData || (window.PixisState?.state?.site?.banners) || {};
+  Object.entries(bData).forEach(([id, b]) => {
+    promoBanners.push({ id, title: b.t || id });
+  });
+
+  const getGuideText = (cnt) => {
+    const c = parseInt(cnt, 10) || 2;
+    switch (c) {
+      case 1: return '📐 Medida recomendada: <strong>240 × 1080 px</strong> (Formato vertical completo)';
+      case 2: return '📐 Medida recomendada: <strong>240 × 530 px</strong> cada uno (2 banners apilados)';
+      case 3: return '📐 Medida recomendada: <strong>240 × 350 px</strong> cada uno (3 banners apilados)';
+      case 4: return '📐 Medida recomendada: <strong>240 × 260 px</strong> cada uno (4 banners apilados)';
+      default: return '📐 Medida recomendada: <strong>240 × 530 px</strong> cada uno';
+    }
+  };
+
+  const renderBannerSlot = (idx) => {
+    const item = (latBanners.items && latBanners.items[idx]) ? latBanners.items[idx] : { img: '', title: '', tipo: 'categoria', target: '' };
+    const isVisible = idx < (parseInt(latBanners.count, 10) || 2);
+    return `
+      <div class="panel-section lat-banner-slot" id="latBannerSlot_${idx}" style="display:${isVisible ? 'block' : 'none'};background:rgba(255,255,255,0.02);border:1px solid rgba(168,85,247,0.2);padding:12px;border-radius:8px;margin-bottom:12px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+          <strong style="color:#b0faff;font-size:12px;">🎯 Banner #${idx + 1}</strong>
+          <span style="font-size:11px;color:#888;">Posición ${idx + 1}</span>
+        </div>
+        
+        <div class="panel-field" style="margin-bottom:8px;">
+          <label class="panel-label" style="font-size:11px;">Imagen del Banner</label>
+          <div style="display:flex;gap:6px;align-items:center;">
+            <input type="text" class="panel-input" id="latBannerImg_${idx}" value="${escHtml(item.img || '')}" placeholder="img/uploads/... o URL" style="flex:1;font-size:12px;">
+            <label class="panel-btn" style="padding:4px 8px;font-size:11px;cursor:pointer;white-space:nowrap;margin:0;">
+              📁 Subir
+              <input type="file" accept="image/*" class="lat-banner-file-input" data-idx="${idx}" style="display:none;">
+            </label>
+          </div>
+        </div>
+
+        <div class="panel-field" style="margin-bottom:8px;">
+          <label class="panel-label" style="font-size:11px;">Título / Texto Alternativo</label>
+          <input type="text" class="panel-input" id="latBannerTitle_${idx}" value="${escHtml(item.title || '')}" placeholder="Ej: Sección Herramientas" style="font-size:12px;">
+        </div>
+
+        <div class="panel-field" style="margin-bottom:8px;">
+          <label class="panel-label" style="font-size:11px;">Acción al hacer clic</label>
+          <select class="panel-select lat-banner-tipo-select" id="latBannerTipo_${idx}" data-idx="${idx}" style="font-size:12px;">
+            <option value="categoria" ${item.tipo === 'categoria' ? 'selected' : ''}>📂 Vincular a Categoría del Menú</option>
+            <option value="banner_promocional" ${item.tipo === 'banner_promocional' ? 'selected' : ''}>🏷️ Vincular a Banner Promocional / Colección</option>
+            <option value="url" ${item.tipo === 'url' ? 'selected' : ''}>🔗 Enlace URL personalizada</option>
+            <option value="none" ${item.tipo === 'none' ? 'selected' : ''}>⛔ Sin enlace (Solo informativo)</option>
+          </select>
+        </div>
+
+        <!-- Opciones dinámicas de acción -->
+        <div id="latBannerActionCat_${idx}" class="panel-field" style="display:${item.tipo === 'categoria' ? 'block' : 'none'};margin-bottom:4px;">
+          <label class="panel-label" style="font-size:11px;">Elegir Categoría de Destino</label>
+          <select class="panel-select" id="latBannerCat_${idx}" style="font-size:12px;">
+            ${cats.map(c => `<option value="${escHtml(c.id)}" ${item.target === c.id ? 'selected' : ''}>${escHtml(c.name)}</option>`).join('')}
+          </select>
+        </div>
+
+        <div id="latBannerActionPromo_${idx}" class="panel-field" style="display:${item.tipo === 'banner_promocional' ? 'block' : 'none'};margin-bottom:4px;">
+          <label class="panel-label" style="font-size:11px;">Elegir Banner Promocional</label>
+          <select class="panel-select" id="latBannerPromo_${idx}" style="font-size:12px;">
+            ${promoBanners.length > 0 
+              ? promoBanners.map(b => `<option value="${escHtml(b.id)}" ${item.target === b.id ? 'selected' : ''}>${escHtml(b.title)} (?banner=${escHtml(b.id)})</option>`).join('') 
+              : '<option value="">(No hay banners promocionales creados)</option>'}
+          </select>
+        </div>
+
+        <div id="latBannerActionUrl_${idx}" class="panel-field" style="display:${item.tipo === 'url' ? 'block' : 'none'};margin-bottom:4px;">
+          <label class="panel-label" style="font-size:11px;">URL de destino</label>
+          <input type="text" class="panel-input" id="latBannerUrl_${idx}" value="${escHtml(item.target || '')}" placeholder="https://..." style="font-size:12px;">
+        </div>
+      </div>
+    `;
+  };
+
+  const renderFanpageSide = (side, title, defaultItem) => {
+    const item = defaultItem || { img: '', title: '', tipo: 'categoria', target: '' };
+    return `
+      <div class="panel-section" style="background:rgba(255,255,255,0.02);border:1px solid rgba(0,255,213,0.2);padding:12px;border-radius:8px;margin-bottom:12px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+          <strong style="color:#00ffd5;font-size:12px;">${title}</strong>
+          <span style="font-size:10px;color:#888;">Medida: 240 × 440 px</span>
+        </div>
+        
+        <div class="panel-field" style="margin-bottom:8px;">
+          <label class="panel-label" style="font-size:11px;">Imagen del Banner</label>
+          <div style="display:flex;gap:6px;align-items:center;">
+            <input type="text" class="panel-input" id="fanpageBannerImg_${side}" value="${escHtml(item.img || '')}" placeholder="img/uploads/... o URL" style="flex:1;font-size:12px;">
+            <label class="panel-btn" style="padding:4px 8px;font-size:11px;cursor:pointer;white-space:nowrap;margin:0;">
+              📁 Subir
+              <input type="file" accept="image/*" class="fanpage-banner-file-input" data-side="${side}" style="display:none;">
+            </label>
+          </div>
+        </div>
+
+        <div class="panel-field" style="margin-bottom:8px;">
+          <label class="panel-label" style="font-size:11px;">Título / Texto Alternativo</label>
+          <input type="text" class="panel-input" id="fanpageBannerTitle_${side}" value="${escHtml(item.title || '')}" placeholder="Ej: Ofertas Semanales" style="font-size:12px;">
+        </div>
+
+        <div class="panel-field" style="margin-bottom:8px;">
+          <label class="panel-label" style="font-size:11px;">Acción al hacer clic</label>
+          <select class="panel-select fanpage-banner-tipo-select" id="fanpageBannerTipo_${side}" data-side="${side}" style="font-size:12px;">
+            <option value="categoria" ${item.tipo === 'categoria' ? 'selected' : ''}>📂 Vincular a Categoría del Menú</option>
+            <option value="banner_promocional" ${item.tipo === 'banner_promocional' ? 'selected' : ''}>🏷️ Vincular a Banner Promocional / Colección</option>
+            <option value="url" ${item.tipo === 'url' ? 'selected' : ''}>🔗 Enlace URL personalizada</option>
+            <option value="none" ${item.tipo === 'none' ? 'selected' : ''}>⛔ Sin enlace (Solo informativo)</option>
+          </select>
+        </div>
+
+        <div id="fanpageBannerActionCat_${side}" class="panel-field" style="display:${item.tipo === 'categoria' ? 'block' : 'none'};margin-bottom:4px;">
+          <label class="panel-label" style="font-size:11px;">Elegir Categoría de Destino</label>
+          <select class="panel-select" id="fanpageBannerCat_${side}" style="font-size:12px;">
+            ${cats.map(c => `<option value="${escHtml(c.id)}" ${item.target === c.id ? 'selected' : ''}>${escHtml(c.name)}</option>`).join('')}
+          </select>
+        </div>
+
+        <div id="fanpageBannerActionPromo_${side}" class="panel-field" style="display:${item.tipo === 'banner_promocional' ? 'block' : 'none'};margin-bottom:4px;">
+          <label class="panel-label" style="font-size:11px;">Elegir Banner Promocional</label>
+          <select class="panel-select" id="fanpageBannerPromo_${side}" style="font-size:12px;">
+            ${promoBanners.length > 0 
+              ? promoBanners.map(b => `<option value="${escHtml(b.id)}" ${item.target === b.id ? 'selected' : ''}>${escHtml(b.title)} (?banner=${escHtml(b.id)})</option>`).join('') 
+              : '<option value="">(No hay banners promocionales creados)</option>'}
+          </select>
+        </div>
+
+        <div id="fanpageBannerActionUrl_${side}" class="panel-field" style="display:${item.tipo === 'url' ? 'block' : 'none'};margin-bottom:4px;">
+          <label class="panel-label" style="font-size:11px;">URL de destino</label>
+          <input type="text" class="panel-input" id="fanpageBannerUrl_${side}" value="${escHtml(item.target || '')}" placeholder="https://..." style="font-size:12px;">
+        </div>
+      </div>
+    `;
+  };
+
+  const renderReelSlot = (idx) => {
+    const item = (latReels.items && latReels.items[idx]) ? latReels.items[idx] : { title: '', platform: 'youtube', url: '' };
+    const isVisible = idx < (parseInt(latReels.count, 10) || 1);
+    return `
+      <div class="panel-section lat-reel-slot" id="latReelSlot_${idx}" style="display:${isVisible ? 'block' : 'none'};background:rgba(255,255,255,0.02);border:1px solid rgba(0,255,213,0.2);padding:12px;border-radius:8px;margin-bottom:12px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+          <strong style="color:#00ffd5;font-size:12px;">🎬 Reel / Video #${idx + 1}</strong>
+          <span style="font-size:11px;color:#888;">Posición ${idx + 1}</span>
+        </div>
+
+        <div class="panel-field" style="margin-bottom:8px;">
+          <label class="panel-label" style="font-size:11px;">Título del Video / Producto</label>
+          <input type="text" class="panel-input" id="latReelTitle_${idx}" value="${escHtml(item.title || '')}" placeholder="Ej: Teclado Mecánico RGB Review" style="font-size:12px;">
+        </div>
+
+        <div class="panel-field" style="margin-bottom:8px;">
+          <label class="panel-label" style="font-size:11px;">Plataforma</label>
+          <select class="panel-select" id="latReelPlatform_${idx}" style="font-size:12px;">
+            <option value="youtube" ${item.platform === 'youtube' ? 'selected' : ''}>🔴 YouTube Shorts / Video</option>
+            <option value="instagram" ${item.platform === 'instagram' ? 'selected' : ''}>📸 Instagram Reel</option>
+            <option value="tiktok" ${item.platform === 'tiktok' ? 'selected' : ''}>🎵 TikTok Video</option>
+            <option value="facebook" ${item.platform === 'facebook' ? 'selected' : ''}>🔵 Facebook Reel</option>
+            <option value="mp4" ${item.platform === 'mp4' ? 'selected' : ''}>🎥 Video Directo MP4 / WebM</option>
+          </select>
+        </div>
+
+        <div class="panel-field" style="margin-bottom:4px;">
+          <label class="panel-label" style="font-size:11px;">Enlace / URL del Video</label>
+          <input type="text" class="panel-input" id="latReelUrl_${idx}" value="${escHtml(item.url || '')}" placeholder="Pegá el link del Reel / Short aquí" style="font-size:12px;">
+        </div>
+      </div>
+    `;
+  };
+
+  const html = `
+    <div class="panel-tabs" style="margin-bottom:15px;display:flex;gap:6px;">
+      <button class="panel-tab active" id="tabBtnFanpageBanners" style="flex:1;padding:8px 4px;font-size:11px;font-weight:bold;">🎯 Portada / Nuevos Ingresos</button>
+      <button class="panel-tab" id="tabBtnLatBanners" style="flex:1;padding:8px 4px;font-size:11px;font-weight:bold;">📂 Banners Catálogo</button>
+      <button class="panel-tab" id="tabBtnLatReels" style="flex:1;padding:8px 4px;font-size:11px;font-weight:bold;">🎬 Reels / Videos</button>
+    </div>
+
+    <!-- TAB 1: PORTADA / NUEVOS INGRESOS (IMAGEN 2) -->
+    <div id="tabFanpageBannersContent">
+      <div class="panel-section" style="background:rgba(0,255,213,0.08);border-left:4px solid #00ffd5;padding:10px;border-radius:6px;margin-bottom:12px;">
+        <div style="display:flex;align-items:center;justify-content:space-between;">
+          <label for="fanpageBannersEnabled" style="font-weight:bold;color:#fff;font-size:12px;cursor:pointer;">
+            🎯 Activar Banners en Nuevos Ingresos (Desktop)
+          </label>
+          <input type="checkbox" id="fanpageBannersEnabled" ${fanpageBanners.enabled ? 'checked' : ''} style="width:18px;height:18px;accent-color:#00ffd5;cursor:pointer;">
+        </div>
+      </div>
+
+      <div style="background:rgba(0,255,213,0.1);border:1px dashed #00ffd5;border-radius:6px;padding:8px 10px;margin-bottom:12px;color:#00ffd5;font-size:11px;line-height:1.4;">
+        📐 <strong>Medida recomendada:</strong> 240 × 440 px cada uno (Altura fija alineada al carrusel central).
+      </div>
+
+      ${renderFanpageSide('left', '🎯 Banner Lateral Izquierdo', fanpageBanners.left)}
+      ${renderFanpageSide('right', '🎯 Banner Lateral Derecho', fanpageBanners.right)}
+    </div>
+
+    <!-- TAB 2: BANNERS LATERALES (CATÁLOGO) -->
+    <div id="tabLatBannersContent" style="display:none;">
+      <div class="panel-section" style="background:rgba(168,85,247,0.08);border-left:4px solid #a855f7;padding:10px;border-radius:6px;margin-bottom:15px;">
+        <div style="display:flex;align-items:center;justify-content:space-between;">
+          <label for="latBannersEnabled" style="font-weight:bold;color:#fff;font-size:13px;cursor:pointer;">
+            🎯 Activar Banners Laterales (Catálogo)
+          </label>
+          <input type="checkbox" id="latBannersEnabled" ${latBanners.enabled ? 'checked' : ''} style="width:18px;height:18px;accent-color:#a855f7;cursor:pointer;">
+        </div>
+      </div>
+
+      <div class="panel-field" style="margin-bottom:12px;">
+        <label class="panel-label" style="font-size:12px;"><strong>Cantidad de Banners a Mostrar:</strong></label>
+        <select class="panel-select" id="latBannersCount" style="font-size:13px;font-weight:bold;">
+          <option value="1" ${parseInt(latBanners.count, 10) === 1 ? 'selected' : ''}>1 Banner (Vertical completo)</option>
+          <option value="2" ${parseInt(latBanners.count, 10) === 2 || !latBanners.count ? 'selected' : ''}>2 Banners (Recomendado)</option>
+          <option value="3" ${parseInt(latBanners.count, 10) === 3 ? 'selected' : ''}>3 Banners</option>
+          <option value="4" ${parseInt(latBanners.count, 10) === 4 ? 'selected' : ''}>4 Banners</option>
+        </select>
+      </div>
+
+      <!-- GUÍA DINÁMICA DE MEDIDAS -->
+      <div id="latBannersGuide" style="background:rgba(168,85,247,0.1);border:1px dashed #a855f7;border-radius:6px;padding:10px;margin-bottom:15px;color:#d8b4fe;font-size:12px;line-height:1.4;">
+        ${getGuideText(latBanners.count || 2)}
+      </div>
+
+      <div id="latBannersSlotsContainer">
+        ${[0, 1, 2, 3].map(i => renderBannerSlot(i)).join('')}
+      </div>
+    </div>
+
+    <!-- TAB 3: REELS & VIDEOS (DERECHA) -->
+    <div id="tabLatReelsContent" style="display:none;">
+      <div class="panel-section" style="background:rgba(0,255,213,0.08);border-left:4px solid #00ffd5;padding:10px;border-radius:6px;margin-bottom:15px;">
+        <div style="display:flex;align-items:center;justify-content:space-between;">
+          <label for="latReelsEnabled" style="font-weight:bold;color:#fff;font-size:13px;cursor:pointer;">
+            🎬 Activar Módulo de Reels (Derecha)
+          </label>
+          <input type="checkbox" id="latReelsEnabled" ${latReels.enabled ? 'checked' : ''} style="width:18px;height:18px;accent-color:#00ffd5;cursor:pointer;">
+        </div>
+      </div>
+
+      <div class="panel-field" style="margin-bottom:12px;">
+        <label class="panel-label" style="font-size:12px;"><strong>Cantidad de Videos a Mostrar:</strong></label>
+        <select class="panel-select" id="latReelsCount" style="font-size:13px;font-weight:bold;">
+          <option value="1" ${parseInt(latReels.count, 10) === 1 || !latReels.count ? 'selected' : ''}>1 Video Reel</option>
+          <option value="2" ${parseInt(latReels.count, 10) === 2 ? 'selected' : ''}>2 Videos Reels</option>
+          <option value="3" ${parseInt(latReels.count, 10) === 3 ? 'selected' : ''}>3 Videos Reels</option>
+        </select>
+      </div>
+
+      <div style="font-size:11px;color:#888;margin-bottom:15px;line-height:1.4;">
+        💡 Los videos se muestran en formato vertical 9:16 al costado derecho del catálogo.
+      </div>
+
+      <div id="latReelsSlotsContainer">
+        ${[0, 1, 2].map(i => renderReelSlot(i)).join('')}
+      </div>
+    </div>
+
+    <div style="margin-top:20px;padding-top:15px;border-top:1px solid rgba(255,255,255,0.1);">
+      <button class="panel-btn panel-btn-primary" id="saveBannersLateralesBtn" style="width:100%;padding:10px;font-size:13px;font-weight:bold;background:linear-gradient(135deg, #a855f7, #00ffd5);color:#000;">
+        💾 Guardar Banners y Reels
+      </button>
+    </div>
+  `;
+
+  window.PixisOverlay.openPanel('🎯 Banners Laterales & Reels', html);
+
+  // Tab switching (3 pestañas)
+  const tabBtnFanpage = document.getElementById('tabBtnFanpageBanners');
+  const tabBtnBanners = document.getElementById('tabBtnLatBanners');
+  const tabBtnReels = document.getElementById('tabBtnLatReels');
+  const tabContentFanpage = document.getElementById('tabFanpageBannersContent');
+  const tabContentBanners = document.getElementById('tabLatBannersContent');
+  const tabContentReels = document.getElementById('tabLatReelsContent');
+
+  const switchTab = (activeBtn, activeContent) => {
+    [tabBtnFanpage, tabBtnBanners, tabBtnReels].forEach(b => b?.classList.remove('active'));
+    [tabContentFanpage, tabContentBanners, tabContentReels].forEach(c => { if (c) c.style.display = 'none'; });
+    activeBtn?.classList.add('active');
+    if (activeContent) activeContent.style.display = 'block';
+  };
+
+  tabBtnFanpage?.addEventListener('click', () => switchTab(tabBtnFanpage, tabContentFanpage));
+  tabBtnBanners?.addEventListener('click', () => switchTab(tabBtnBanners, tabContentBanners));
+  tabBtnReels?.addEventListener('click', () => switchTab(tabBtnReels, tabContentReels));
+
+  // Dynamic measure guide & slot toggle on count change
+  const countSelect = document.getElementById('latBannersCount');
+  const guideEl = document.getElementById('latBannersGuide');
+  countSelect?.addEventListener('change', (e) => {
+    const val = parseInt(e.target.value, 10) || 2;
+    if (guideEl) guideEl.innerHTML = getGuideText(val);
+    for (let i = 0; i < 4; i++) {
+      const slot = document.getElementById(`latBannerSlot_${i}`);
+      if (slot) slot.style.display = i < val ? 'block' : 'none';
+    }
+  });
+
+  // Reels slot toggle on count change
+  const reelsCountSelect = document.getElementById('latReelsCount');
+  reelsCountSelect?.addEventListener('change', (e) => {
+    const val = parseInt(e.target.value, 10) || 1;
+    for (let i = 0; i < 3; i++) {
+      const slot = document.getElementById(`latReelSlot_${i}`);
+      if (slot) slot.style.display = i < val ? 'block' : 'none';
+    }
+  });
+
+  // Dynamic action selector toggles (Catálogo)
+  document.querySelectorAll('.lat-banner-tipo-select').forEach(sel => {
+    sel.addEventListener('change', (e) => {
+      const idx = e.target.dataset.idx;
+      const tipo = e.target.value;
+      const catBox = document.getElementById(`latBannerActionCat_${idx}`);
+      const promoBox = document.getElementById(`latBannerActionPromo_${idx}`);
+      const urlBox = document.getElementById(`latBannerActionUrl_${idx}`);
+
+      if (catBox) catBox.style.display = tipo === 'categoria' ? 'block' : 'none';
+      if (promoBox) promoBox.style.display = tipo === 'banner_promocional' ? 'block' : 'none';
+      if (urlBox) urlBox.style.display = tipo === 'url' ? 'block' : 'none';
+    });
+  });
+
+  // Dynamic action selector toggles (Fanpage)
+  document.querySelectorAll('.fanpage-banner-tipo-select').forEach(sel => {
+    sel.addEventListener('change', (e) => {
+      const side = e.target.dataset.side;
+      const tipo = e.target.value;
+      const catBox = document.getElementById(`fanpageBannerActionCat_${side}`);
+      const promoBox = document.getElementById(`fanpageBannerActionPromo_${side}`);
+      const urlBox = document.getElementById(`fanpageBannerActionUrl_${side}`);
+
+      if (catBox) catBox.style.display = tipo === 'categoria' ? 'block' : 'none';
+      if (promoBox) promoBox.style.display = tipo === 'banner_promocional' ? 'block' : 'none';
+      if (urlBox) urlBox.style.display = tipo === 'url' ? 'block' : 'none';
+    });
+  });
+
+  // Image file uploads (Catálogo)
+  document.querySelectorAll('.lat-banner-file-input').forEach(input => {
+    input.addEventListener('change', async (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      const idx = e.target.dataset.idx;
+      const textInput = document.getElementById(`latBannerImg_${idx}`);
+      window.PixisOverlay.showToast('Subiendo banner lateral en calidad original...', 'info');
+
+      try {
+        const filename = `latbanner_${Date.now()}_${file.name.replace(/[^a-zA-Z0-9.]/g, '_')}`;
+        const res = await fetch(`/api/upload-image?filename=${filename}&folder=img/uploads`, {
+          method: 'POST',
+          body: file
+        });
+        const data = await res.json();
+        if (data.ok && data.url) {
+          if (textInput) textInput.value = data.url;
+          window.PixisOverlay.showToast(`✅ Imagen de Banner #${parseInt(idx, 10) + 1} subida`, 'success');
+        } else {
+          window.PixisOverlay.showToast('❌ Error al subir imagen', 'error');
+        }
+      } catch (err) {
+        window.PixisOverlay.showToast('❌ Error de conexión al subir imagen', 'error');
+      }
+    });
+  });
+
+  // Image file uploads (Fanpage)
+  document.querySelectorAll('.fanpage-banner-file-input').forEach(input => {
+    input.addEventListener('change', async (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      const side = e.target.dataset.side;
+      const textInput = document.getElementById(`fanpageBannerImg_${side}`);
+      window.PixisOverlay.showToast('Subiendo banner de Nuevos Ingresos...', 'info');
+
+      try {
+        const filename = `fanpage_lat_${side}_${Date.now()}_${file.name.replace(/[^a-zA-Z0-9.]/g, '_')}`;
+        const res = await fetch(`/api/upload-image?filename=${filename}&folder=img/uploads`, {
+          method: 'POST',
+          body: file
+        });
+        const data = await res.json();
+        if (data.ok && data.url) {
+          if (textInput) textInput.value = data.url;
+          window.PixisOverlay.showToast(`✅ Banner Lateral ${side === 'left' ? 'Izquierdo' : 'Derecho'} subido`, 'success');
+        } else {
+          window.PixisOverlay.showToast('❌ Error al subir imagen', 'error');
+        }
+      } catch (err) {
+        window.PixisOverlay.showToast('❌ Error de conexión al subir imagen', 'error');
+      }
+    });
+  });
+
+  // Save handler
+  document.getElementById('saveBannersLateralesBtn')?.addEventListener('click', async () => {
+    // 1. Catálogo Banners
+    const bannersEnabled = Boolean(document.getElementById('latBannersEnabled')?.checked);
+    const bannersCount = parseInt(document.getElementById('latBannersCount')?.value, 10) || 2;
+    const bannerItems = [];
+
+    for (let i = 0; i < bannersCount; i++) {
+      const img = document.getElementById(`latBannerImg_${i}`)?.value.trim() || '';
+      const title = document.getElementById(`latBannerTitle_${i}`)?.value.trim() || '';
+      const tipo = document.getElementById(`latBannerTipo_${i}`)?.value || 'categoria';
+      let target = '';
+
+      if (tipo === 'categoria') {
+        target = document.getElementById(`latBannerCat_${i}`)?.value || '';
+      } else if (tipo === 'banner_promocional') {
+        target = document.getElementById(`latBannerPromo_${i}`)?.value || '';
+      } else if (tipo === 'url') {
+        target = document.getElementById(`latBannerUrl_${i}`)?.value.trim() || '';
+      }
+
+      bannerItems.push({ img, title, tipo, target });
+    }
+
+    // 2. Catálogo Reels
+    const reelsEnabled = Boolean(document.getElementById('latReelsEnabled')?.checked);
+    const reelsCount = parseInt(document.getElementById('latReelsCount')?.value, 10) || 1;
+    const reelItems = [];
+
+    for (let i = 0; i < reelsCount; i++) {
+      const title = document.getElementById(`latReelTitle_${i}`)?.value.trim() || '';
+      const platform = document.getElementById(`latReelPlatform_${i}`)?.value || 'youtube';
+      const url = document.getElementById(`latReelUrl_${i}`)?.value.trim() || '';
+      reelItems.push({ title, platform, url });
+    }
+
+    // 3. Fanpage / Nuevos Ingresos Banners
+    const fanpageEnabled = Boolean(document.getElementById('fanpageBannersEnabled')?.checked);
+    const getSideData = (side) => {
+      const img = document.getElementById(`fanpageBannerImg_${side}`)?.value.trim() || '';
+      const title = document.getElementById(`fanpageBannerTitle_${side}`)?.value.trim() || '';
+      const tipo = document.getElementById(`fanpageBannerTipo_${side}`)?.value || 'categoria';
+      let target = '';
+      if (tipo === 'categoria') {
+        target = document.getElementById(`fanpageBannerCat_${side}`)?.value || '';
+      } else if (tipo === 'banner_promocional') {
+        target = document.getElementById(`fanpageBannerPromo_${side}`)?.value || '';
+      } else if (tipo === 'url') {
+        target = document.getElementById(`fanpageBannerUrl_${side}`)?.value.trim() || '';
+      }
+      return { img, title, tipo, target };
+    };
+
+    const newFanpageBanners = {
+      enabled: fanpageEnabled,
+      left: getSideData('left'),
+      right: getSideData('right')
+    };
+
+    // Autolimpieza segura Set-Difference de imágenes reemplazadas/borradas
+    const oldLatItems = site.lateralBanners?.items || [];
+    const oldFanpageItems = [site.fanpageBanners?.left, site.fanpageBanners?.right].filter(Boolean);
+    const oldAll = [...oldLatItems, ...oldFanpageItems];
+    const newAll = [...bannerItems, newFanpageBanners.left, newFanpageBanners.right];
+
+    if (window.PixisEditorAPI && window.PixisEditorAPI._safeCleanupImages) {
+      window.PixisEditorAPI._safeCleanupImages(oldAll, newAll, 'laterals');
+    }
+
+    // Actualizar datos del editor y de PixisState
+    PixisEditor.data.site.lateralBanners = {
+      enabled: bannersEnabled,
+      count: bannersCount,
+      items: bannerItems
+    };
+
+    PixisEditor.data.site.lateralReels = {
+      enabled: reelsEnabled,
+      count: reelsCount,
+      items: reelItems
+    };
+
+    PixisEditor.data.site.fanpageBanners = newFanpageBanners;
+
+    if (window.PixisState && window.PixisState.state && window.PixisState.state.site) {
+      window.PixisState.state.site.lateralBanners = PixisEditor.data.site.lateralBanners;
+      window.PixisState.state.site.lateralReels = PixisEditor.data.site.lateralReels;
+      window.PixisState.state.site.fanpageBanners = PixisEditor.data.site.fanpageBanners;
+    }
+
+    window.PixisOverlay.markUnsaved();
+    if (typeof saveAllData === 'function') {
+      await saveAllData();
+    }
+
+    if (typeof window.renderLateralBannersAndReels === 'function') {
+      window.renderLateralBannersAndReels();
+    }
+    if (typeof window.renderFanpageLaterals === 'function') {
+      window.renderFanpageLaterals();
+    }
+
+    window.PixisOverlay.showToast('✅ Banners y Reels guardados con éxito', 'success');
+  });
 }

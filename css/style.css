@@ -188,6 +188,15 @@ html {
   z-index: 5;
 }
 
+/* Banner Principal Superior (Ancho Completo Desktop - Imagen 1) */
+.destacados .banner-carousel-outer {
+  max-width: 1720px;
+  width: 100%;
+  padding: 0 50px;
+  margin: 20px auto 40px;
+  box-sizing: border-box;
+}
+
 .banner-carousel {
   position: relative;
   width: 100%;
@@ -9601,5 +9610,212 @@ body.light-mode .pedido-aviso-inline.aviso-vencido-tag {
     grid-template-columns: 1fr;
   }
 }
+
+/* ── MÓDULOS LATERALES (DESKTOP PC ONLY) ── */
+.catalog-layout-container {
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  gap: 20px;
+  width: 100%;
+  max-width: 1720px;
+  margin: 0 auto;
+  padding: 0 15px;
+  box-sizing: border-box;
+}
+
+.lateral-column {
+  width: 240px;
+  flex-shrink: 0;
+  position: sticky;
+  top: 90px;
+  max-height: calc(100vh - 110px);
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  z-index: 10;
+  box-sizing: border-box;
+}
+
+.lateral-column::-webkit-scrollbar {
+  width: 4px;
+}
+.lateral-column::-webkit-scrollbar-thumb {
+  background: rgba(168, 85, 247, 0.4);
+  border-radius: 4px;
+}
+
+.catalog-center-content {
+  flex: 1;
+  min-width: 0;
+  max-width: 1200px;
+}
+
+/* Tarjetas de Banners Laterales */
+.lateral-banner-card {
+  width: 100%;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid rgba(168, 85, 247, 0.4);
+  background: rgba(14, 0, 22, 0.85);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+  transition: all 0.25s ease;
+  cursor: pointer;
+  display: block;
+  text-decoration: none;
+  position: relative;
+}
+
+.lateral-banner-card:hover {
+  transform: translateY(-4px);
+  border-color: #00ffd5;
+  box-shadow: 0 8px 25px rgba(0, 255, 213, 0.3);
+}
+
+.lateral-banner-card img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+/* Reels & Videos Verticales */
+.lateral-reel-card {
+  width: 100%;
+  aspect-ratio: 9 / 16;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid rgba(0, 255, 213, 0.35);
+  background: #000;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.6);
+  position: relative;
+}
+
+.lateral-reel-card iframe,
+.lateral-reel-card video {
+  width: 100%;
+  height: 100%;
+  border: none;
+  object-fit: cover;
+  display: block;
+}
+
+/* Light mode */
+body.light-mode .lateral-banner-card {
+  border-color: rgba(0, 100, 200, 0.3);
+  background: rgba(255, 255, 255, 0.9);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+body.light-mode .lateral-banner-card:hover {
+  border-color: #008a3d;
+  box-shadow: 0 8px 20px rgba(0, 138, 61, 0.2);
+}
+
+body.light-mode .lateral-reel-card {
+  border-color: rgba(0, 100, 200, 0.3);
+}
+
+/* BLINDAJE MOBILE & TABLET — Columnas laterales NO EXISTEN en mobile */
+@media (max-width: 1199px) {
+  .lateral-column,
+  .lateral-banners-col,
+  .lateral-reels-col {
+    display: none !important;
+  }
+  .catalog-layout-container {
+    display: block !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    padding: 0 !important;
+  }
+}
+
+/* ── BANNERS LATERALES ACOMPAÑANDO A NUEVOS INGRESOS (FANPAGE - IMAGEN 2) ── */
+.nuevos-ingresos-banner-wrapper {
+  display: flex;
+  justify-content: center;
+  align-items: stretch;
+  gap: 20px;
+  width: 100%;
+  max-width: 1720px;
+  margin: 20px auto 40px;
+  padding: 0 15px;
+  box-sizing: border-box;
+}
+
+.nuevos-ingresos-banner-wrapper .banner-carousel-outer {
+  flex: 1;
+  max-width: 1200px;
+  margin: 0;
+  padding: 0 45px;
+}
+
+.fanpage-lateral-col {
+  width: 240px;
+  height: 440px; /* Misma altura exacta que el carrusel */
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+}
+
+.fanpage-lateral-card {
+  width: 100%;
+  height: 100%;
+  border-radius: 20px;
+  overflow: hidden;
+  border: 1px solid rgba(168, 85, 247, 0.4);
+  background: rgba(14, 0, 22, 0.85);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+  transition: all 0.25s ease;
+  cursor: pointer;
+  display: block;
+  text-decoration: none;
+  position: relative;
+}
+
+.fanpage-lateral-card:hover {
+  transform: translateY(-4px);
+  border-color: #00ffd5;
+  box-shadow: 0 12px 30px rgba(0, 255, 213, 0.35);
+}
+
+.fanpage-lateral-card img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+/* Light mode */
+body.light-mode .fanpage-lateral-card {
+  border-color: rgba(0, 100, 200, 0.3);
+  background: rgba(255, 255, 255, 0.9);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+body.light-mode .fanpage-lateral-card:hover {
+  border-color: #008a3d;
+  box-shadow: 0 8px 20px rgba(0, 138, 61, 0.2);
+}
+
+/* Blindaje Móvil para Nuevos Ingresos */
+@media (max-width: 1199px) {
+  .fanpage-lateral-col {
+    display: none !important;
+  }
+  .nuevos-ingresos-banner-wrapper {
+    display: block !important;
+    padding: 0 !important;
+    margin: 0 auto !important;
+  }
+  .nuevos-ingresos-banner-wrapper .banner-carousel-outer {
+    max-width: 100% !important;
+    padding: 0 5px !important;
+  }
+}
+
 
 

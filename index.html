@@ -525,14 +525,23 @@
                 </script>
     </section>
 
-    <!-- CATÁLOGO -->
-    <div id="catalogo-completo" style="display: none;">
+    <!-- LAYOUT LATERAL + CATÁLOGO (DESKTOP PC ONLY) -->
+    <div class="catalog-layout-container" id="catalogLayoutContainer">
+        <aside class="lateral-column lateral-banners-col" id="lateralBannersCol" style="display:none;"></aside>
+        <div class="catalog-center-content">
+            <!-- CATÁLOGO -->
+            <div id="catalogo-completo" style="display: none;">
         <section class="Gabinetes">
 
 
             <h3 id="Periféricos" class="categoria pulsante">PERIFÉRICOS</h3>
             <div class="categoria-ui">
                 <div class="filtros-panel">
+                    <button class="btn-view-toggle" title="Cambiar vista cuadrícula o lista" aria-label="Cambiar vista">
+                        <svg class="icon-grid" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+                        <svg class="icon-list" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><rect x="3" y="4" width="18" height="3"/><rect x="3" y="10.5" width="18" height="3"/><rect x="3" y="17" width="18" height="3"/></svg>
+                        <span class="btn-view-label">Vista cuadrícula</span>
+                    </button>
                     <span class="filtro-titulo">Ordenar por:</span>
                     <label class="switch-precio">
                         <input type="checkbox" class="toggle-precio">
@@ -541,11 +550,7 @@
                     </label>
                     <div class="filtros-categoria" data-static-placeholder="true">
                         <button class="btn-filtro activo" data-filter="all">Todos</button>
-                    </div>
-        <button class="btn-view-toggle" title="Cambiar vista" aria-label="Cambiar vista">
-            <svg class="icon-grid" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
-            <svg class="icon-list" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><rect x="3" y="4" width="18" height="3"/><rect x="3" y="10.5" width="18" height="3"/><rect x="3" y="17" width="18" height="3"/></svg>
-        </button>
+                </div>
                 </div>
             </div>
             <div class="productos">
@@ -557,6 +562,11 @@
             <h3 id="almacenamiento" class="categoria pulsante">ALMACENAMIENTOS</h3>
             <div class="categoria-ui">
                 <div class="filtros-panel">
+                    <button class="btn-view-toggle" title="Cambiar vista cuadrícula o lista" aria-label="Cambiar vista">
+                        <svg class="icon-grid" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+                        <svg class="icon-list" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><rect x="3" y="4" width="18" height="3"/><rect x="3" y="10.5" width="18" height="3"/><rect x="3" y="17" width="18" height="3"/></svg>
+                        <span class="btn-view-label">Vista cuadrícula</span>
+                    </button>
                     <span class="filtro-titulo">Ordenar por:</span>
                     <label class="switch-precio">
                         <input type="checkbox" class="toggle-precio">
@@ -565,11 +575,7 @@
                     </label>
                     <div class="filtros-categoria" data-static-placeholder="true">
                         <button class="btn-filtro activo" data-filter="all">Todos</button>
-                    </div>
-        <button class="btn-view-toggle" title="Cambiar vista" aria-label="Cambiar vista">
-            <svg class="icon-grid" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
-            <svg class="icon-list" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><rect x="3" y="4" width="18" height="3"/><rect x="3" y="10.5" width="18" height="3"/><rect x="3" y="17" width="18" height="3"/></svg>
-        </button>
+                </div>
                 </div>
             </div>
             <div class="productos">
@@ -581,6 +587,11 @@
             <h3 id="gabinetes" class="categoria pulsante">GABINETES</h3>
             <div class="categoria-ui">
                 <div class="filtros-panel">
+                    <button class="btn-view-toggle" title="Cambiar vista cuadrícula o lista" aria-label="Cambiar vista">
+                        <svg class="icon-grid" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+                        <svg class="icon-list" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><rect x="3" y="4" width="18" height="3"/><rect x="3" y="10.5" width="18" height="3"/><rect x="3" y="17" width="18" height="3"/></svg>
+                        <span class="btn-view-label">Vista cuadrícula</span>
+                    </button>
                     <span class="filtro-titulo">Ordenar por:</span>
                     <label class="switch-precio">
                         <input type="checkbox" class="toggle-precio">
@@ -591,11 +602,7 @@
                         <button class="btn-filtro activo" data-filter="all">Todos</button>
                         <button class="btn-filtro" data-filter="ITX/MATX/ATX">Gabinetes ITX/MATX/ATX</button>
                         <button class="btn-filtro" data-filter="ITX/MATX">Gabinetes ITX/MATX</button>
-                    </div>
-        <button class="btn-view-toggle" title="Cambiar vista" aria-label="Cambiar vista">
-            <svg class="icon-grid" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
-            <svg class="icon-list" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><rect x="3" y="4" width="18" height="3"/><rect x="3" y="10.5" width="18" height="3"/><rect x="3" y="17" width="18" height="3"/></svg>
-        </button>
+                </div>
                 </div>
             </div>
             <div class="productos">
@@ -605,6 +612,11 @@
             <h3 id="Procesadores" class="categoria">PROCESADORES</h3>
             <div class="categoria-ui">
                 <div class="filtros-panel">
+                    <button class="btn-view-toggle" title="Cambiar vista cuadrícula o lista" aria-label="Cambiar vista">
+                        <svg class="icon-grid" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+                        <svg class="icon-list" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><rect x="3" y="4" width="18" height="3"/><rect x="3" y="10.5" width="18" height="3"/><rect x="3" y="17" width="18" height="3"/></svg>
+                        <span class="btn-view-label">Vista cuadrícula</span>
+                    </button>
                     <span class="filtro-titulo">Ordenar por:</span>
                     <label class="switch-precio">
                         <input type="checkbox" class="toggle-precio">
@@ -613,11 +625,7 @@
                     </label>
                     <div class="filtros-categoria" data-static-placeholder="true">
                         <button class="btn-filtro activo" data-filter="all">Todos</button>
-                    </div>
-        <button class="btn-view-toggle" title="Cambiar vista" aria-label="Cambiar vista">
-            <svg class="icon-grid" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
-            <svg class="icon-list" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><rect x="3" y="4" width="18" height="3"/><rect x="3" y="10.5" width="18" height="3"/><rect x="3" y="17" width="18" height="3"/></svg>
-        </button>
+                </div>
                 </div>
             </div>
             <div class="productos">
@@ -628,6 +636,11 @@
             <h3 id="Placas madres" class="categoria pulsante">PLACAS MADRES</h3>
             <div class="categoria-ui">
                 <div class="filtros-panel">
+                    <button class="btn-view-toggle" title="Cambiar vista cuadrícula o lista" aria-label="Cambiar vista">
+                        <svg class="icon-grid" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+                        <svg class="icon-list" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><rect x="3" y="4" width="18" height="3"/><rect x="3" y="10.5" width="18" height="3"/><rect x="3" y="17" width="18" height="3"/></svg>
+                        <span class="btn-view-label">Vista cuadrícula</span>
+                    </button>
                     <span class="filtro-titulo">Ordenar por:</span>
                     <label class="switch-precio">
                         <input type="checkbox" class="toggle-precio">
@@ -636,11 +649,7 @@
                     </label>
                     <div class="filtros-categoria" data-static-placeholder="true">
                         <button class="btn-filtro activo" data-filter="all">Todos</button>
-                    </div>
-        <button class="btn-view-toggle" title="Cambiar vista" aria-label="Cambiar vista">
-            <svg class="icon-grid" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
-            <svg class="icon-list" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><rect x="3" y="4" width="18" height="3"/><rect x="3" y="10.5" width="18" height="3"/><rect x="3" y="17" width="18" height="3"/></svg>
-        </button>
+                </div>
                 </div>
             </div>
             <div class="productos">
@@ -650,6 +659,11 @@
             <h3 id="Memorias Ram" class=" categoria pulsante">MEMORIAS RAM</h3>
             <div class="categoria-ui">
                 <div class="filtros-panel">
+                    <button class="btn-view-toggle" title="Cambiar vista cuadrícula o lista" aria-label="Cambiar vista">
+                        <svg class="icon-grid" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+                        <svg class="icon-list" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><rect x="3" y="4" width="18" height="3"/><rect x="3" y="10.5" width="18" height="3"/><rect x="3" y="17" width="18" height="3"/></svg>
+                        <span class="btn-view-label">Vista cuadrícula</span>
+                    </button>
                     <span class="filtro-titulo">Ordenar por:</span>
                     <label class="switch-precio">
                         <input type="checkbox" class="toggle-precio">
@@ -658,11 +672,7 @@
                     </label>
                     <div class="filtros-categoria" data-static-placeholder="true">
                         <button class="btn-filtro activo" data-filter="all">Todos</button>
-                    </div>
-        <button class="btn-view-toggle" title="Cambiar vista" aria-label="Cambiar vista">
-            <svg class="icon-grid" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
-            <svg class="icon-list" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><rect x="3" y="4" width="18" height="3"/><rect x="3" y="10.5" width="18" height="3"/><rect x="3" y="17" width="18" height="3"/></svg>
-        </button>
+                </div>
                 </div>
             </div>
             <div class="productos">
@@ -673,6 +683,11 @@
             <h3 id="fuentes" class="categoria pulsante">FUENTES</h3>
             <div class="categoria-ui">
                 <div class="filtros-panel">
+                    <button class="btn-view-toggle" title="Cambiar vista cuadrícula o lista" aria-label="Cambiar vista">
+                        <svg class="icon-grid" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+                        <svg class="icon-list" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><rect x="3" y="4" width="18" height="3"/><rect x="3" y="10.5" width="18" height="3"/><rect x="3" y="17" width="18" height="3"/></svg>
+                        <span class="btn-view-label">Vista cuadrícula</span>
+                    </button>
                     <span class="filtro-titulo">Ordenar por:</span>
                     <label class="switch-precio">
                         <input type="checkbox" class="toggle-precio">
@@ -681,11 +696,7 @@
                     </label>
                     <div class="filtros-categoria" data-static-placeholder="true">
                         <button class="btn-filtro activo" data-filter="all">Todos</button>
-                    </div>
-        <button class="btn-view-toggle" title="Cambiar vista" aria-label="Cambiar vista">
-            <svg class="icon-grid" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
-            <svg class="icon-list" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><rect x="3" y="4" width="18" height="3"/><rect x="3" y="10.5" width="18" height="3"/><rect x="3" y="17" width="18" height="3"/></svg>
-        </button>
+                </div>
                 </div>
             </div>
             <div class="productos">
@@ -695,6 +706,11 @@
             <h3 id="refrigeracion" class="categoria pulsante">REFRIGERACION</h3>
             <div class="categoria-ui">
                 <div class="filtros-panel">
+                    <button class="btn-view-toggle" title="Cambiar vista cuadrícula o lista" aria-label="Cambiar vista">
+                        <svg class="icon-grid" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+                        <svg class="icon-list" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><rect x="3" y="4" width="18" height="3"/><rect x="3" y="10.5" width="18" height="3"/><rect x="3" y="17" width="18" height="3"/></svg>
+                        <span class="btn-view-label">Vista cuadrícula</span>
+                    </button>
                     <span class="filtro-titulo">Ordenar por:</span>
                     <label class="switch-precio">
                         <input type="checkbox" class="toggle-precio">
@@ -703,11 +719,7 @@
                     </label>
                     <div class="filtros-categoria" data-static-placeholder="true">
                         <button class="btn-filtro activo" data-filter="all">Todos</button>
-                    </div>
-        <button class="btn-view-toggle" title="Cambiar vista" aria-label="Cambiar vista">
-            <svg class="icon-grid" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
-            <svg class="icon-list" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><rect x="3" y="4" width="18" height="3"/><rect x="3" y="10.5" width="18" height="3"/><rect x="3" y="17" width="18" height="3"/></svg>
-        </button>
+                </div>
                 </div>
             </div>
             <div class="productos">
@@ -717,6 +729,11 @@
             <h3 id="monitores" class="categoria pulsante">MONITORES</h3>
             <div class="categoria-ui">
                 <div class="filtros-panel">
+                    <button class="btn-view-toggle" title="Cambiar vista cuadrícula o lista" aria-label="Cambiar vista">
+                        <svg class="icon-grid" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+                        <svg class="icon-list" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><rect x="3" y="4" width="18" height="3"/><rect x="3" y="10.5" width="18" height="3"/><rect x="3" y="17" width="18" height="3"/></svg>
+                        <span class="btn-view-label">Vista cuadrícula</span>
+                    </button>
                     <span class="filtro-titulo">Ordenar por:</span>
                     <label class="switch-precio">
                         <input type="checkbox" class="toggle-precio">
@@ -725,11 +742,7 @@
                     </label>
                     <div class="filtros-categoria" data-static-placeholder="true">
                         <button class="btn-filtro activo" data-filter="all">Todos</button>
-                    </div>
-        <button class="btn-view-toggle" title="Cambiar vista" aria-label="Cambiar vista">
-            <svg class="icon-grid" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
-            <svg class="icon-list" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><rect x="3" y="4" width="18" height="3"/><rect x="3" y="10.5" width="18" height="3"/><rect x="3" y="17" width="18" height="3"/></svg>
-        </button>
+                </div>
                 </div>
             </div>
             <div class="productos">
@@ -739,6 +752,11 @@
             <h3 id="Placas de video" class="categoria pulsante">PLACAS DE VIDEO</h3>
             <div class="categoria-ui">
                 <div class="filtros-panel">
+                    <button class="btn-view-toggle" title="Cambiar vista cuadrícula o lista" aria-label="Cambiar vista">
+                        <svg class="icon-grid" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+                        <svg class="icon-list" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><rect x="3" y="4" width="18" height="3"/><rect x="3" y="10.5" width="18" height="3"/><rect x="3" y="17" width="18" height="3"/></svg>
+                        <span class="btn-view-label">Vista cuadrícula</span>
+                    </button>
                     <span class="filtro-titulo">Ordenar por:</span>
                     <label class="switch-precio">
                         <input type="checkbox" class="toggle-precio">
@@ -747,11 +765,7 @@
                     </label>
                     <div class="filtros-categoria" data-static-placeholder="true">
                         <button class="btn-filtro activo" data-filter="all">Todos</button>
-                    </div>
-        <button class="btn-view-toggle" title="Cambiar vista" aria-label="Cambiar vista">
-            <svg class="icon-grid" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
-            <svg class="icon-list" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><rect x="3" y="4" width="18" height="3"/><rect x="3" y="10.5" width="18" height="3"/><rect x="3" y="17" width="18" height="3"/></svg>
-        </button>
+                </div>
                 </div>
             </div>
             <div class="productos">
@@ -761,6 +775,11 @@
             <h3 id="red" class="categoria pulsante">CONECTIVIDAD</h3>
             <div class="categoria-ui">
                 <div class="filtros-panel">
+                    <button class="btn-view-toggle" title="Cambiar vista cuadrícula o lista" aria-label="Cambiar vista">
+                        <svg class="icon-grid" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+                        <svg class="icon-list" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><rect x="3" y="4" width="18" height="3"/><rect x="3" y="10.5" width="18" height="3"/><rect x="3" y="17" width="18" height="3"/></svg>
+                        <span class="btn-view-label">Vista cuadrícula</span>
+                    </button>
                     <span class="filtro-titulo">Ordenar por:</span>
                     <label class="switch-precio">
                         <input type="checkbox" class="toggle-precio">
@@ -769,11 +788,7 @@
                     </label>
                     <div class="filtros-categoria" data-static-placeholder="true">
                         <button class="btn-filtro activo" data-filter="all">Todos</button>
-                    </div>
-        <button class="btn-view-toggle" title="Cambiar vista" aria-label="Cambiar vista">
-            <svg class="icon-grid" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
-            <svg class="icon-list" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><rect x="3" y="4" width="18" height="3"/><rect x="3" y="10.5" width="18" height="3"/><rect x="3" y="17" width="18" height="3"/></svg>
-        </button>
+                </div>
                 </div>
             </div>
             <div class="productos">
@@ -783,6 +798,11 @@
             <h3 id="Sillas y Escritorios Gamer" class="categoria pulsante">SILLAS Y ESCRITORIOS</h3>
             <div class="categoria-ui">
                 <div class="filtros-panel">
+                    <button class="btn-view-toggle" title="Cambiar vista cuadrícula o lista" aria-label="Cambiar vista">
+                        <svg class="icon-grid" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+                        <svg class="icon-list" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><rect x="3" y="4" width="18" height="3"/><rect x="3" y="10.5" width="18" height="3"/><rect x="3" y="17" width="18" height="3"/></svg>
+                        <span class="btn-view-label">Vista cuadrícula</span>
+                    </button>
                     <span class="filtro-titulo">Ordenar por:</span>
                     <label class="switch-precio">
                         <input type="checkbox" class="toggle-precio">
@@ -794,11 +814,7 @@
                         <button class="btn-filtro" data-filter="Diseño gamer">Diseño gamer</button>
                         <button class="btn-filtro" data-filter="Diseño Ergonomico">Diseño Ergonomicas</button>
                         <button class="btn-filtro" data-filter="Escritorio">Escritorios</button>
-                    </div>
-        <button class="btn-view-toggle" title="Cambiar vista" aria-label="Cambiar vista">
-            <svg class="icon-grid" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
-            <svg class="icon-list" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><rect x="3" y="4" width="18" height="3"/><rect x="3" y="10.5" width="18" height="3"/><rect x="3" y="17" width="18" height="3"/></svg>
-        </button>
+                </div>
                 </div>
             </div>
             <div class="productos">
@@ -807,6 +823,11 @@
             <h3 id="Cables" class="categoria pulsante">CABLES & ADAPTADORES</h3>
             <div class="categoria-ui">
                 <div class="filtros-panel">
+                    <button class="btn-view-toggle" title="Cambiar vista cuadrícula o lista" aria-label="Cambiar vista">
+                        <svg class="icon-grid" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+                        <svg class="icon-list" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><rect x="3" y="4" width="18" height="3"/><rect x="3" y="10.5" width="18" height="3"/><rect x="3" y="17" width="18" height="3"/></svg>
+                        <span class="btn-view-label">Vista cuadrícula</span>
+                    </button>
                     <span class="filtro-titulo">Ordenar por:</span>
                     <label class="switch-precio">
                         <input type="checkbox" class="toggle-precio">
@@ -815,11 +836,7 @@
                     </label>
                     <div class="filtros-categoria" data-static-placeholder="true">
                         <button class="btn-filtro activo" data-filter="all">Todos</button>
-                    </div>
-        <button class="btn-view-toggle" title="Cambiar vista" aria-label="Cambiar vista">
-            <svg class="icon-grid" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
-            <svg class="icon-list" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><rect x="3" y="4" width="18" height="3"/><rect x="3" y="10.5" width="18" height="3"/><rect x="3" y="17" width="18" height="3"/></svg>
-        </button>
+                </div>
                 </div>
             </div>
             <div class="productos">
@@ -828,6 +845,11 @@
             <h3 id="Herramientas" class="categoria pulsante">HERRAMIENTAS</h3>
             <div class="categoria-ui">
                 <div class="filtros-panel">
+                    <button class="btn-view-toggle" title="Cambiar vista cuadrícula o lista" aria-label="Cambiar vista">
+                        <svg class="icon-grid" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+                        <svg class="icon-list" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><rect x="3" y="4" width="18" height="3"/><rect x="3" y="10.5" width="18" height="3"/><rect x="3" y="17" width="18" height="3"/></svg>
+                        <span class="btn-view-label">Vista cuadrícula</span>
+                    </button>
                     <span class="filtro-titulo">Ordenar por:</span>
                     <label class="switch-precio">
                         <input type="checkbox" class="toggle-precio">
@@ -836,11 +858,7 @@
                     </label>
                     <div class="filtros-categoria" data-static-placeholder="true">
                         <button class="btn-filtro activo" data-filter="all">Todos</button>
-                    </div>
-        <button class="btn-view-toggle" title="Cambiar vista" aria-label="Cambiar vista">
-            <svg class="icon-grid" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
-            <svg class="icon-list" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><rect x="3" y="4" width="18" height="3"/><rect x="3" y="10.5" width="18" height="3"/><rect x="3" y="17" width="18" height="3"/></svg>
-        </button>
+                </div>
                 </div>
             </div>
             <div class="productos">
@@ -850,6 +868,11 @@
             <h3 id="Cargadores" class="categoria">CARGADORES</h3>
             <div class="categoria-ui">
                 <div class="filtros-panel">
+                    <button class="btn-view-toggle" title="Cambiar vista cuadrícula o lista" aria-label="Cambiar vista">
+                        <svg class="icon-grid" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+                        <svg class="icon-list" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><rect x="3" y="4" width="18" height="3"/><rect x="3" y="10.5" width="18" height="3"/><rect x="3" y="17" width="18" height="3"/></svg>
+                        <span class="btn-view-label">Vista cuadrícula</span>
+                    </button>
                     <span class="filtro-titulo">Ordenar por:</span>
                     <label class="switch-precio">
                         <input type="checkbox" class="toggle-precio">
@@ -858,11 +881,7 @@
                     </label>
                     <div class="filtros-categoria" data-static-placeholder="true">
                         <button class="btn-filtro activo" data-filter="all">Todos</button>
-                    </div>
-        <button class="btn-view-toggle" title="Cambiar vista" aria-label="Cambiar vista">
-            <svg class="icon-grid" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
-            <svg class="icon-list" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><rect x="3" y="4" width="18" height="3"/><rect x="3" y="10.5" width="18" height="3"/><rect x="3" y="17" width="18" height="3"/></svg>
-        </button>
+                </div>
                 </div>
             </div>
             <div class="productos">
@@ -874,6 +893,11 @@
             <h3 id="Notebook" class="categoria pulsante">PC, COMBOS Y PORTATILES</h3>
             <div class="categoria-ui">
                 <div class="filtros-panel">
+                    <button class="btn-view-toggle" title="Cambiar vista cuadrícula o lista" aria-label="Cambiar vista">
+                        <svg class="icon-grid" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+                        <svg class="icon-list" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><rect x="3" y="4" width="18" height="3"/><rect x="3" y="10.5" width="18" height="3"/><rect x="3" y="17" width="18" height="3"/></svg>
+                        <span class="btn-view-label">Vista cuadrícula</span>
+                    </button>
                     <span class="filtro-titulo">Ordenar por:</span>
                     <label class="switch-precio">
                         <input type="checkbox" class="toggle-precio">
@@ -882,11 +906,7 @@
                     </label>
                     <div class="filtros-categoria" data-static-placeholder="true">
                         <button class="btn-filtro activo" data-filter="all">Todos</button>
-                    </div>
-        <button class="btn-view-toggle" title="Cambiar vista" aria-label="Cambiar vista">
-            <svg class="icon-grid" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
-            <svg class="icon-list" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><rect x="3" y="4" width="18" height="3"/><rect x="3" y="10.5" width="18" height="3"/><rect x="3" y="17" width="18" height="3"/></svg>
-        </button>
+                </div>
                 </div>
             </div>
             <div class="productos">
@@ -895,6 +915,11 @@
             <h3 id="Camara de Seguridad" class="categoria pulsante">CAMARA DE SEGURIDAD</h3>
             <div class="categoria-ui">
                 <div class="filtros-panel">
+                    <button class="btn-view-toggle" title="Cambiar vista cuadrícula o lista" aria-label="Cambiar vista">
+                        <svg class="icon-grid" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+                        <svg class="icon-list" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><rect x="3" y="4" width="18" height="3"/><rect x="3" y="10.5" width="18" height="3"/><rect x="3" y="17" width="18" height="3"/></svg>
+                        <span class="btn-view-label">Vista cuadrícula</span>
+                    </button>
                     <span class="filtro-titulo">Ordenar por:</span>
                     <label class="switch-precio">
                         <input type="checkbox" class="toggle-precio">
@@ -904,11 +929,7 @@
                     <div class="filtros-categoria" data-static-placeholder="true">
                         <button class="btn-filtro activo" data-filter="all">Todos</button>
                         <button class="btn-filtro" data-filter="Camara de seguridad">Camara de seguridad</button>
-                    </div>
-        <button class="btn-view-toggle" title="Cambiar vista" aria-label="Cambiar vista">
-            <svg class="icon-grid" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
-            <svg class="icon-list" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><rect x="3" y="4" width="18" height="3"/><rect x="3" y="10.5" width="18" height="3"/><rect x="3" y="17" width="18" height="3"/></svg>
-        </button>
+                </div>
                 </div>
             </div>
             <div class="productos">
@@ -917,19 +938,30 @@
 
         </section>
     </div> <!-- END CATALAGO COMPLETO -->
+        </div> <!-- END catalog-center-content -->
+        <aside class="lateral-column lateral-reels-col" id="lateralReelsCol" style="display:none;"></aside>
+    </div> <!-- END catalog-layout-container -->
 
     <!-- SECCIÓN NUEVOS INGRESOS (SOLO FANPAGE) -->
     <section class="nuevos-ingresos" id="nuevosIngresosSection">
-        <div class="banner-carousel-outer">
-            <div class="banner-carousel">
-                <div class="banner-track">
-                    <!-- Los slides se cargan dinámicamente desde products.json / site.json -->
+        <div class="nuevos-ingresos-banner-wrapper" id="nuevosIngresosBannerWrapper">
+            <!-- BANNER LATERAL IZQUIERDO (DESKTOP PC ONLY) -->
+            <aside class="fanpage-lateral-col" id="fanpageLateralLeft" style="display:none;"></aside>
+
+            <div class="banner-carousel-outer">
+                <div class="banner-carousel">
+                    <div class="banner-track">
+                        <!-- Los slides se cargan dinámicamente desde products.json / site.json -->
+                    </div>
                 </div>
+                <div class="banner-dots"></div>
+                <!-- BOTONES -->
+                <button class="banner-prev">‹</button>
+                <button class="banner-next">›</button>
             </div>
-            <div class="banner-dots"></div>
-            <!-- BOTONES -->
-            <button class="banner-prev">‹</button>
-            <button class="banner-next">›</button>
+
+            <!-- BANNER LATERAL DERECHO (DESKTOP PC ONLY) -->
+            <aside class="fanpage-lateral-col" id="fanpageLateralRight" style="display:none;"></aside>
         </div>
         <h2 class="nuevos-ingreso">🔥NUEVOS INGRESOS🔥</h2>
         <div class="carousel-wrapper">

@@ -4392,25 +4392,28 @@ app.post('/api/upload-image', (req, res) => {
   });
 });
 
-// POST /api/remove-image
+// POST /api/remove-image (Hardened for Hostinger Linux)
 app.post('/api/remove-image', (req, res) => {
   if (!isAuthorized(req)) {
     return res.sendStatus(403);
   }
   
   try {
-    const { url: relativePath } = req.body;
-    if (!relativePath || !relativePath.startsWith('img/') || relativePath.includes('..')) {
-      return res.status(400).json({ error: 'Ruta inválida' });
+    let cleanPath = (req.body?.url || '').replace(/\\/g, '/').replace(/^\/+/, '').split('?')[0].trim();
+    
+    // Seguridad: solo permitir carpetas dinámicas de banners/uploads y bloquear directory traversal
+    const isAllowedFolder = cleanPath.startsWith('img/uploads/') || cleanPath.startsWith('img/carrusel/');
+    if (!cleanPath || !isAllowedFolder || cleanPath.includes('..')) {
+      return res.status(400).json({ error: 'Ruta no permitida o inválida' });
     }
 
-    const fullPath = path.join(BASE, ...relativePath.split('/'));
+    const fullPath = path.join(BASE, ...cleanPath.split('/'));
     
     if (fs.existsSync(fullPath)) {
       fs.unlinkSync(fullPath);
       const now = new Date().toLocaleTimeString('es-AR');
-      console.log(`  \x1b[31m🗑️ [${now}] Imagen eliminada: ${relativePath}\x1b[0m`);
-      res.json({ ok: true });
+      console.log(`  \x1b[31m🗑️ [${now}] Imagen eliminada permanentemente: ${cleanPath}\x1b[0m`);
+      res.json({ ok: true, deleted: cleanPath });
     } else {
       res.status(404).json({ error: 'Archivo no encontrado' });
     }

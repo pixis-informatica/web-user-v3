@@ -1615,6 +1615,14 @@ window.PixisState = {
     // 10. Notificar que el estado está listo
     document.dispatchEvent(new CustomEvent('pixis:state-ready'));
 
+    // Renderizar módulos laterales (Banners & Reels) si están configurados
+    if (typeof window.renderLateralBannersAndReels === 'function') {
+      window.renderLateralBannersAndReels();
+    }
+    if (typeof window.renderFanpageLaterals === 'function') {
+      window.renderFanpageLaterals();
+    }
+
     // Restaurar scroll de forma segura e instantánea ante colapsos de layout temporales
     if (window.scrollY !== savedScrollY) {
       window.scrollTo(window.scrollX, savedScrollY);
@@ -1747,7 +1755,7 @@ function renderDynamicProducts(products) {
               <button class="btn-view-toggle" title="Cambiar vista" aria-label="Cambiar vista">
                 <svg class="icon-grid" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
                 <svg class="icon-list" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><rect x="3" y="4" width="18" height="3"/><rect x="3" y="10.5" width="18" height="3"/><rect x="3" y="17" width="18" height="3"/></svg>
-                <span class="btn-view-label">Cambiar vista</span>
+                <span class="btn-view-label">Vista cuadrícula</span>
               </button>
               <span class="filtro-titulo">Ordenar por:</span>
               <label class="switch-precio">
@@ -1946,7 +1954,7 @@ function generarFiltrosDinamicos() {
           <button class="btn-view-toggle" title="Cambiar vista" aria-label="Cambiar vista">
             <svg class="icon-grid" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
             <svg class="icon-list" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><rect x="3" y="4" width="18" height="3"/><rect x="3" y="10.5" width="18" height="3"/><rect x="3" y="17" width="18" height="3"/></svg>
-            <span class="btn-view-label">Cambiar vista</span>
+            <span class="btn-view-label">Vista cuadrícula</span>
           </button>
           <span class="filtro-titulo">Ordenar por:</span>
           <label class="switch-precio">
