@@ -135,5 +135,48 @@
       "t": "nuevos ingresos pronto"
     }
   },
-  "cacheVersion": 1787869205687
+  "cacheVersion": 1788286790641,
+  "lateralBanners": {
+    "enabled": true,
+    "count": 1,
+    "items": [
+      {
+        "img": "img/uploads/latbanner_1788286174724_Dise_o_sin_t_tulo.png",
+        "title": "zxczxczxczx",
+        "tipo": "none",
+        "target": ""
+      }
+    ]
+  },
+  "lateralReels": {
+    "enabled": true,
+    "count": 2,
+    "items": [
+      {
+        "title": "putas",
+        "platform": "youtube",
+        "url": "https://www.youtube.com/shorts/xADClRr11Zg"
+      },
+      {
+        "title": "asdasdasd",
+        "platform": "instagram",
+        "url": "https://www.instagram.com/p/DWbl-iOA-8u/"
+      }
+    ]
+  },
+  "fanpageBanners": {
+    "enabled": true,
+    "left": {
+      "img": "img/uploads/fanpage_lat_left_1788286657260_6.png",
+      "title": "te la podes coger",
+      "tipo": "categoria",
+      "target": "gabinetes"
+    },
+    "right": {
+      "img": "img/uploads/fanpage_lat_right_1788286659649_5.png",
+      "title": "asdasdasdasdasd",
+      "tipo": "categoria",
+      "target": "refrigeracion"
+    }
+  }
 }
