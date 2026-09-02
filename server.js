@@ -1366,7 +1366,16 @@ app.post('/api/admin/coupons/import-pxgcupon', async (req, res) => {
       if (!c.codigo || typeof c.codigo !== 'string' || c.codigo.trim().length === 0) continue;
       const code = c.codigo.trim().toUpperCase();
 
-      const expiraEnDate = c.expira_en ? new Date(c.expira_en) : null;
+      let expiraEnDate = null;
+      if (c.expira_en) {
+        let str = String(c.expira_en).trim();
+        // Si no tiene offset de zona horaria ('Z' o '+/-HH:mm'), especificar hora de Argentina (-03:00)
+        if (!str.includes('Z') && !/[+-]\d{2}:\d{2}$/.test(str)) {
+          str = str.replace(' ', 'T') + '-03:00';
+        }
+        const d = new Date(str);
+        if (!isNaN(d.getTime())) expiraEnDate = d;
+      }
 
       await prisma.cupon.upsert({
         where: { codigo: code },

@@ -1480,7 +1480,7 @@ window.cargarCuponesAdmin = async function() {
         let estadoBadge = c.activo ? (c.expirado ? '<span style="background:rgba(234,179,8,0.2); color:#facc15; padding:3px 10px; border-radius:12px; font-size:0.75rem; font-weight:700;">EXPIRADO</span>' : '<span style="background:rgba(34,197,94,0.2); color:#4ade80; padding:3px 10px; border-radius:12px; font-size:0.75rem; font-weight:700;">🟢 ACTIVO</span>') : '<span style="background:rgba(239,68,68,0.2); color:#f87171; padding:3px 10px; border-radius:12px; font-size:0.75rem; font-weight:700;">INACTIVO</span>';
         const valorStr = c.tipo === 'PERCENTAGE' ? `${c.descuento_porcentaje}% OFF` : `$${c.descuento_monto.toLocaleString('es-AR')} OFF`;
         const minStr = c.monto_minimo > 0 ? `$${c.monto_minimo.toLocaleString('es-AR')}` : 'Sin mínimo';
-        const expStr = c.expira_en ? new Date(c.expira_en).toLocaleString('es-AR') : 'Sin Vencimiento';
+        const expStr = c.expira_en ? new Date(c.expira_en).toLocaleString('es-AR', { timeZone: 'America/Argentina/Buenos_Aires', day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit' }) : 'Sin Vencimiento';
         const usosCount = typeof c.usos_count === 'number' ? c.usos_count : 0;
 
         return `
