@@ -2859,7 +2859,7 @@ function openSiteDataPanel() {
         <div style="font-size:11px;color:#888;margin-bottom:8px;">Gestioná las imágenes rotativas de arriba de todo.</div>
         <div style="background:rgba(176,38,255,0.1);border:1px solid rgba(176,38,255,0.3);padding:8px 10px;border-radius:6px;font-size:11px;color:#d8b4fe;margin-bottom:12px;display:flex;align-items:center;gap:6px;">
           <span>📐</span>
-          <div><strong>Medidas recomendadas:</strong> 1720 × 440 px (PC) | 800 × 600 px (Móvil)</div>
+          <div><strong>Medidas recomendadas:</strong> 1720 × 540 px (PC) | 800 × 600 px (Móvil)</div>
         </div>
         <div id="carouselTopContainer">
           ${renderCarouselEditor(site.carouselTop || [], 'top')}
