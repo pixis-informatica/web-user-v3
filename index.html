@@ -5,19 +5,17 @@
     <meta charset="UTF-8">
     <base href="/">
     <script>
-        // Protección y Persistencia del Editor
+        // Protección del Editor (Sin bucles de redirección)
         (function () {
             const params = new URLSearchParams(window.location.search);
             const hasEditParam = params.has('edit');
             const hasSession = sessionStorage.getItem('pixis_session') === 'active';
 
+            // Solo si el usuario INTENTA entrar explícitamente al editor (?edit=true) sin sesión previa,
+            // lo enviamos a login.html. Jamás forzar ?edit=true si entra a la tienda normal.
             if (hasEditParam && !hasSession) {
-                // Intento de entrar sin login -> ir a login
+                sessionStorage.removeItem('pixis_session');
                 window.location.replace('login.html');
-            } else if (!hasEditParam && hasSession) {
-                // Sesión activa pero se perdió el parámetro -> recuperarlo automáticamente
-                params.set('edit', 'true');
-                window.location.replace(window.location.pathname + '?' + params.toString() + window.location.hash);
             }
         })();
     </script>

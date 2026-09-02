@@ -427,7 +427,10 @@ async function attemptLogin() {
       },
       body: JSON.stringify({ user, pass })
     });
-    const data = await res.json();
+    let data = {};
+    try { data = await res.json(); } catch (_) {
+      throw new Error(res.status >= 500 ? 'El servidor se está iniciando. Reintentá en unos segundos.' : 'Respuesta inesperada del servidor.');
+    }
 
     if (data.ok) {
       currentTempToken = data.tempToken; // Guardamos el tempToken (UUID)
@@ -474,11 +477,14 @@ async function verify2FA() {
       },
       body: JSON.stringify({ token, tempToken: currentTempToken }) // Enviamos el tempToken (Bloque 12)
     });
-    const data = await res.json();
+    let data = {};
+    try { data = await res.json(); } catch (_) {
+      throw new Error(res.status >= 500 ? 'El servidor se está iniciando. Reintentá en unos segundos.' : 'Respuesta inesperada del servidor.');
+    }
 
     if (data.ok) {
       sessionStorage.setItem('pixis_session', 'active');
-      window.location.replace('index.html?edit=true');
+      window.location.replace('index.html?edit=true&_t=' + Date.now());
     } else {
       throw new Error(data.error || 'Código incorrecto');
     }

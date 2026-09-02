@@ -1,7 +1,16 @@
-// ── AUTO-CONFIGURACIÓN: Garantizar DATABASE_URL ──────────────────
+// ── AUTO-CONFIGURACIÓN: Garantizar DATABASE_URL Absoluta ──────────────────
 if (!process.env.DATABASE_URL) {
-  process.env.DATABASE_URL = 'file:./dev.db';
+  const __path = require('path');
+  process.env.DATABASE_URL = 'file:' + __path.join(__dirname, 'prisma', 'dev.db');
 }
+
+// Prevenir caídas del proceso en Hostinger ante errores no capturados
+process.on('uncaughtException', (err) => {
+  console.error('💥 [CRÍTICO] Uncaught Exception capturada (servidor sigue vivo):', err);
+});
+process.on('unhandledRejection', (reason) => {
+  console.error('💥 [CRÍTICO] Unhandled Rejection capturada (servidor sigue vivo):', reason);
+});
 
 /**
  * ╔══════════════════════════════════════════════════════════════╗
@@ -342,12 +351,20 @@ app.use((req, res, next) => {
     // Aceptar admin_token O editor_token para el editor visual
     const token = req.cookies.admin_token || req.cookies.editor_token;
     if (!token) {
+      res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
+      res.setHeader('Pragma', 'no-cache');
+      res.setHeader('Expires', '0');
+      res.setHeader('X-LiteSpeed-Cache-Control', 'no-cache, no-store');
       return res.status(404).send('Not Found');
     }
     try {
       jwt.verify(token, JWT_SECRET);
       // Token válido, continuar sirviendo el editor
     } catch (e) {
+      res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
+      res.setHeader('Pragma', 'no-cache');
+      res.setHeader('Expires', '0');
+      res.setHeader('X-LiteSpeed-Cache-Control', 'no-cache, no-store');
       return res.status(404).send('Not Found');
     }
   }
@@ -373,50 +390,58 @@ const MAX_FAILED_ATTEMPTS = 5;
 const LOCK_TIME_MS = 1 * 60 * 1000; // 60 segundos (1 minuto)
 
 async function checkLoginRateLimit(email, tipo) {
-  const record = await prisma.intentosLogin.findUnique({
-    where: { email_tipo: { email, tipo } }
-  });
-  
-  if (record && record.bloqueado_hasta) {
-    const now = new Date();
-    if (record.bloqueado_hasta > now) {
-      const remainingTime = Math.ceil((record.bloqueado_hasta - now) / 1000);
-      return { blocked: true, remainingTime };
-    } else {
-      // Expiró el bloqueo, resetear
-      await prisma.intentosLogin.update({
-        where: { email_tipo: { email, tipo } },
-        data: { cantidad: 0, bloqueado_hasta: null }
-      });
+  try {
+    const record = await prisma.intentosLogin.findUnique({
+      where: { email_tipo: { email, tipo } }
+    });
+    
+    if (record && record.bloqueado_hasta) {
+      const now = new Date();
+      if (record.bloqueado_hasta > now) {
+        const remainingTime = Math.ceil((record.bloqueado_hasta - now) / 1000);
+        return { blocked: true, remainingTime };
+      } else {
+        // Expiró el bloqueo, resetear
+        await prisma.intentosLogin.update({
+          where: { email_tipo: { email, tipo } },
+          data: { cantidad: 0, bloqueado_hasta: null }
+        });
+      }
     }
+  } catch (err) {
+    console.warn('⚠️ [RateLimit] Error no bloqueante en checkLoginRateLimit:', err.message);
   }
   return { blocked: false };
 }
 
 async function recordFailedLoginAttempt(email, tipo) {
-  const now = new Date();
-  const record = await prisma.intentosLogin.findUnique({
-    where: { email_tipo: { email, tipo } }
-  });
-  
-  if (!record) {
-    await prisma.intentosLogin.create({
-      data: { email, tipo, cantidad: 1, ultimo_intento: now }
+  try {
+    const now = new Date();
+    const record = await prisma.intentosLogin.findUnique({
+      where: { email_tipo: { email, tipo } }
     });
-  } else {
-    const newCount = record.cantidad + 1;
-    let bloqueadoHasta = null;
-    if (newCount >= MAX_FAILED_ATTEMPTS) {
-      bloqueadoHasta = new Date(now.getTime() + LOCK_TIME_MS);
-    }
-    await prisma.intentosLogin.update({
-      where: { email_tipo: { email, tipo } },
-      data: {
-        cantidad: newCount,
-        ultimo_intento: now,
-        bloqueado_hasta: bloqueadoHasta
+    
+    if (!record) {
+      await prisma.intentosLogin.create({
+        data: { email, tipo, cantidad: 1, ultimo_intento: now }
+      });
+    } else {
+      const newCount = record.cantidad + 1;
+      let bloqueadoHasta = null;
+      if (newCount >= MAX_FAILED_ATTEMPTS) {
+        bloqueadoHasta = new Date(now.getTime() + LOCK_TIME_MS);
       }
-    });
+      await prisma.intentosLogin.update({
+        where: { email_tipo: { email, tipo } },
+        data: {
+          cantidad: newCount,
+          ultimo_intento: now,
+          bloqueado_hasta: bloqueadoHasta
+        }
+      });
+    }
+  } catch (err) {
+    console.warn('⚠️ [RateLimit] Error no bloqueante en recordFailedLoginAttempt:', err.message);
   }
 }
 

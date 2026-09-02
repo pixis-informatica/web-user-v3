@@ -5952,7 +5952,14 @@ onPixisDOMReady(() => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password })
       });
-      const data = await res.json();
+      
+      let data = {};
+      try {
+        data = await res.json();
+      } catch (jsonErr) {
+        showAuthError(res.status >= 500 ? 'El servidor se está iniciando. Reintentá en unos segundos.' : 'Respuesta inesperada del servidor.');
+        return;
+      }
       
       if (!res.ok) {
         if (data.requiereVerificacion) {
