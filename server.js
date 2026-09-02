@@ -1561,14 +1561,49 @@ app.get('/api/admin/orders/:id/export-pxgres', async (req, res) => {
     if (!order) return res.status(404).json({ error: 'Pedido no encontrado.' });
 
     const fechaObj = new Date(order.creado_en);
+    const tzArgentina = 'America/Argentina/Buenos_Aires';
+
+    // Fecha y hora formateada en locale argentino (Día/Mes/Año, HH:mm:ss 24hs)
     const dateFormatted = fechaObj.toLocaleString('es-AR', {
-      day: 'numeric',
-      month: 'numeric',
+      timeZone: tzArgentina,
+      day: '2-digit',
+      month: '2-digit',
       year: 'numeric',
       hour: '2-digit',
       minute: '2-digit',
-      second: '2-digit'
+      second: '2-digit',
+      hour12: false
     });
+
+    // Desglose de componentes para compatibilidad universal con Maestro POS / ERPs
+    const fechaSolo = fechaObj.toLocaleDateString('es-AR', {
+      timeZone: tzArgentina,
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric'
+    });
+
+    const horaSolo = fechaObj.toLocaleTimeString('es-AR', {
+      timeZone: tzArgentina,
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: false
+    });
+
+    const partesFecha = new Intl.DateTimeFormat('es-AR', {
+      timeZone: tzArgentina,
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: false
+    }).formatToParts(fechaObj);
+    const pMap = {};
+    partesFecha.forEach(p => { pMap[p.type] = p.value; });
+    const fechaHoraEstandar = `${pMap.year}-${pMap.month}-${pMap.day} ${pMap.hour}:${pMap.minute}:${pMap.second}`;
 
     const isEfectivo = (order.forma_pago || '').toLowerCase() === 'efectivo';
     const montoEfectivo = isEfectivo ? order.total : 0;
@@ -1581,12 +1616,17 @@ app.get('/api/admin/orders/:id/export-pxgres', async (req, res) => {
 
     const pxgresPayload = {
       tipo: 'RESERVA_WEB',
-      version: '1.0',
+      version: '1.1',
       origen: 'Pixis Live Web',
       folio: `#${order.id}`,
       pedido_id: order.id,
       fecha: order.creado_en,
       fecha_formateada: dateFormatted,
+      fecha_reserva: fechaSolo,
+      hora_reserva: horaSolo,
+      fecha_hora: fechaHoraEstandar,
+      timestamp: fechaObj.getTime(),
+      zona_horaria: tzArgentina,
       vendedor: 'Web / Admin',
       cliente: {
         id_cliente_web: order.usuario_id,

@@ -378,7 +378,16 @@ function renderOrders() {
 
   container.innerHTML = '';
   filtered.forEach(order => {
-    const dateStr = new Date(order.creado_en).toLocaleString('es-AR');
+    const dateStr = new Date(order.creado_en).toLocaleString('es-AR', {
+      timeZone: 'America/Argentina/Buenos_Aires',
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: false
+    });
     
     let comprobantesHtml = '';
     if (order.comprobantes && order.comprobantes.length > 0) {
