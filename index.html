@@ -505,23 +505,35 @@
             <button class="banner-prev">‹</button>
             <button class="banner-next">›</button>
         </div>
-        <h2>🔥 DESTACADOS 🔥</h2>
-        <div class="carousel-wrapper">
+        <!-- CABECERA INTERACTIVA DESTACADOS (BOTÓN DE ACCESO A COLECCIÓN COMPLETA) -->
+        <div class="section-title-interactive-row">
+            <button type="button" class="section-title-btn destacados-title-btn" onclick="if(window.abrirCategoria){window.abrirCategoria('destacados');} return false;" title="Ver todos los productos destacados">
+                🔥 DESTACADOS 🔥 <span class="title-btn-arrow">›</span>
+            </button>
+        </div>
 
-            <button class="btn-next"><span>&#8250;</span></button>
-            <button class="btn-prev"><span>&#8249;</span></button>
-
-            <div class="carousel">
-
-                <div class="productos" id="destacadosTrack">
-
+        <!-- SHOWCASE GRID DESTACADOS (ESTILO IMAGEN 3) -->
+        <div class="showcase-section-layout">
+            <!-- BANNER CARD DESTACADOS -->
+            <div class="showcase-banner-card destacados-banner-card" id="showcaseBannerDestacados" onclick="if(window.abrirCategoria){window.abrirCategoria('destacados');} return false;" title="Ver todos los productos destacados">
+                <div class="showcase-banner-content">
+                    <span class="showcase-banner-tag">TOP VENTAS</span>
+                    <h3 class="showcase-banner-title">Destacados_</h3>
+                    <div class="showcase-banner-icon">
+                        <i class="fas fa-fire-alt"></i>
+                    </div>
+                    <p class="showcase-banner-desc">Los productos más elegidos y recomendados de nuestra tienda.</p>
+                    <button type="button" class="showcase-banner-action-btn" onclick="event.stopPropagation(); if(window.abrirCategoria){window.abrirCategoria('destacados');} return false;">
+                        Ver todos
+                    </button>
                 </div>
+            </div>
 
-                <script data-cfasync="false"
-                    src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script>
-                <script>
-                    // La duplicación del carrusel ya no es necesaria dado que implementaremos arrastre manual.
-                </script>
+            <!-- GRILLA DE PRODUCTOS DESTACADOS -->
+            <div class="productos showcase-grid" id="destacadosTrack">
+                <!-- Inyección dinámica de cards simétricas -->
+            </div>
+        </div>
     </section>
 
     <!-- LAYOUT LATERAL + CATÁLOGO (DESKTOP PC ONLY) -->
@@ -962,14 +974,33 @@
             <!-- BANNER LATERAL DERECHO (DESKTOP PC ONLY) -->
             <aside class="fanpage-lateral-col" id="fanpageLateralRight" style="display:none;"></aside>
         </div>
-        <h2 class="nuevos-ingreso">🔥NUEVOS INGRESOS🔥</h2>
-        <div class="carousel-wrapper">
-            <button class="btn-next"><span>&#8250;</span></button>
-            <button class="btn-prev"><span>&#8249;</span></button>
-            <div class="carousel">
-                <div class="productos" id="nuevosIngresosTrack">
+        <!-- CABECERA INTERACTIVA NUEVOS INGRESOS (BOTÓN DE ACCESO A COLECCIÓN COMPLETA) -->
+        <div class="section-title-interactive-row">
+            <button type="button" class="section-title-btn nuevos-title-btn" onclick="if(window.abrirCategoria){window.abrirCategoria('nuevos');} return false;" title="Ver todos los nuevos ingresos">
+                🔥 NUEVOS INGRESOS 🔥 <span class="title-btn-arrow">›</span>
+            </button>
+        </div>
 
+        <!-- SHOWCASE GRID NUEVOS INGRESOS (ESTILO IMAGEN 3) -->
+        <div class="showcase-section-layout">
+            <!-- BANNER CARD NUEVOS INGRESOS (CAMIONETA DE REPARTO / NOVEDADES) -->
+            <div class="showcase-banner-card nuevos-banner-card" id="showcaseBannerNuevos" onclick="if(window.abrirCategoria){window.abrirCategoria('nuevos');} return false;" title="Ver todos los nuevos ingresos">
+                <div class="showcase-banner-content">
+                    <span class="showcase-banner-tag">RECIÉN LLEGADO</span>
+                    <h3 class="showcase-banner-title">Nuevos ingresos_</h3>
+                    <div class="showcase-banner-icon">
+                        <i class="fas fa-truck-moving"></i>
+                    </div>
+                    <p class="showcase-banner-desc">Descubrí lo último que entró a Pixis Informática.</p>
+                    <button type="button" class="showcase-banner-action-btn" onclick="event.stopPropagation(); if(window.abrirCategoria){window.abrirCategoria('nuevos');} return false;">
+                        Ver todas
+                    </button>
                 </div>
+            </div>
+
+            <!-- GRILLA DE PRODUCTOS NUEVOS INGRESOS -->
+            <div class="productos showcase-grid" id="nuevosIngresosTrack">
+                <!-- Inyección dinámica de cards simétricas -->
             </div>
         </div>
     </section>
@@ -978,96 +1009,234 @@
     <div id="dynamic-catalog-container"></div>
 
 
-    <!-- SECCIÓN REELS (SHORTS) -->
+    <!-- SECCIÓN REELS (SHORTS) - SHOWCASE LAYOUT -->
     <section class="nuevos-ingresos reels-section" id="reelsSection">
-        <div class="section-title-row">
-            <h2 class="neon-title">🔥NUESTROS REELS🔥</h2>
-            <a href="https://www.youtube.com/@PIXIS.INFORMATICA/shorts" target="_blank" class="yt-button">Ir a reels de
-                productos</a>
-        </div>
-        <div class="carousel">
-            <div class="productos">
-                <!-- 5 Shorts (como enlaces con thumbnail) -->
-                <a href="https://www.youtube.com/shorts/mccm3ivIs_g" target="_blank" class="short-card pulsante2">
-                    <img src="https://img.youtube.com/vi/mccm3ivIs_g/hqdefault.jpg" alt="Short YouTube 1">
-                    <div class="yt-play-btn"><i class="fas fa-play"></i></div>
-                </a>
-                <a href="https://www.youtube.com/shorts/FutZdWHQZGU" target="_blank" class="short-card pulsante2">
-                    <img src="https://img.youtube.com/vi/FutZdWHQZGU/hqdefault.jpg" alt="Short YouTube 2">
-                    <div class="yt-play-btn"><i class="fas fa-play"></i></div>
-                </a>
-                <a href="https://www.youtube.com/shorts/mXgmT3VHN8w" target="_blank" class="short-card pulsante2">
-                    <img src="https://img.youtube.com/vi/mXgmT3VHN8w/hqdefault.jpg" alt="Short YouTube 3">
-                    <div class="yt-play-btn"><i class="fas fa-play"></i></div>
-                </a>
-                <a href="https://www.youtube.com/shorts/xADClRr11Zg" target="_blank" class="short-card pulsante2">
-                    <img src="https://img.youtube.com/vi/xADClRr11Zg/hqdefault.jpg" alt="Short YouTube 4">
-                    <div class="yt-play-btn"><i class="fas fa-play"></i></div>
-                </a>
-                <a href="https://www.youtube.com/shorts/enbM-g2FDA4" target="_blank" class="short-card pulsante2">
-                    <img src="https://img.youtube.com/vi/enbM-g2FDA4/hqdefault.jpg" alt="Short YouTube 5">
-                    <div class="yt-play-btn"><i class="fas fa-play"></i></div>
-                </a>
-                <a href="https://www.youtube.com/shorts/8HIC09VsqSg" target="_blank" class="short-card pulsante2">
-                    <img src="https://img.youtube.com/vi/8HIC09VsqSg/hqdefault.jpg" alt="Short YouTube 6">
-                    <div class="yt-play-btn"><i class="fas fa-play"></i></div>
-                </a>
-                <a href="https://www.youtube.com/shorts/Va72GXwDCJQ" target="_blank" class="short-card pulsante2">
-                    <img src="https://img.youtube.com/vi/Va72GXwDCJQ/hqdefault.jpg" alt="Short YouTube 7">
-                    <div class="yt-play-btn"><i class="fas fa-play"></i></div>
-                </a>
-                <a href="https://www.youtube.com/shorts/s5IzZCbNOSU" target="_blank" class="short-card pulsante2">
-                    <img src="https://img.youtube.com/vi/s5IzZCbNOSU/hqdefault.jpg" alt="Short YouTube 8">
-                    <div class="yt-play-btn"><i class="fas fa-play"></i></div>
-                </a>
-                <a href="https://www.youtube.com/shorts/k1EiKr2mong" target="_blank" class="short-card pulsante2">
-                    <img src="https://img.youtube.com/vi/k1EiKr2mong/hqdefault.jpg" alt="Short YouTube 9">
-                    <div class="yt-play-btn"><i class="fas fa-play"></i></div>
-                </a>
-                <a href="https://www.youtube.com/shorts/zMPwwHP7KJA" target="_blank" class="short-card pulsante2">
-                    <img src="https://img.youtube.com/vi/zMPwwHP7KJA/hqdefault.jpg" alt="Short YouTube 10">
-                    <div class="yt-play-btn"><i class="fas fa-play"></i></div>
-                </a>
+        <div class="showcase-section-layout">
+            <!-- BANNER LATERAL SHOWCASE REELS (CYBER-PURPLE / SHORTS) -->
+            <div class="showcase-banner-card reels-banner-card" id="showcaseBannerReels" onclick="window.open('https://www.youtube.com/@PIXIS.INFORMATICA/shorts', '_blank'); return false;" title="Ver todos los Reels en YouTube Shorts">
+                <div class="showcase-banner-content">
+                    <span class="showcase-banner-tag">⚡ SHORTS & REELS</span>
+                    <h3 class="showcase-banner-title">Pixis Reels_</h3>
+                    <div class="showcase-banner-icon">
+                        <i class="fas fa-play-circle"></i>
+                    </div>
+                    <p class="showcase-banner-desc">Reviews rápidas de 60s, pruebas de rendimiento y unboxings en vivo.</p>
+                    <button type="button" class="showcase-banner-action-btn" onclick="event.stopPropagation(); window.open('https://www.youtube.com/@PIXIS.INFORMATICA/shorts', '_blank');">
+                        Ver en Shorts
+                    </button>
+                </div>
+            </div>
+
+            <!-- GRILLA / CARRUSEL DE REELS ENRIQUECIDOS -->
+            <div class="media-carousel-wrapper">
+                <button type="button" class="media-nav-btn media-prev" id="reelsPrevBtn" aria-label="Anterior"><span>‹</span></button>
+                <button type="button" class="media-nav-btn media-next" id="reelsNextBtn" aria-label="Siguiente"><span>›</span></button>
+                <div class="media-scroll-track" id="reelsTrack">
+                    <!-- 10 Shorts con metadatos reales y botón glassmorphism -->
+                    <a href="https://www.youtube.com/shorts/mccm3ivIs_g" target="_blank" class="media-card short-card-premium" title="Correa de arco ajustable para mayor comodidad">
+                        <span class="media-card-badge">🎧 REVIEW</span>
+                        <div class="media-img-wrap">
+                            <img src="https://img.youtube.com/vi/mccm3ivIs_g/hqdefault.jpg" alt="Correa de arco ajustable" loading="lazy">
+                        </div>
+                        <div class="media-glass-play"><i class="fas fa-play"></i></div>
+                        <div class="media-card-info">
+                            <span class="media-card-title">Correa de arco ajustable</span>
+                            <span class="media-card-subtitle">Headset Gaming</span>
+                        </div>
+                    </a>
+                    <a href="https://www.youtube.com/shorts/FutZdWHQZGU" target="_blank" class="media-card short-card-premium" title="Raptor Inferno Pro X Wireless 7.1 Black">
+                        <span class="media-card-badge">⚡ UNBOXING</span>
+                        <div class="media-img-wrap">
+                            <img src="https://img.youtube.com/vi/FutZdWHQZGU/hqdefault.jpg" alt="Raptor Inferno Pro X" loading="lazy">
+                        </div>
+                        <div class="media-glass-play"><i class="fas fa-play"></i></div>
+                        <div class="media-card-info">
+                            <span class="media-card-title">Raptor Inferno Pro X 7.1</span>
+                            <span class="media-card-subtitle">Auriculares Wireless</span>
+                        </div>
+                    </a>
+                    <a href="https://www.youtube.com/shorts/mXgmT3VHN8w" target="_blank" class="media-card short-card-premium" title="Gabinete Gamer Raptor Thunder Strike RGB">
+                        <span class="media-card-badge">🖥️ GABINETES</span>
+                        <div class="media-img-wrap">
+                            <img src="https://img.youtube.com/vi/mXgmT3VHN8w/hqdefault.jpg" alt="Gabinete Gamer RGB" loading="lazy">
+                        </div>
+                        <div class="media-glass-play"><i class="fas fa-play"></i></div>
+                        <div class="media-card-info">
+                            <span class="media-card-title">Gabinete Thunder Strike</span>
+                            <span class="media-card-subtitle">4 Fans RGB Incluidos</span>
+                        </div>
+                    </a>
+                    <a href="https://www.youtube.com/shorts/xADClRr11Zg" target="_blank" class="media-card short-card-premium" title="Prueba de Teclado Mecánico Gamer">
+                        <span class="media-card-badge">🔥 TEST GAMER</span>
+                        <div class="media-img-wrap">
+                            <img src="https://img.youtube.com/vi/xADClRr11Zg/hqdefault.jpg" alt="Prueba de Teclado" loading="lazy">
+                        </div>
+                        <div class="media-glass-play"><i class="fas fa-play"></i></div>
+                        <div class="media-card-info">
+                            <span class="media-card-title">Hora de la Prueba Mecánica</span>
+                            <span class="media-card-subtitle">Switches & Sound Test</span>
+                        </div>
+                    </a>
+                    <a href="https://www.youtube.com/shorts/enbM-g2FDA4" target="_blank" class="media-card short-card-premium" title="Mousepad Gamer Borda Cosido Antideslizante">
+                        <span class="media-card-badge">🎯 ACCESORIOS</span>
+                        <div class="media-img-wrap">
+                            <img src="https://img.youtube.com/vi/enbM-g2FDA4/hqdefault.jpg" alt="Mousepad Antideslizante" loading="lazy">
+                        </div>
+                        <div class="media-glass-play"><i class="fas fa-play"></i></div>
+                        <div class="media-card-info">
+                            <span class="media-card-title">Mousepad Borda Cosido</span>
+                            <span class="media-card-subtitle">Base de Goma Antideslizante</span>
+                        </div>
+                    </a>
+                    <a href="https://www.youtube.com/shorts/8HIC09VsqSg" target="_blank" class="media-card short-card-premium" title="Mouse Gamer Recargable Ultra Liviano">
+                        <span class="media-card-badge">⚡ HARDWARE</span>
+                        <div class="media-img-wrap">
+                            <img src="https://img.youtube.com/vi/8HIC09VsqSg/hqdefault.jpg" alt="Mouse Recargable" loading="lazy">
+                        </div>
+                        <div class="media-glass-play"><i class="fas fa-play"></i></div>
+                        <div class="media-card-info">
+                            <span class="media-card-title">Mouse Gamer Recargable</span>
+                            <span class="media-card-subtitle">Batería Larga Duración</span>
+                        </div>
+                    </a>
+                    <a href="https://www.youtube.com/shorts/Va72GXwDCJQ" target="_blank" class="media-card short-card-premium" title="Mantenimiento y Limpieza de Fan Cooler">
+                        <span class="media-card-badge">🔧 TALLER</span>
+                        <div class="media-img-wrap">
+                            <img src="https://img.youtube.com/vi/Va72GXwDCJQ/hqdefault.jpg" alt="Mantenimiento Cooler" loading="lazy">
+                        </div>
+                        <div class="media-glass-play"><i class="fas fa-play"></i></div>
+                        <div class="media-card-info">
+                            <span class="media-card-title">Mantenimiento Fan Cooler</span>
+                            <span class="media-card-subtitle">Limpieza y Lubricación</span>
+                        </div>
+                    </a>
+                    <a href="https://www.youtube.com/shorts/s5IzZCbNOSU" target="_blank" class="media-card short-card-premium" title="Revisión de Motherboards en Laboratorio">
+                        <span class="media-card-badge">🔧 TALLER</span>
+                        <div class="media-img-wrap">
+                            <img src="https://img.youtube.com/vi/s5IzZCbNOSU/hqdefault.jpg" alt="Motherboards Laboratorio" loading="lazy">
+                        </div>
+                        <div class="media-glass-play"><i class="fas fa-play"></i></div>
+                        <div class="media-card-info">
+                            <span class="media-card-title">Diagnóstico de Motherboards</span>
+                            <span class="media-card-subtitle">Laboratorio Pixis</span>
+                        </div>
+                    </a>
+                    <a href="https://www.youtube.com/shorts/k1EiKr2mong" target="_blank" class="media-card short-card-premium" title="Setup PC Gamer Ensamble de Alto Rendimiento">
+                        <span class="media-card-badge">🖥️ BUILD</span>
+                        <div class="media-img-wrap">
+                            <img src="https://img.youtube.com/vi/k1EiKr2mong/hqdefault.jpg" alt="Setup PC Gamer" loading="lazy">
+                        </div>
+                        <div class="media-glass-play"><i class="fas fa-play"></i></div>
+                        <div class="media-card-info">
+                            <span class="media-card-title">Ensamble Custom Gamer</span>
+                            <span class="media-card-subtitle">Sapphire + Watercooling</span>
+                        </div>
+                    </a>
+                    <a href="https://www.youtube.com/shorts/zMPwwHP7KJA" target="_blank" class="media-card short-card-premium" title="Unboxing de Procesadores y Componentes Ryzen">
+                        <span class="media-card-badge">📦 UNBOXING</span>
+                        <div class="media-img-wrap">
+                            <img src="https://img.youtube.com/vi/zMPwwHP7KJA/hqdefault.jpg" alt="Unboxing Componentes" loading="lazy">
+                        </div>
+                        <div class="media-glass-play"><i class="fas fa-play"></i></div>
+                        <div class="media-card-info">
+                            <span class="media-card-title">Unboxing Componentes</span>
+                            <span class="media-card-subtitle">Ryzen & Placas Madre</span>
+                        </div>
+                    </a>
+                </div>
             </div>
         </div>
     </section>
 
-    <!-- SECCIÓN APRENDE CON NOSOTROS (VIDEOS 16:9) -->
+    <!-- SECCIÓN APRENDE CON NOSOTROS (VIDEOS 16:9) - SHOWCASE LAYOUT -->
     <section class="nuevos-ingresos videos-section" id="aprendeSection">
-        <div class="section-title-row">
-            <h2 class="neon-title">🔥APRENDE CON NOSOTROS🔥</h2>
-            <a href="https://www.youtube.com/@PIXIS.INFORMATICA" target="_blank" class="yt-button">Unite a nuestro canal
-                y aprende con nosotros</a>
-        </div>
-        <div class="carousel-wrapper">
-            <button class="btn-next"><span>&#8250;</span></button>
-            <button class="btn-prev"><span>&#8249;</span></button>
-            <div class="carousel">
-                <div class="productos">
-                    <!-- 3 Videos (como enlaces con thumbnail) -->
-                    <a href="https://www.youtube.com/watch?v=c05um5sca6U" target="_blank" class="video-card pulsante2">
-                        <img src="https://img.youtube.com/vi/c05um5sca6U/hqdefault.jpg" alt="Video YouTube 1">
-                        <div class="yt-play-btn"><i class="fas fa-play"></i></div>
+        <div class="showcase-section-layout">
+            <!-- BANNER LATERAL SHOWCASE APRENDE (CYBER-CYAN / ACADEMIA) -->
+            <div class="showcase-banner-card aprende-banner-card" id="showcaseBannerAprende" onclick="window.open('https://www.youtube.com/@PIXIS.INFORMATICA', '_blank'); return false;" title="Unite a nuestro canal oficial de YouTube">
+                <div class="showcase-banner-content">
+                    <span class="showcase-banner-tag">🎓 PIXIS ACADEMY</span>
+                    <h3 class="showcase-banner-title">Aprende con Nosotros_</h3>
+                    <div class="showcase-banner-icon">
+                        <i class="fas fa-tools"></i>
+                    </div>
+                    <p class="showcase-banner-desc">Guías paso a paso de armado, mantenimiento preventivo y optimización de hardware.</p>
+                    <button type="button" class="showcase-banner-action-btn" onclick="event.stopPropagation(); window.open('https://www.youtube.com/@PIXIS.INFORMATICA', '_blank');">
+                        Suscribirse al Canal
+                    </button>
+                </div>
+            </div>
+
+            <!-- GRILLA / CARRUSEL DE VIDEOS 16:9 -->
+            <div class="media-carousel-wrapper">
+                <button type="button" class="media-nav-btn media-prev" id="aprendePrevBtn" aria-label="Anterior"><span>‹</span></button>
+                <button type="button" class="media-nav-btn media-next" id="aprendeNextBtn" aria-label="Siguiente"><span>›</span></button>
+                <div class="media-scroll-track video-scroll-track" id="aprendeTrack">
+                    <!-- 6 Videos 16:9 con títulos reales y badges temáticos -->
+                    <a href="https://www.youtube.com/watch?v=c05um5sca6U" target="_blank" class="media-card video-card-premium" title="Bienvenidos a Pixis Informática | Tienda Oficial">
+                        <span class="media-card-badge badge-cyan">🏬 TIENDA OFICIAL</span>
+                        <div class="media-img-wrap-169">
+                            <img src="https://img.youtube.com/vi/c05um5sca6U/hqdefault.jpg" alt="Bienvenidos a Pixis Informática" loading="lazy">
+                        </div>
+                        <div class="media-glass-play"><i class="fas fa-play"></i></div>
+                        <div class="media-card-info">
+                            <span class="media-card-title">Bienvenidos a Pixis Informática</span>
+                            <span class="media-card-subtitle">Conocé nuestro local y catálogo</span>
+                        </div>
                     </a>
-                    <a href="https://www.youtube.com/watch?v=ya6CQZQ16LA" target="_blank" class="video-card pulsante2">
-                        <img src="https://img.youtube.com/vi/ya6CQZQ16LA/hqdefault.jpg" alt="Video YouTube 2">
-                        <div class="yt-play-btn"><i class="fas fa-play"></i></div>
+                    <a href="https://www.youtube.com/watch?v=ya6CQZQ16LA" target="_blank" class="media-card video-card-premium" title="Mantenimiento Preventivo y Limpieza de PS4">
+                        <span class="media-card-badge badge-purple">🎮 CONSOLAS</span>
+                        <div class="media-img-wrap-169">
+                            <img src="https://img.youtube.com/vi/ya6CQZQ16LA/hqdefault.jpg" alt="Mantenimiento PS4" loading="lazy">
+                        </div>
+                        <div class="media-glass-play"><i class="fas fa-play"></i></div>
+                        <div class="media-card-info">
+                            <span class="media-card-title">Mantenimiento de Consolas PS4</span>
+                            <span class="media-card-subtitle">Limpieza térmica y cambio de pasta</span>
+                        </div>
                     </a>
-                    <a href="https://www.youtube.com/watch?v=ETbF3492Hps" target="_blank" class="video-card pulsante2">
-                        <img src="https://img.youtube.com/vi/ETbF3492Hps/hqdefault.jpg" alt="Video YouTube 3">
-                        <div class="yt-play-btn"><i class="fas fa-play"></i></div>
+                    <a href="https://www.youtube.com/watch?v=ETbF3492Hps" target="_blank" class="media-card video-card-premium" title="Mantenimiento Completo RTX: Pasta Térmica y Pads">
+                        <span class="media-card-badge badge-red">🔧 TALLER GPU</span>
+                        <div class="media-img-wrap-169">
+                            <img src="https://img.youtube.com/vi/ETbF3492Hps/hqdefault.jpg" alt="Mantenimiento Completo RTX" loading="lazy">
+                        </div>
+                        <div class="media-glass-play"><i class="fas fa-play"></i></div>
+                        <div class="media-card-info">
+                            <span class="media-card-title">Mantenimiento Completo RTX</span>
+                            <span class="media-card-subtitle">Thermal pads y pasta de alto rendimiento</span>
+                        </div>
                     </a>
-                    <a href="https://www.youtube.com/watch?v=g8X4RCxeqvY" target="_blank" class="video-card pulsante2">
-                        <img src="https://img.youtube.com/vi/g8X4RCxeqvY/hqdefault.jpg" alt="Video YouTube 4">
-                        <div class="yt-play-btn"><i class="fas fa-play"></i></div>
+                    <a href="https://www.youtube.com/watch?v=g8X4RCxeqvY" target="_blank" class="media-card video-card-premium" title="Review: Headset Raptor Inferno Pro X Wireless 7.1">
+                        <span class="media-card-badge badge-yellow">🎧 REVIEW TÉCNICO</span>
+                        <div class="media-img-wrap-169">
+                            <img src="https://img.youtube.com/vi/g8X4RCxeqvY/hqdefault.jpg" alt="Review Raptor Inferno Pro X" loading="lazy">
+                        </div>
+                        <div class="media-glass-play"><i class="fas fa-play"></i></div>
+                        <div class="media-card-info">
+                            <span class="media-card-title">Inferno Pro X Wireless 7.1 White</span>
+                            <span class="media-card-subtitle">Test de audio, micro y latencia</span>
+                        </div>
                     </a>
-                    <a href="https://www.youtube.com/watch?v=BWup0n9fS8Y" target="_blank" class="video-card pulsante2">
-                        <img src="https://img.youtube.com/vi/BWup0n9fS8Y/hqdefault.jpg" alt="Video YouTube 5">
-                        <div class="yt-play-btn"><i class="fas fa-play"></i></div>
+                    <a href="https://www.youtube.com/watch?v=BWup0n9fS8Y" target="_blank" class="media-card video-card-premium" title="Ensamble PC Gamer de Alto Rendimiento Paso a Paso">
+                        <span class="media-card-badge badge-cyan">🖥️ BUILD GAMER</span>
+                        <div class="media-img-wrap-169">
+                            <img src="https://img.youtube.com/vi/BWup0n9fS8Y/hqdefault.jpg" alt="Ensamble PC Gamer" loading="lazy">
+                        </div>
+                        <div class="media-glass-play"><i class="fas fa-play"></i></div>
+                        <div class="media-card-info">
+                            <span class="media-card-title">Ensamble PC Gamer Paso a Paso</span>
+                            <span class="media-card-subtitle">Armado profesional y cable management</span>
+                        </div>
                     </a>
-                    <a href="https://www.youtube.com/watch?v=gZ-wXPUasYY" target="_blank" class="video-card pulsante2">
-                        <img src="https://img.youtube.com/vi/gZ-wXPUasYY/hqdefault.jpg" alt="Video YouTube 6">
-                        <div class="yt-play-btn"><i class="fas fa-play"></i></div>
+                    <a href="https://www.youtube.com/watch?v=gZ-wXPUasYY" target="_blank" class="media-card video-card-premium" title="Mantenimiento a Fondo MSI Radeon RX 6900 XT Trio">
+                        <span class="media-card-badge badge-red">🔧 TALLER GPU</span>
+                        <div class="media-img-wrap-169">
+                            <img src="https://img.youtube.com/vi/gZ-wXPUasYY/hqdefault.jpg" alt="Mantenimiento MSI RX 6900 XT" loading="lazy">
+                        </div>
+                        <div class="media-glass-play"><i class="fas fa-play"></i></div>
+                        <div class="media-card-info">
+                            <span class="media-card-title">Mantenimiento MSI RX 6900 XT</span>
+                            <span class="media-card-subtitle">Gaming X Trio: Rejuvenecé tu gráfica</span>
+                        </div>
                     </a>
                 </div>
             </div>

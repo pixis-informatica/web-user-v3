@@ -1027,3 +1027,101 @@ body.light-mode .modal-desc {
     border-color: rgba(0, 0, 0, 0.08) !important;
     color: #334155 !important;
 }
+
+/* ══════════════════════════════════════════════════════
+   SHOWCASE GRID Y CARDS SIMÉTRICAS EN MODO CLARO
+   ══════════════════════════════════════════════════════ */
+body.light-mode .section-title-btn {
+    background: linear-gradient(135deg, #ffffff 0%, #f1f5f9 100%) !important;
+    color: #1e1b4b !important;
+    border-color: #8b5cf6 !important;
+    box-shadow: 0 4px 15px rgba(139, 92, 246, 0.2) !important;
+}
+
+body.light-mode .section-title-btn:hover {
+    color: #7c3aed !important;
+    border-color: #7c3aed !important;
+    box-shadow: 0 6px 20px rgba(124, 58, 237, 0.3) !important;
+}
+
+body.light-mode .card {
+    background: #ffffff !important;
+    border: 1.5px solid #e2e8f0 !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06) !important;
+    color: #1e293b !important;
+}
+
+body.light-mode .card:hover {
+    box-shadow: 0 8px 24px rgba(139, 92, 246, 0.2) !important;
+    border-color: #8b5cf6 !important;
+}
+
+body.light-mode .card-title,
+body.light-mode .card h3 {
+    color: #0f172a !important;
+}
+
+body.light-mode .card-subcat {
+    color: #6366f1 !important;
+}
+
+body.light-mode .card .precio {
+    color: #047857 !important;
+}
+
+body.light-mode .card-img-wrap {
+    background: #f8fafc !important;
+}
+
+body.light-mode .card-qty-stepper {
+    background: #f8fafc !important;
+    border-color: #cbd5e1 !important;
+}
+
+body.light-mode .card-qty-input {
+    color: #0f172a !important;
+}
+
+body.light-mode .card-qty-btn {
+    color: #475569 !important;
+}
+
+body.light-mode .card-qty-btn:hover {
+    background: #e2e8f0 !important;
+    color: #0f172a !important;
+}
+
+body.light-mode .showcase-banner-card.has-custom-img {
+    background: transparent !important;
+    border: none !important;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1) !important;
+}
+
+body.light-mode .productos.view-list .card {
+    background: #ffffff !important;
+    border: 1.5px solid #e2e8f0 !important;
+}
+
+body.light-mode .productos.view-list .card .card-img-wrap {
+    background: #f8fafc !important;
+}
+
+/* Media Hub Showcase en Modo Claro */
+body.light-mode .media-card {
+    background: #ffffff !important;
+    border-color: #cbd5e1 !important;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.08) !important;
+}
+
+body.light-mode .media-nav-btn {
+    background: rgba(255, 255, 255, 0.9) !important;
+    color: #0f172a !important;
+    border-color: #cbd5e1 !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
+}
+
+body.light-mode .media-nav-btn:hover {
+    background: #ffffff !important;
+    border-color: #7c3aed !important;
+    color: #7c3aed !important;
+}

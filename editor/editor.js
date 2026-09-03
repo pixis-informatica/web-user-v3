@@ -3657,22 +3657,46 @@ function injectProductCard(product) {
   card.dataset.pixisId = product.id;
 
   card.innerHTML = `
-    ${isProximo ? `
-      <span class="card-badge-proximamente">PRÓXIMAMENTE</span>
-      <div class="card-gold-promo-title">¡COMPRA EL TUYO AHORA!</div>
-      <div class="card-gold-promo-subtitle">Sé de los primeros en tenerlo</div>
-    ` : ''}
-    <img src="${product.img || ''}" alt="${escHtml(product.title)}">
-    <h3>${escHtml(product.title)}</h3>
-    <p>${escHtml(product.subcategoria || '')}</p>
-    <span class="precio">${priceFormatted}</span>
-    <button class="btn-add-cart"
-            data-name="${escHtml(product.title)}"
-            data-price="${product.price}"
-            data-price-local="${product.priceLocal}">
-      ${isProximo ? '🛒 AGREGAR AL CARRITO' : 'Agregar al carrito'}
-    </button>
-    <a href="https://wa.me/message/EYUUSVNG5HPNF1" class="btn-wsp">Consultar</a>
+    <div class="card-top-bar">
+      ${isProximo 
+        ? '<span class="card-pill badge-proximo">⏳ Próximamente</span>' 
+        : '<span class="card-pill badge-destacado">★ Destacado</span>'}
+      <span class="card-stock-pill ${isProximo ? 'stock-proximo' : 'stock-disponible'}">
+        ${isProximo ? '● Próximo' : '● En stock'}
+      </span>
+    </div>
+    <div class="card-img-wrap">
+      <img src="${product.img || ''}" alt="${escHtml(product.title)}" loading="lazy">
+    </div>
+    <div class="card-subcat">${escHtml(product.subcategoria || 'Hardware')}</div>
+    <h3 class="card-title">${escHtml(product.title)}</h3>
+    <div class="precio-box">
+      <span class="precio-label">PRECIO ESPECIAL WEB</span>
+      <span class="precio">${priceFormatted}</span>
+    </div>
+    <div class="card-actions">
+      ${isProximo ? `
+        <button type="button" class="btn-add-cart"
+                data-name="${escHtml(product.title)}"
+                data-price="${product.price}"
+                data-price-local="${product.priceLocal}">
+          🛒 Reservar
+        </button>
+        <a href="https://wa.me/message/EYUUSVNG5HPNF1" class="btn-wsp" onclick="event.stopPropagation();">Consultar</a>
+      ` : `
+        <div class="card-qty-stepper" onclick="event.stopPropagation();">
+          <button type="button" class="card-qty-btn qty-minus" aria-label="Restar">−</button>
+          <input type="number" class="card-qty-input" value="1" min="1" max="99" aria-label="Cantidad">
+          <button type="button" class="card-qty-btn qty-plus" aria-label="Sumar">+</button>
+        </div>
+        <button type="button" class="btn-add-cart"
+                data-name="${escHtml(product.title)}"
+                data-price="${product.price}"
+                data-price-local="${product.priceLocal}">
+          <i class="fas fa-shopping-cart"></i> Agregar
+        </button>
+      `}
+    </div>
   `;
 
   destacadosTrack.appendChild(card);
@@ -6801,10 +6825,19 @@ function openBannersLateralesPanel() {
   if (!site.fanpageBanners) {
     site.fanpageBanners = { enabled: false, left: { img: '', title: '', tipo: 'categoria', target: '' }, right: { img: '', title: '', tipo: 'categoria', target: '' } };
   }
+  if (!site.showcaseBanners) {
+    site.showcaseBanners = {
+      destacados: { img: '', title: 'Destacados' },
+      nuevos: { img: '', title: 'Nuevos Ingresos' },
+      reels: { img: '', title: 'Pixis Reels' },
+      aprende: { img: '', title: 'Aprende con Nosotros' }
+    };
+  }
 
   const latBanners = site.lateralBanners;
   const latReels = site.lateralReels;
   const fanpageBanners = site.fanpageBanners;
+  const showcaseBanners = site.showcaseBanners;
 
   // Obtener categorías disponibles para vincular
   const cats = [];
@@ -6993,13 +7026,118 @@ function openBannersLateralesPanel() {
 
   const html = `
     <div class="panel-tabs" style="margin-bottom:15px;display:flex;gap:6px;">
-      <button class="panel-tab active" id="tabBtnFanpageBanners" style="flex:1;padding:8px 4px;font-size:11px;font-weight:bold;">🎯 Portada / Nuevos Ingresos</button>
+      <button class="panel-tab active" id="tabBtnShowcaseBanners" style="flex:1;padding:8px 4px;font-size:11px;font-weight:bold;">🔥 Banners Showcase</button>
+      <button class="panel-tab" id="tabBtnFanpageBanners" style="flex:1;padding:8px 4px;font-size:11px;font-weight:bold;">🎯 Portada / Nuevos</button>
       <button class="panel-tab" id="tabBtnLatBanners" style="flex:1;padding:8px 4px;font-size:11px;font-weight:bold;">📂 Banners Catálogo</button>
       <button class="panel-tab" id="tabBtnLatReels" style="flex:1;padding:8px 4px;font-size:11px;font-weight:bold;">🎬 Reels / Videos</button>
     </div>
 
+    <!-- TAB 0: BANNERS SHOWCASE (DESTACADOS Y NUEVOS INGRESOS) -->
+    <div id="tabShowcaseBannersContent">
+      <div style="background:rgba(255, 75, 43, 0.1);border:1px dashed #ff4b2b;border-radius:6px;padding:10px;margin-bottom:14px;color:#ff8a73;font-size:11px;line-height:1.5;">
+        📐 <strong>Medida quirúrgica recomendada:</strong> <strong>260 × 900 px</strong> (o <strong>520 × 1800 px @2x</strong> para máxima nitidez HD).<br>
+        💡 Estos banners acompañan a la grilla de 10 productos (2 filas de 5). Al cliquearlos en la web, llevan directamente al catálogo completo de su colección.
+      </div>
+
+      <!-- BANNER DESTACADOS -->
+      <div class="panel-section" style="background:rgba(255,255,255,0.02);border:1px solid rgba(255,75,43,0.3);padding:12px;border-radius:8px;margin-bottom:12px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+          <strong style="color:#ff4b2b;font-size:12px;">🔥 Banner Lateral Showcase — DESTACADOS</strong>
+          <span style="font-size:10px;color:#888;">Medida: 260 × 900 px</span>
+        </div>
+        
+        <div class="panel-field" style="margin-bottom:8px;">
+          <label class="panel-label" style="font-size:11px;">Imagen del Banner</label>
+          <div style="display:flex;gap:6px;align-items:center;">
+            <input type="text" class="panel-input" id="showcaseBannerImg_destacados" value="${escHtml(showcaseBanners.destacados?.img || '')}" placeholder="img/uploads/... o URL" style="flex:1;font-size:12px;">
+            <label class="panel-btn" style="padding:4px 8px;font-size:11px;cursor:pointer;white-space:nowrap;margin:0;">
+              📁 Subir
+              <input type="file" accept="image/*" class="showcase-banner-file-input" data-type="destacados" style="display:none;">
+            </label>
+          </div>
+        </div>
+
+        <div class="panel-field" style="margin-bottom:4px;">
+          <label class="panel-label" style="font-size:11px;">Título / Texto Alternativo</label>
+          <input type="text" class="panel-input" id="showcaseBannerTitle_destacados" value="${escHtml(showcaseBanners.destacados?.title || 'Destacados')}" placeholder="Ej: Top Ventas Pixis" style="font-size:12px;">
+        </div>
+      </div>
+
+      <!-- BANNER NUEVOS INGRESOS -->
+      <div class="panel-section" style="background:rgba(255,255,255,0.02);border:1px solid rgba(254,81,150,0.3);padding:12px;border-radius:8px;margin-bottom:12px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+          <strong style="color:#fe5196;font-size:12px;">✨ Banner Lateral Showcase — NUEVOS INGRESOS</strong>
+          <span style="font-size:10px;color:#888;">Medida: 260 × 900 px</span>
+        </div>
+        
+        <div class="panel-field" style="margin-bottom:8px;">
+          <label class="panel-label" style="font-size:11px;">Imagen del Banner</label>
+          <div style="display:flex;gap:6px;align-items:center;">
+            <input type="text" class="panel-input" id="showcaseBannerImg_nuevos" value="${escHtml(showcaseBanners.nuevos?.img || '')}" placeholder="img/uploads/... o URL" style="flex:1;font-size:12px;">
+            <label class="panel-btn" style="padding:4px 8px;font-size:11px;cursor:pointer;white-space:nowrap;margin:0;">
+              📁 Subir
+              <input type="file" accept="image/*" class="showcase-banner-file-input" data-type="nuevos" style="display:none;">
+            </label>
+          </div>
+        </div>
+
+        <div class="panel-field" style="margin-bottom:4px;">
+          <label class="panel-label" style="font-size:11px;">Título / Texto Alternativo</label>
+          <input type="text" class="panel-input" id="showcaseBannerTitle_nuevos" value="${escHtml(showcaseBanners.nuevos?.title || 'Nuevos Ingresos')}" placeholder="Ej: Novedades Tecnológicas" style="font-size:12px;">
+        </div>
+      </div>
+
+      <!-- BANNER REELS -->
+      <div class="panel-section" style="background:rgba(255,255,255,0.02);border:1px solid rgba(216,70,239,0.3);padding:12px;border-radius:8px;margin-bottom:12px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+          <strong style="color:#f0abfc;font-size:12px;">⚡ Banner Lateral Showcase — PIXIS REELS</strong>
+          <span style="font-size:10px;color:#888;">Medida: 260 × 900 px</span>
+        </div>
+        
+        <div class="panel-field" style="margin-bottom:8px;">
+          <label class="panel-label" style="font-size:11px;">Imagen del Banner</label>
+          <div style="display:flex;gap:6px;align-items:center;">
+            <input type="text" class="panel-input" id="showcaseBannerImg_reels" value="${escHtml(showcaseBanners.reels?.img || '')}" placeholder="img/uploads/... o URL" style="flex:1;font-size:12px;">
+            <label class="panel-btn" style="padding:4px 8px;font-size:11px;cursor:pointer;white-space:nowrap;margin:0;">
+              📁 Subir
+              <input type="file" accept="image/*" class="showcase-banner-file-input" data-type="reels" style="display:none;">
+            </label>
+          </div>
+        </div>
+
+        <div class="panel-field" style="margin-bottom:4px;">
+          <label class="panel-label" style="font-size:11px;">Título / Texto Alternativo</label>
+          <input type="text" class="panel-input" id="showcaseBannerTitle_reels" value="${escHtml(showcaseBanners.reels?.title || 'Pixis Reels')}" placeholder="Ej: Shorts y Reviews" style="font-size:12px;">
+        </div>
+      </div>
+
+      <!-- BANNER APRENDE CON NOSOTROS -->
+      <div class="panel-section" style="background:rgba(255,255,255,0.02);border:1px solid rgba(0,255,213,0.3);padding:12px;border-radius:8px;margin-bottom:12px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+          <strong style="color:#67e8f9;font-size:12px;">🎓 Banner Lateral Showcase — APRENDE CON NOSOTROS</strong>
+          <span style="font-size:10px;color:#888;">Medida: 260 × 900 px</span>
+        </div>
+        
+        <div class="panel-field" style="margin-bottom:8px;">
+          <label class="panel-label" style="font-size:11px;">Imagen del Banner</label>
+          <div style="display:flex;gap:6px;align-items:center;">
+            <input type="text" class="panel-input" id="showcaseBannerImg_aprende" value="${escHtml(showcaseBanners.aprende?.img || '')}" placeholder="img/uploads/... o URL" style="flex:1;font-size:12px;">
+            <label class="panel-btn" style="padding:4px 8px;font-size:11px;cursor:pointer;white-space:nowrap;margin:0;">
+              📁 Subir
+              <input type="file" accept="image/*" class="showcase-banner-file-input" data-type="aprende" style="display:none;">
+            </label>
+          </div>
+        </div>
+
+        <div class="panel-field" style="margin-bottom:4px;">
+          <label class="panel-label" style="font-size:11px;">Título / Texto Alternativo</label>
+          <input type="text" class="panel-input" id="showcaseBannerTitle_aprende" value="${escHtml(showcaseBanners.aprende?.title || 'Aprende con Nosotros')}" placeholder="Ej: Pixis Academy" style="font-size:12px;">
+        </div>
+      </div>
+    </div>
+
     <!-- TAB 1: PORTADA / NUEVOS INGRESOS (IMAGEN 2) -->
-    <div id="tabFanpageBannersContent">
+    <div id="tabFanpageBannersContent" style="display:none;">
       <div class="panel-section" style="background:rgba(0,255,213,0.08);border-left:4px solid #00ffd5;padding:10px;border-radius:6px;margin-bottom:12px;">
         <div style="display:flex;align-items:center;justify-content:space-between;">
           <label for="fanpageBannersEnabled" style="font-weight:bold;color:#fff;font-size:12px;cursor:pointer;">
@@ -7086,21 +7224,24 @@ function openBannersLateralesPanel() {
 
   window.PixisOverlay.openPanel('🎯 Banners Laterales & Reels', html);
 
-  // Tab switching (3 pestañas)
+  // Tab switching (4 pestañas)
+  const tabBtnShowcase = document.getElementById('tabBtnShowcaseBanners');
   const tabBtnFanpage = document.getElementById('tabBtnFanpageBanners');
   const tabBtnBanners = document.getElementById('tabBtnLatBanners');
   const tabBtnReels = document.getElementById('tabBtnLatReels');
+  const tabContentShowcase = document.getElementById('tabShowcaseBannersContent');
   const tabContentFanpage = document.getElementById('tabFanpageBannersContent');
   const tabContentBanners = document.getElementById('tabLatBannersContent');
   const tabContentReels = document.getElementById('tabLatReelsContent');
 
   const switchTab = (activeBtn, activeContent) => {
-    [tabBtnFanpage, tabBtnBanners, tabBtnReels].forEach(b => b?.classList.remove('active'));
-    [tabContentFanpage, tabContentBanners, tabContentReels].forEach(c => { if (c) c.style.display = 'none'; });
+    [tabBtnShowcase, tabBtnFanpage, tabBtnBanners, tabBtnReels].forEach(b => b?.classList.remove('active'));
+    [tabContentShowcase, tabContentFanpage, tabContentBanners, tabContentReels].forEach(c => { if (c) c.style.display = 'none'; });
     activeBtn?.classList.add('active');
     if (activeContent) activeContent.style.display = 'block';
   };
 
+  tabBtnShowcase?.addEventListener('click', () => switchTab(tabBtnShowcase, tabContentShowcase));
   tabBtnFanpage?.addEventListener('click', () => switchTab(tabBtnFanpage, tabContentFanpage));
   tabBtnBanners?.addEventListener('click', () => switchTab(tabBtnBanners, tabContentBanners));
   tabBtnReels?.addEventListener('click', () => switchTab(tabBtnReels, tabContentReels));
@@ -7213,8 +7354,56 @@ function openBannersLateralesPanel() {
     });
   });
 
+  // Image file uploads (Showcase Banners: Destacados y Nuevos)
+  document.querySelectorAll('.showcase-banner-file-input').forEach(input => {
+    input.addEventListener('change', async (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      const type = e.target.dataset.type;
+      const textInput = document.getElementById(`showcaseBannerImg_${type}`);
+      window.PixisOverlay.showToast(`Subiendo banner showcase (${type})...`, 'info');
+
+      try {
+        const filename = `showcase_${type}_${Date.now()}_${file.name.replace(/[^a-zA-Z0-9.]/g, '_')}`;
+        const res = await fetch(`/api/upload-image?filename=${filename}&folder=img/uploads`, {
+          method: 'POST',
+          body: file
+        });
+        const data = await res.json();
+        if (data.ok && data.url) {
+          if (textInput) textInput.value = data.url;
+          window.PixisOverlay.showToast(`✅ Banner Showcase (${type}) subido con éxito`, 'success');
+        } else {
+          window.PixisOverlay.showToast('❌ Error al subir imagen', 'error');
+        }
+      } catch (err) {
+        window.PixisOverlay.showToast('❌ Error de conexión al subir imagen', 'error');
+      }
+    });
+  });
+
   // Save handler
   document.getElementById('saveBannersLateralesBtn')?.addEventListener('click', async () => {
+    // 0. Showcase Banners (Destacados, Nuevos Ingresos, Reels y Aprende)
+    const newShowcaseBanners = {
+      destacados: {
+        img: document.getElementById('showcaseBannerImg_destacados')?.value.trim() || '',
+        title: document.getElementById('showcaseBannerTitle_destacados')?.value.trim() || 'Destacados'
+      },
+      nuevos: {
+        img: document.getElementById('showcaseBannerImg_nuevos')?.value.trim() || '',
+        title: document.getElementById('showcaseBannerTitle_nuevos')?.value.trim() || 'Nuevos Ingresos'
+      },
+      reels: {
+        img: document.getElementById('showcaseBannerImg_reels')?.value.trim() || '',
+        title: document.getElementById('showcaseBannerTitle_reels')?.value.trim() || 'Pixis Reels'
+      },
+      aprende: {
+        img: document.getElementById('showcaseBannerImg_aprende')?.value.trim() || '',
+        title: document.getElementById('showcaseBannerTitle_aprende')?.value.trim() || 'Aprende con Nosotros'
+      }
+    };
+
     // 1. Catálogo Banners
     const bannersEnabled = Boolean(document.getElementById('latBannersEnabled')?.checked);
     const bannersCount = parseInt(document.getElementById('latBannersCount')?.value, 10) || 2;
@@ -7283,6 +7472,7 @@ function openBannersLateralesPanel() {
     }
 
     // Actualizar datos del editor y de PixisState
+    PixisEditor.data.site.showcaseBanners = newShowcaseBanners;
     PixisEditor.data.site.lateralBanners = {
       enabled: bannersEnabled,
       count: bannersCount,
@@ -7298,9 +7488,48 @@ function openBannersLateralesPanel() {
     PixisEditor.data.site.fanpageBanners = newFanpageBanners;
 
     if (window.PixisState && window.PixisState.state && window.PixisState.state.site) {
+      window.PixisState.state.site.showcaseBanners = newShowcaseBanners;
       window.PixisState.state.site.lateralBanners = PixisEditor.data.site.lateralBanners;
       window.PixisState.state.site.lateralReels = PixisEditor.data.site.lateralReels;
       window.PixisState.state.site.fanpageBanners = PixisEditor.data.site.fanpageBanners;
+    }
+
+    // Actualización inmediata en el DOM del Showcase
+    const destBanner = document.getElementById('showcaseBannerDestacados');
+    if (destBanner) {
+      if (newShowcaseBanners.destacados.img) {
+        destBanner.classList.add('has-custom-img');
+        destBanner.innerHTML = `<img src="${newShowcaseBanners.destacados.img}" alt="${newShowcaseBanners.destacados.title}" class="showcase-custom-banner-img">`;
+      } else {
+        destBanner.classList.remove('has-custom-img');
+      }
+    }
+    const nuevosBanner = document.getElementById('showcaseBannerNuevos');
+    if (nuevosBanner) {
+      if (newShowcaseBanners.nuevos.img) {
+        nuevosBanner.classList.add('has-custom-img');
+        nuevosBanner.innerHTML = `<img src="${newShowcaseBanners.nuevos.img}" alt="${newShowcaseBanners.nuevos.title}" class="showcase-custom-banner-img">`;
+      } else {
+        nuevosBanner.classList.remove('has-custom-img');
+      }
+    }
+    const reelsBanner = document.getElementById('showcaseBannerReels');
+    if (reelsBanner) {
+      if (newShowcaseBanners.reels.img) {
+        reelsBanner.classList.add('has-custom-img');
+        reelsBanner.innerHTML = `<img src="${newShowcaseBanners.reels.img}" alt="${newShowcaseBanners.reels.title}" class="showcase-custom-banner-img">`;
+      } else {
+        reelsBanner.classList.remove('has-custom-img');
+      }
+    }
+    const aprendeBanner = document.getElementById('showcaseBannerAprende');
+    if (aprendeBanner) {
+      if (newShowcaseBanners.aprende.img) {
+        aprendeBanner.classList.add('has-custom-img');
+        aprendeBanner.innerHTML = `<img src="${newShowcaseBanners.aprende.img}" alt="${newShowcaseBanners.aprende.title}" class="showcase-custom-banner-img">`;
+      } else {
+        aprendeBanner.classList.remove('has-custom-img');
+      }
     }
 
     window.PixisOverlay.markUnsaved();

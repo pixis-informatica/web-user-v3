@@ -684,19 +684,84 @@ document.addEventListener('click', e => {
   const item = cart.find(p => p.name === name);
   const currentQty = item ? item.qty : 0;
 
-  // Validar stock antes de agregar
-  if (!pixisCheckStock(name, currentQty)) return;
+  // Leer cantidad especificada en el selector stepper de la tarjeta (si existe)
+  const qtyInput = card.querySelector('.card-qty-input');
+  const addQty = qtyInput ? Math.max(1, parseInt(qtyInput.value, 10) || 1) : 1;
+
+  // Validar stock antes de agregar considerando la cantidad a sumar
+  if (!pixisCheckStock(name, currentQty + addQty - 1)) return;
 
   if (item) {
-    item.qty++;
+    item.qty += addQty;
   } else {
-    cart.push({ name, price, priceLocal, img, qty: 1 });
+    cart.push({ name, price, priceLocal, img, qty: addQty });
   }
 
   renderCart();
   animarAgregarCarrito(img, btn);
 
   showCartMessage(); // 🟢 MENSAJE
+});
+
+/* ======================================================
+   SELECTOR DE CANTIDAD EN CARDS (STEPPER +/- Y MANUAL)
+====================================================== */
+['click', 'pointerdown', 'mousedown'].forEach(evtType => {
+  document.addEventListener(evtType, e => {
+    const qtyBtn = e.target.closest('.card-qty-btn');
+    if (qtyBtn) {
+      e.preventDefault();
+      e.stopPropagation();
+      if (evtType === 'click') {
+        const card = qtyBtn.closest('.card');
+        if (!card) return;
+        const input = card.querySelector('.card-qty-input');
+        if (!input) return;
+
+        let currentVal = parseInt(input.value, 10) || 1;
+        const maxStock = parseInt(input.getAttribute('max'), 10) || 999;
+
+        if (qtyBtn.classList.contains('qty-plus')) {
+          if (currentVal < maxStock) {
+            input.value = currentVal + 1;
+          } else {
+            pixisShowStockWarning(maxStock);
+          }
+        } else if (qtyBtn.classList.contains('qty-minus')) {
+          if (currentVal > 1) {
+            input.value = currentVal - 1;
+          }
+        }
+      }
+    }
+
+    if (e.target.classList.contains('card-qty-input')) {
+      e.stopPropagation();
+    }
+  }, { capture: true });
+});
+
+// Sanitización de entrada manual de cantidad
+document.addEventListener('input', e => {
+  if (e.target.classList.contains('card-qty-input')) {
+    e.stopPropagation();
+    let val = parseInt(e.target.value, 10);
+    const maxStock = parseInt(e.target.getAttribute('max'), 10) || 999;
+    if (isNaN(val) || val < 1) {
+      val = 1;
+    } else if (val > maxStock) {
+      val = maxStock;
+      pixisShowStockWarning(maxStock);
+    }
+    e.target.value = val;
+  }
+});
+
+// Proteger eventos de teclado en el input de cantidad
+document.addEventListener('keydown', e => {
+  if (e.target.classList.contains('card-qty-input')) {
+    e.stopPropagation();
+  }
 });
 
 /* =========================
@@ -1268,6 +1333,10 @@ document.addEventListener('click', function (e) {
     e.target.closest('.btn-wsp') ||
     e.target.closest('.btn-whatsapp') ||
     e.target.closest('.btn-config') ||
+    e.target.closest('.card-qty-stepper') ||
+    e.target.closest('.card-qty-btn') ||
+    e.target.closest('.card-qty-input') ||
+    e.target.closest('.showcase-banner-card') ||
     e.target.closest('.pixis-edit-card-btn') ||
     e.target.closest('.pixis-delete-card-btn') ||
     e.target.closest('.pixis-select-card-btn')
@@ -2293,14 +2362,6 @@ function ordenarProductos(productos, ordenarPorPrecio) {
       font-size: 11px !important;
     }
 
-    /* Wrapper de botones: apilados verticalmente en todos los modos */
-    .card .card-actions {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 6px;
-    }
-
     /* Botón Consultar visible en vista lista */
     .productos.view-list .card .btn-wsp {
       display: inline-flex !important;
@@ -2309,12 +2370,6 @@ function ordenarProductos(productos, ordenarPorPrecio) {
       width: auto !important;
       padding: 8px 14px !important;
       font-size: 12px !important;
-    }
-
-    /* En vista lista el wrapper de botones se alinea a la derecha */
-    .productos.view-list .card .card-actions {
-      align-items: stretch;
-      min-width: 160px;
     }
   `;
   document.head.appendChild(s);
@@ -4946,7 +5001,7 @@ if (btnShareLink) {
     const card = e.target.closest('.card:not(.sin-stock):not(.yt-card)');
     if (!card) return;
     // Excluimos botones pero permitimos el link general de la tarjeta
-    if (e.target.closest('.btn-add-cart') || e.target.closest('.btn-wsp')) return;
+    if (e.target.closest('.btn-add-cart') || e.target.closest('.btn-wsp') || e.target.closest('.card-qty-stepper') || e.target.closest('.showcase-banner-card')) return;
     if (e.target.closest('a') && !e.target.closest('.full-card-link')) return;
     window.requestAnimationFrame(() => updateMetaFromCard(card));
   }, { capture: true });
@@ -4996,8 +5051,8 @@ document.addEventListener('mouseup', (e) => {
 document.addEventListener('auxclick', e => {
   if (e.button === 1) { // 1 es el botón del centro (ruedita)
     const card = e.target.closest('.card:not(.sin-stock):not(.yt-card)');
-    // Nos aseguramos que no estén clickeando un botón (agregar al carrito, whatsapp) ni tampoco un enlace
-    if (card && !e.target.closest('.btn-add-cart') && !e.target.closest('.btn-wsp') && !e.target.closest('a')) {
+    // Nos aseguramos que no estén clickeando un botón (agregar al carrito, whatsapp, stepper) ni tampoco un enlace
+    if (card && !e.target.closest('.btn-add-cart') && !e.target.closest('.btn-wsp') && !e.target.closest('.card-qty-stepper') && !e.target.closest('.showcase-banner-card') && !e.target.closest('a')) {
       e.preventDefault();
       // URL limpia: /slug--id-IDREAL para abrir producto en nueva pestaña
       const slug = card.dataset.pixisSlug || card.dataset.title.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
@@ -5205,8 +5260,6 @@ window.initPixisCarousels = function() {
 
     if (!carousel || !btnPrev || !btnNext) return;
 
-    // Remover listeners viejos si existen (clonando nodos o simplemente no agregando duplicados)
-    // Para simplificar, usaremos onclick directo o verificaremos una marca
     if (btnNext.dataset.init === 'true') return;
     btnNext.dataset.init = 'true';
 
@@ -5218,6 +5271,28 @@ window.initPixisCarousels = function() {
 
     btnPrev.addEventListener("click", () => {
       carousel.scrollBy({ left: -scrollAmount, behavior: "smooth" });
+    });
+  });
+
+  // Soporte para Media Hub Carousels (Reels y Aprende)
+  document.querySelectorAll(".media-carousel-wrapper").forEach(wrapper => {
+    const track = wrapper.querySelector(".media-scroll-track");
+    const btnPrev = wrapper.querySelector(".media-prev");
+    const btnNext = wrapper.querySelector(".media-next");
+
+    if (!track || !btnPrev || !btnNext) return;
+    if (btnNext.dataset.init === 'true') return;
+    btnNext.dataset.init = 'true';
+
+    const isVideo = track.classList.contains("video-scroll-track");
+    const scrollAmount = isVideo ? 340 : 220;
+
+    btnNext.addEventListener("click", () => {
+      track.scrollBy({ left: scrollAmount, behavior: "smooth" });
+    });
+
+    btnPrev.addEventListener("click", () => {
+      track.scrollBy({ left: -scrollAmount, behavior: "smooth" });
     });
   });
 };

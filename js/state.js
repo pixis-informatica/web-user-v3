@@ -1350,38 +1350,34 @@ window.PixisState = {
             card.classList.add('proximo-ingreso');
             card.dataset.proximoIngreso = 'true';
             card.setAttribute('href', 'javascript:void(0);');
-            if (!card.querySelector('.card-badge-proximamente')) {
-              const badge = document.createElement('span');
-              badge.className = 'card-badge-proximamente';
-              badge.textContent = 'PRÓXIMAMENTE';
-
-              const title = document.createElement('div');
-              title.className = 'card-gold-promo-title';
-              title.textContent = '¡COMPRA EL TUYO AHORA!';
-
-              const subtitle = document.createElement('div');
-              subtitle.className = 'card-gold-promo-subtitle';
-              subtitle.textContent = 'Sé de los primeros en tenerlo';
-
-              card.prepend(subtitle);
-              card.prepend(title);
-              card.prepend(badge);
-
-              const addBtn = card.querySelector('.btn-add-cart');
-              if (addBtn && !addBtn.textContent.includes('🛒')) {
-                addBtn.textContent = '🛒 AGREGAR AL CARRITO';
+            const topBar = card.querySelector('.card-top-bar');
+            if (topBar) {
+              let pill = topBar.querySelector('.card-pill');
+              if (pill) {
+                pill.className = 'card-pill badge-proximo';
+                pill.textContent = '⏳ Próximamente';
+              }
+              let stockPill = topBar.querySelector('.card-stock-pill');
+              if (stockPill) {
+                stockPill.className = 'card-stock-pill stock-proximo';
+                stockPill.textContent = '● Próximo';
               }
             }
           } else if (data.proximoIngreso === false) {
             card.classList.remove('proximo-ingreso');
             card.dataset.proximoIngreso = 'false';
-            card.querySelector('.card-badge-proximamente')?.remove();
-            card.querySelector('.card-gold-promo-title')?.remove();
-            card.querySelector('.card-gold-promo-subtitle')?.remove();
-
-            const addBtn = card.querySelector('.btn-add-cart');
-            if (addBtn && addBtn.textContent.includes('🛒')) {
-              addBtn.textContent = 'Agregar al carrito';
+            const topBar = card.querySelector('.card-top-bar');
+            if (topBar) {
+              let pill = topBar.querySelector('.card-pill');
+              if (pill) {
+                pill.className = 'card-pill badge-destacado';
+                pill.textContent = '★ Destacado';
+              }
+              let stockPill = topBar.querySelector('.card-stock-pill');
+              if (stockPill) {
+                stockPill.className = 'card-stock-pill stock-disponible';
+                stockPill.textContent = '● En stock';
+              }
             }
           }
 
@@ -1528,6 +1524,38 @@ window.PixisState = {
     // Re-inicializar lógica de movimiento una sola vez al final
     if (hasDynamicCarousel && window.initPixisBanners) {
       window.initPixisBanners();
+    }
+
+    // 5d. Banners Showcase Personalizados (Destacados, Nuevos Ingresos, Reels y Aprende)
+    if (site.showcaseBanners) {
+      if (site.showcaseBanners.destacados && site.showcaseBanners.destacados.img) {
+        const destCard = document.getElementById('showcaseBannerDestacados');
+        if (destCard) {
+          destCard.classList.add('has-custom-img');
+          destCard.innerHTML = `<img src="${site.showcaseBanners.destacados.img}" alt="${site.showcaseBanners.destacados.title || 'Destacados'}" class="showcase-custom-banner-img">`;
+        }
+      }
+      if (site.showcaseBanners.nuevos && site.showcaseBanners.nuevos.img) {
+        const nuevosCard = document.getElementById('showcaseBannerNuevos');
+        if (nuevosCard) {
+          nuevosCard.classList.add('has-custom-img');
+          nuevosCard.innerHTML = `<img src="${site.showcaseBanners.nuevos.img}" alt="${site.showcaseBanners.nuevos.title || 'Nuevos Ingresos'}" class="showcase-custom-banner-img">`;
+        }
+      }
+      if (site.showcaseBanners.reels && site.showcaseBanners.reels.img) {
+        const reelsCard = document.getElementById('showcaseBannerReels');
+        if (reelsCard) {
+          reelsCard.classList.add('has-custom-img');
+          reelsCard.innerHTML = `<img src="${site.showcaseBanners.reels.img}" alt="${site.showcaseBanners.reels.title || 'Pixis Reels'}" class="showcase-custom-banner-img">`;
+        }
+      }
+      if (site.showcaseBanners.aprende && site.showcaseBanners.aprende.img) {
+        const aprendeCard = document.getElementById('showcaseBannerAprende');
+        if (aprendeCard) {
+          aprendeCard.classList.add('has-custom-img');
+          aprendeCard.innerHTML = `<img src="${site.showcaseBanners.aprende.img}" alt="${site.showcaseBanners.aprende.title || 'Aprende con Nosotros'}" class="showcase-custom-banner-img">`;
+        }
+      }
     }
 
     // 5c. Menú Lateral de Categorías (Dinámico y con auto-ocultado)
@@ -1775,6 +1803,9 @@ function renderDynamicProducts(products) {
   }
 
   // 4. INYECTAR PRODUCTOS
+  let destacadosShowcaseCount = 0;
+  let nuevosShowcaseCount = 0;
+
   products.forEach(prod => {
     const assignedCats = [];
     if (prod.category) assignedCats.push(prod.category.trim());
@@ -1832,35 +1863,85 @@ function renderDynamicProducts(products) {
       }
 
       card.innerHTML = `
-        ${isProximo ? `
-          <span class="card-badge-proximamente">PRÓXIMAMENTE</span>
-          <div class="card-gold-promo-title">¡COMPRA EL TUYO AHORA!</div>
-          <div class="card-gold-promo-subtitle">Sé de los primeros en tenerlo</div>
-        ` : ''}
-        <img src="${window.optimizeImageUrl(coverImg, 400)}" alt="${escStateHtml(prod.title)}">
-        <h3>${escStateHtml(prod.title)}</h3>
-        <p>${escStateHtml(prod.subcategoria || '')}</p>
+        <div class="card-top-bar">
+          ${isProximo 
+            ? '<span class="card-pill badge-proximo">⏳ Próximamente</span>' 
+            : (catId === 'nuevos' ? '<span class="card-pill badge-nuevo">★ Nuevo</span>' : '<span class="card-pill badge-destacado">★ Destacado</span>')}
+          <span class="card-stock-pill ${isProximo ? 'stock-proximo' : (esSinStock ? 'stock-agotado' : 'stock-disponible')}">
+            ${isProximo ? '● Próximo' : (esSinStock ? '● Sin stock' : '● En stock')}
+          </span>
+        </div>
+        <div class="card-img-wrap">
+          <img src="${window.optimizeImageUrl(coverImg, 400)}" alt="${escStateHtml(prod.title)}" loading="lazy">
+        </div>
+        <div class="card-subcat">${escStateHtml(prod.subcategoria || 'Hardware')}</div>
+        <h3 class="card-title">${escStateHtml(prod.title)}</h3>
         <div class="precio-box">
           <span class="precio-label">PRECIO ESPECIAL WEB</span>
           <span class="precio">${priceFormatted}</span>
         </div>
         <div class="card-actions">
-          <button class="btn-add-cart"
-                  data-name="${escStateHtml(prod.title)}"
-                  data-price="${prod.price}"
-                  data-price-local="${prod.priceLocal || prod.price}">
-            ${isProximo ? '🛒 AGREGAR AL CARRITO' : 'Agregar al carrito'}
-          </button>
-          <a href="${(window.PixisState?.state?.site?.whatsappLink) || 'https://wa.me/message/EYUUSVNG5HPNF1'}" class="btn-wsp">Consultar</a>
+          ${isProximo ? `
+            <button type="button" class="btn-add-cart"
+                    data-name="${escStateHtml(prod.title)}"
+                    data-price="${prod.price}"
+                    data-price-local="${prod.priceLocal || prod.price}">
+              🛒 Reservar
+            </button>
+            <a href="${(window.PixisState?.state?.site?.whatsappLink) || 'https://wa.me/message/EYUUSVNG5HPNF1'}" 
+               class="btn-wsp" onclick="event.stopPropagation();">Consultar</a>
+          ` : `
+            <div class="card-qty-stepper" onclick="event.stopPropagation();">
+              <button type="button" class="card-qty-btn qty-minus" aria-label="Restar">−</button>
+              <input type="number" class="card-qty-input" value="1" min="1" max="${prod.stock || 99}" aria-label="Cantidad">
+              <button type="button" class="card-qty-btn qty-plus" aria-label="Sumar">+</button>
+            </div>
+            <button type="button" class="btn-add-cart"
+                    data-name="${escStateHtml(prod.title)}"
+                    data-price="${prod.price}"
+                    data-price-local="${prod.priceLocal || prod.price}">
+              <i class="fas fa-shopping-cart"></i> Agregar
+            </button>
+          `}
         </div>
       `;
 
-      let targetSection = null;
+      if (catId === 'destacados') {
+        const destacadosTrack = document.getElementById('destacadosTrack');
+        // Limitar a los primeros 10 productos (2 filas de 5) en el inicio
+        if (destacadosTrack && destacadosShowcaseCount < 10) {
+          destacadosTrack.appendChild(card);
+          destacadosShowcaseCount++;
+        }
 
-      if (catId === 'destacados') targetSection = document.getElementById('destacadosTrack');
-      else if (catId === 'nuevos') targetSection = document.getElementById('nuevosIngresosTrack');
+        // Inyección Dual: Agregar TODOS los productos al catálogo completo para la vista de colección
+        const catH3 = document.getElementById('destacados');
+        if (catH3) {
+          const wrapper = catH3.closest('.dynamic-cat-wrapper');
+          const catContainer = wrapper ? wrapper.querySelector('.productos') : null;
+          if (catContainer) {
+            catContainer.appendChild(card.cloneNode(true));
+          }
+        }
+      } else if (catId === 'nuevos') {
+        const nuevosTrack = document.getElementById('nuevosIngresosTrack');
+        // Limitar a los primeros 10 productos (2 filas de 5) en el inicio
+        if (nuevosTrack && nuevosShowcaseCount < 10) {
+          nuevosTrack.appendChild(card);
+          nuevosShowcaseCount++;
+        }
 
-      if (!targetSection) {
+        // Inyección Dual: Agregar TODOS los productos al catálogo completo para la vista de colección
+        const catH3 = document.getElementById('nuevos');
+        if (catH3) {
+          const wrapper = catH3.closest('.dynamic-cat-wrapper');
+          const catContainer = wrapper ? wrapper.querySelector('.productos') : null;
+          if (catContainer) {
+            catContainer.appendChild(card.cloneNode(true));
+          }
+        }
+      } else {
+        let targetSection = null;
         const catH3 = document.getElementById(catId);
         if (catH3) {
           let nextEl = catH3.nextElementSibling;
@@ -1872,10 +1953,9 @@ function renderDynamicProducts(products) {
             nextEl = nextEl.nextElementSibling;
           }
         }
-      }
-
-      if (targetSection) {
-        targetSection.appendChild(card);
+        if (targetSection) {
+          targetSection.appendChild(card);
+        }
       }
     });
   });
