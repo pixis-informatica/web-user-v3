@@ -1303,7 +1303,9 @@ window.PixisState = {
           // Actualización visual del precio (Prioridad Precio Especial)
           const finalVisiblePrice = data.cashPrice || data.priceLocal || (data.priceNum ? data.priceNum : (data.price ? data.price.replace(/[$. ]/g, '') : null));
           if (finalVisiblePrice) {
-            const formatted = `$${Number(finalVisiblePrice).toLocaleString('es-AR', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+            const numFinal = Number(finalVisiblePrice);
+            const hasDecFinal = (numFinal % 1) !== 0;
+            const formatted = `$${numFinal.toLocaleString('es-AR', {minimumFractionDigits: hasDecFinal ? 2 : 0, maximumFractionDigits: 2})}`;
             const sp = card.querySelector('.precio');
             if (sp) {
               sp.textContent = formatted;
@@ -1526,36 +1528,45 @@ window.PixisState = {
       window.initPixisBanners();
     }
 
-    // 5d. Banners Showcase Personalizados (Destacados, Nuevos Ingresos, Reels y Aprende)
+    // 5d. Banners Showcase Personalizados Duales (Destacados, Nuevos Ingresos, Reels y Aprende)
     if (site.showcaseBanners) {
-      if (site.showcaseBanners.destacados && site.showcaseBanners.destacados.img) {
-        const destCard = document.getElementById('showcaseBannerDestacados');
-        if (destCard) {
-          destCard.classList.add('has-custom-img');
-          destCard.innerHTML = `<img src="${site.showcaseBanners.destacados.img}" alt="${site.showcaseBanners.destacados.title || 'Destacados'}" class="showcase-custom-banner-img">`;
+      const applyBannerBg = (id, bannerData) => {
+        const card = document.getElementById(id);
+        if (!card) return;
+        const pcImg = bannerData?.img || bannerData?.imgPc || '';
+        const mobileImg = bannerData?.imgMobile || pcImg;
+
+        if (pcImg || mobileImg) {
+          card.classList.add('has-custom-bg');
+          card.classList.remove('has-custom-img');
+          if (pcImg) {
+            card.style.setProperty('--banner-bg-pc', `url("${pcImg}")`);
+          } else {
+            card.style.removeProperty('--banner-bg-pc');
+          }
+          if (mobileImg) {
+            card.style.setProperty('--banner-bg-mobile', `url("${mobileImg}")`);
+          } else {
+            card.style.removeProperty('--banner-bg-mobile');
+          }
+          // Limpiar inline style rígido para que las reglas CSS con variables manden
+          card.style.backgroundImage = '';
+          card.style.backgroundSize = 'cover';
+          card.style.backgroundPosition = 'center';
+        } else {
+          card.classList.remove('has-custom-bg', 'has-custom-img');
+          card.style.removeProperty('--banner-bg-pc');
+          card.style.removeProperty('--banner-bg-mobile');
+          card.style.backgroundImage = '';
+          card.style.backgroundSize = '';
+          card.style.backgroundPosition = '';
         }
-      }
-      if (site.showcaseBanners.nuevos && site.showcaseBanners.nuevos.img) {
-        const nuevosCard = document.getElementById('showcaseBannerNuevos');
-        if (nuevosCard) {
-          nuevosCard.classList.add('has-custom-img');
-          nuevosCard.innerHTML = `<img src="${site.showcaseBanners.nuevos.img}" alt="${site.showcaseBanners.nuevos.title || 'Nuevos Ingresos'}" class="showcase-custom-banner-img">`;
-        }
-      }
-      if (site.showcaseBanners.reels && site.showcaseBanners.reels.img) {
-        const reelsCard = document.getElementById('showcaseBannerReels');
-        if (reelsCard) {
-          reelsCard.classList.add('has-custom-img');
-          reelsCard.innerHTML = `<img src="${site.showcaseBanners.reels.img}" alt="${site.showcaseBanners.reels.title || 'Pixis Reels'}" class="showcase-custom-banner-img">`;
-        }
-      }
-      if (site.showcaseBanners.aprende && site.showcaseBanners.aprende.img) {
-        const aprendeCard = document.getElementById('showcaseBannerAprende');
-        if (aprendeCard) {
-          aprendeCard.classList.add('has-custom-img');
-          aprendeCard.innerHTML = `<img src="${site.showcaseBanners.aprende.img}" alt="${site.showcaseBanners.aprende.title || 'Aprende con Nosotros'}" class="showcase-custom-banner-img">`;
-        }
-      }
+      };
+
+      applyBannerBg('showcaseBannerDestacados', site.showcaseBanners.destacados);
+      applyBannerBg('showcaseBannerNuevos', site.showcaseBanners.nuevos);
+      applyBannerBg('showcaseBannerReels', site.showcaseBanners.reels);
+      applyBannerBg('showcaseBannerAprende', site.showcaseBanners.aprende);
     }
 
     // 5c. Menú Lateral de Categorías (Dinámico y con auto-ocultado)
@@ -1821,8 +1832,13 @@ function renderDynamicProducts(products) {
     // Fuente de verdad canónica: slug guardado en JSON → slug generado del título
     const slug = prod.slug || generateSlug(prod.title || 'producto');
     const displayPrice = prod.priceLocal || prod.price || 0;
-    const priceFormatted = `$${Number(displayPrice).toLocaleString('es-AR', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
-    const transferPriceFormatted = `$${Number(prod.price || 0).toLocaleString('es-AR', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+    const numDisplay = Number(displayPrice);
+    const hasDecDisp = (numDisplay % 1) !== 0;
+    const priceFormatted = `$${numDisplay.toLocaleString('es-AR', {minimumFractionDigits: hasDecDisp ? 2 : 0, maximumFractionDigits: 2})}`;
+
+    const numTransfer = Number(prod.price || 0);
+    const hasDecTrans = (numTransfer % 1) !== 0;
+    const transferPriceFormatted = `$${numTransfer.toLocaleString('es-AR', {minimumFractionDigits: hasDecTrans ? 2 : 0, maximumFractionDigits: 2})}`;
     // Imagen de portada: siempre el campo img (una sola)
     const coverImg = (prod.img || '').trim().split(',')[0].trim();
     // Galería: usamos prod.gallery (todas las imágenes), o prod.img si contiene varias separadas por coma
@@ -1881,28 +1897,17 @@ function renderDynamicProducts(products) {
           <span class="precio">${priceFormatted}</span>
         </div>
         <div class="card-actions">
-          ${isProximo ? `
-            <button type="button" class="btn-add-cart"
-                    data-name="${escStateHtml(prod.title)}"
-                    data-price="${prod.price}"
-                    data-price-local="${prod.priceLocal || prod.price}">
-              🛒 Reservar
-            </button>
-            <a href="${(window.PixisState?.state?.site?.whatsappLink) || 'https://wa.me/message/EYUUSVNG5HPNF1'}" 
-               class="btn-wsp" onclick="event.stopPropagation();">Consultar</a>
-          ` : `
-            <div class="card-qty-stepper" onclick="event.stopPropagation();">
-              <button type="button" class="card-qty-btn qty-minus" aria-label="Restar">−</button>
-              <input type="number" class="card-qty-input" value="1" min="1" max="${prod.stock || 99}" aria-label="Cantidad">
-              <button type="button" class="card-qty-btn qty-plus" aria-label="Sumar">+</button>
-            </div>
-            <button type="button" class="btn-add-cart"
-                    data-name="${escStateHtml(prod.title)}"
-                    data-price="${prod.price}"
-                    data-price-local="${prod.priceLocal || prod.price}">
-              <i class="fas fa-shopping-cart"></i> Agregar
-            </button>
-          `}
+          <div class="card-qty-stepper" onclick="event.preventDefault(); event.stopPropagation();">
+            <button type="button" class="card-qty-btn qty-minus" onclick="event.preventDefault(); event.stopPropagation();" aria-label="Restar">−</button>
+            <input type="number" class="card-qty-input" value="0" min="0" max="${prod.stock || 99}" aria-label="Cantidad" onclick="event.preventDefault(); event.stopPropagation();" onmousedown="event.stopPropagation();">
+            <button type="button" class="card-qty-btn qty-plus" onclick="event.preventDefault(); event.stopPropagation();" aria-label="Sumar">+</button>
+          </div>
+          <button type="button" class="btn-add-cart ${isProximo ? 'btn-reservar' : ''}"
+                  data-name="${escStateHtml(prod.title)}"
+                  data-price="${prod.price}"
+                  data-price-local="${prod.priceLocal || prod.price}">
+            ${isProximo ? '🛒 Reservar' : '<i class="fas fa-shopping-cart"></i> Agregar'}
+          </button>
         </div>
       `;
 
@@ -2097,3 +2102,49 @@ window.addEventListener('load', async () => {
   await window.PixisState.loadState();
   window.PixisState.applyStateToDOM();
 });
+
+/* ─── ACTUALIZACIÓN REACTIVA DE STOCK EN CARDS SIN RECARGAR ───── */
+window.refrescarStockEnCards = function(productoId, nuevoStock, inStock) {
+  if (!window.PixisState || !window.PixisState.state || !Array.isArray(window.PixisState.state.products)) return;
+
+  const prod = window.PixisState.state.products.find(p => p.id === productoId || p.title === productoId);
+  if (prod) {
+    prod.stock = nuevoStock;
+    prod.inStock = inStock;
+
+    // Buscar las cards asociadas en el DOM mediante identificadores robustos
+    const cards = document.querySelectorAll('.card');
+    cards.forEach(card => {
+      const match = (card.dataset.id === prod.id || 
+                     card.dataset.pixisId === prod.id || 
+                     card.dataset.title === prod.title ||
+                     card.querySelector('.btn-add-cart, .btn-reservar')?.dataset?.name === prod.title);
+      if (match) {
+        card.dataset.stock = nuevoStock;
+        card.dataset.inStock = inStock ? 'true' : 'false';
+
+        const stepperInput = card.querySelector('.card-qty-input, input.qty-input, .input-qty');
+        const btnAccion = card.querySelector('.btn-add-cart, .btn-reservar, .btn-add-to-cart');
+        const btnMinus = card.querySelector('.btn-qty-minus, .qty-btn.minus');
+        const btnPlus = card.querySelector('.btn-qty-plus, .qty-btn.plus');
+
+        if (stepperInput) {
+          stepperInput.disabled = !inStock;
+          if (inStock) {
+            if (parseInt(stepperInput.value, 10) === 0 || !stepperInput.value) {
+              stepperInput.value = '1';
+            }
+          } else {
+            stepperInput.value = '0';
+          }
+        }
+        if (btnMinus) btnMinus.disabled = !inStock;
+        if (btnPlus) btnPlus.disabled = !inStock;
+        if (btnAccion) {
+          btnAccion.disabled = !inStock;
+          btnAccion.classList.toggle('disabled', !inStock);
+        }
+      }
+    });
+  }
+};

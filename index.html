@@ -147,8 +147,8 @@
     }
     </script>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700&family=Inter:wght@400;700&family=Montserrat:wght@400;700&family=Roboto:wght@400;700&family=Outfit:wght@400;700&family=Poppins:wght@400;700&family=Lato:wght@400;700&family=Open+Sans:wght@400;700&family=Oswald:wght@400;700&family=Raleway:wght@400;700&family=Nunito:wght@400;700&family=Ubuntu:wght@400;700&family=Playfair+Display:wght@400;700&family=Cinzel:wght@400;700&family=Kanit:wght@400;700&family=Bebas+Neue&family=Fira+Sans:wght@400;700&family=Quicksand:wght@400;700&family=Syne:wght@400;700&family=Teko:wght@400;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="css/style.css?v=1.11064">
-    <link rel="stylesheet" href="css/lightmode.css?v=1.11064" id="lightmode" disabled>
+    <link rel="stylesheet" href="css/style.css?v=1.12032">
+    <link rel="stylesheet" href="css/lightmode.css?v=1.12032" id="lightmode" disabled>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <style>
         /* 🔥 Desactivar transiciones CSS durante la edición/arrastre para lograr fluidez instantánea */
@@ -283,15 +283,82 @@
                     <i class="fas fa-search"></i>
                 </div>
 
-                <!-- BOTON ACCESO CLIENTE (Estilo Mi cuenta / Iniciar sesión) -->
-                <button id="btn-client-login" class="client-login-btn" data-action="openClientAuthModal" title="Mi cuenta / Iniciar sesión">
-                    <i class="far fa-user"></i>
-                    <div class="client-login-text">
-                        <span class="client-login-title">Mi cuenta</span>
-                        <span class="client-login-sub">Iniciar sesión</span>
+                <!-- BOTON ACCESO CLIENTE CON NOTIFICACIONES ESTILO RED SOCIAL -->
+                <div class="client-account-wrapper">
+                    <button id="btn-client-login" class="client-login-btn" data-action="openClientAuthModal" title="Mi cuenta / Iniciar sesión">
+                        <i class="far fa-user"></i>
+                        <div class="client-login-text">
+                            <span class="client-login-title">Mi cuenta</span>
+                            <span class="client-login-sub">Iniciar sesión</span>
+                        </div>
+                        <span id="clientAccountBadge" class="client-account-badge" style="display: none;">0</span>
+                    </button>
+
+                    <!-- Popover Toast Novedades Estilo Red Social -->
+                    <div id="clientSocialToast" class="client-social-toast" style="display: none !important;">
+                        <div class="social-toast-pulse-icon" onclick="window.interactuarNotificacionCuenta(event)" style="cursor: pointer;">
+                            <i class="fas fa-bell"></i>
+                        </div>
+                        <div class="social-toast-content" onclick="window.interactuarNotificacionCuenta(event)" style="cursor: pointer;">
+                            <div class="social-toast-header">
+                                <span class="social-toast-title">Novedad de tu pedido</span>
+                                <span class="social-toast-time">Ahora</span>
+                            </div>
+                            <div class="social-toast-msg" id="socialToastMsg">Tenés un pedido pendiente. Tocá aquí para ver detalles.</div>
+                        </div>
+                        <button type="button" id="btnDescartarToast" class="social-toast-close" onclick="window.descartarNotificacionCuenta(event)" aria-label="Cerrar notificación">&times;</button>
                     </div>
-                </button>
+                </div>
                 <script>
+                // Manejador inmediato, quirúrgico e infalible de descarte de notificaciones
+                window.descartarNotificacionCuenta = function(e) {
+                  if (e) {
+                    if (typeof e.stopPropagation === 'function') e.stopPropagation();
+                    if (typeof e.stopImmediatePropagation === 'function') e.stopImmediatePropagation();
+                    if (typeof e.preventDefault === 'function') e.preventDefault();
+                  }
+                  var toast = document.getElementById('clientSocialToast');
+                  if (toast) {
+                    toast.classList.remove('active');
+                    toast.classList.remove('visible');
+                    toast.classList.add('hidden');
+                    toast.style.setProperty('display', 'none', 'important');
+                  }
+                  var badge = document.getElementById('clientAccountBadge');
+                  if (badge) {
+                    badge.textContent = '0';
+                    badge.style.setProperty('display', 'none', 'important');
+                  }
+                  try {
+                    sessionStorage.setItem('pixis_toast_descartado', 'true');
+                    localStorage.setItem('pixis_notif_silenciadas', 'true');
+                  } catch (_) {}
+                  if (typeof window.marcarNotificacionesComoVistas === 'function') {
+                    window.marcarNotificacionesComoVistas();
+                  }
+                };
+
+                // Asignar listeners de captura inmediata para garantizar respuesta al primer clic/toque
+                (function() {
+                  function bindToastClose() {
+                    var btn = document.getElementById('btnDescartarToast');
+                    if (btn && !btn._hasCloseListener) {
+                      btn._hasCloseListener = true;
+                      btn.addEventListener('click', function(e) {
+                        window.descartarNotificacionCuenta(e);
+                      }, true);
+                      btn.addEventListener('touchend', function(e) {
+                        window.descartarNotificacionCuenta(e);
+                      }, true);
+                    }
+                  }
+                  if (document.readyState === 'loading') {
+                    document.addEventListener('DOMContentLoaded', bindToastClose);
+                  } else {
+                    bindToastClose();
+                  }
+                })();
+
                 // Definición garantizada e inmediata de la lógica de visualización del modal
                 window.openClientAuthModal = function(fromCheckout) {
                   window._isCheckoutAuthFlow = (fromCheckout === true);
@@ -314,6 +381,18 @@
                 // Adjuntamos el manejador de click al botón inmediatamente
                 document.getElementById('btn-client-login').onclick = function(e) {
                   e.stopPropagation();
+                  var toast = document.getElementById('clientSocialToast');
+                  if (toast) {
+                    toast.classList.remove('active', 'visible');
+                    toast.classList.add('hidden');
+                    toast.style.setProperty('display', 'none', 'important');
+                  }
+                  if (typeof window.renderClientAccountBadge === 'function') {
+                    window.renderClientAccountBadge(0);
+                  }
+                  if (typeof window.marcarNotificacionesComoVistas === 'function') {
+                    window.marcarNotificacionesComoVistas();
+                  }
                   var action = this.dataset.action || 'openClientAuthModal';
                   console.log('[Pixis Diagnostic] Click en login detectado. Action:', action);
                   console.log('[Pixis Diagnostic] window[action] tipo:', typeof window[action]);
@@ -377,13 +456,6 @@
                 </div>
 
             </div>
-
-            <div class="header-web">
-                <span>WEB ABIERTA</span>
-                <div class="open-text">24/7</div>
-            </div>
-
-
 
         </div>
 
@@ -1623,6 +1695,7 @@
                 <!-- GALERÍA -->
                 <div class="modal-gallery">
                     <div class="modal-img-zoom" id="modalZoom">
+                        <div class="modal-zoom-badge"><i class="fas fa-search-plus"></i> Zoom HD</div>
                         <img id="modalImg" src="" alt="Producto">
                         <!-- [VIDEO SUPPORT] Contenedor de video aislado. Se monta/desmonta por JS. -->
                         <div id="modalVideoWrapper" style="display:none;"></div>
@@ -1633,55 +1706,62 @@
                 <!-- INFO -->
                 <div class="modal-info">
 
+                    <!-- Badges de Estado, Categoría, SKU y Compartir (Fila superior alineada) -->
+                    <div class="product-header-badges">
+                        <span class="product-pill-stock in-stock" id="modalStockBadge">
+                            <span class="stock-dot"></span> <span id="modalStockText">EN STOCK</span>
+                        </span>
+                        <span class="product-pill-category" id="modalCategoryBadge">Hardware</span>
+                        <div id="modalSkuBadge" class="product-sku-badge">
+                            <i class="fas fa-barcode"></i> SKU: <span id="modalSkuVal">—</span>
+                        </div>
+                        <button id="btnShareLink" class="link-producto" title="Copiar link del producto">
+                            <i class="fas fa-share-alt"></i>
+                            <span>Compartir</span>
+                        </button>
+                    </div>
+
                     <div class="product-title-row">
                         <h3 id="modalTitle"></h3>
-                        <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
-                            <button id="btnShareLink" class="link-producto" title="Copiar link del producto">
-                                <i class="fas fa-share-alt"></i>
-                                <span>Compartir</span>
-                            </button>
-                            <div id="modalSkuBadge" class="product-sku-badge">
-                                <i class="fas fa-barcode"></i> SKU: <span id="modalSkuVal">—</span>
-                            </div>
-                        </div>
                     </div>
 
                     <!-- =========================
-                BLOQUE PRECIOS (Estilo Opciones de Pago) - MOVIDO ARRIBA
-            ========================== -->
+                        BLOQUE PRECIOS (Estilo Opciones de Pago)
+                    ========================== -->
                     <div class="modal-precios">
                         <div class="modal-precios-title">
-                            <i class="far fa-credit-card"></i> Opciones de Pago
+                            <i class="far fa-credit-card"></i> Formas de Pago
                         </div>
 
-                        <!-- 1. Efectivo (en local) - Amarillo -->
+                        <!-- 1. Precio Estrella (Efectivo / Transferencia Web) -->
                         <div class="precio-local">
-                            <span class="precio-local-label"><i class="fas fa-money-bill-wave"></i> Efectivo (en
-                                local) / Transferencia (Unicamente abonando por la web):</span>
-                            <strong id="precioLocal"></strong>
-                        </div>
-
-                        <!-- 2. Precio sin impuestos nacionales - Marrón -->
-                        <div class="precio-sin-iva" id="bloquePrecionSinIva" style="display:none;">
-                            <span id="precioSinIvaLabel">Precio sin impuestos nacionales:</span>
-                            <span id="precioSinIva" class="precio-sin-iva-valor"></span>
-                        </div>
-
-                        <!-- 3. Transferencia - Verde -->
-                        <div class="precio-contado">
-                            <span><i class="fas fa-university"></i> Precio Normal En El Local:</span>
-                            <strong id="precioContado"></strong>
-                        </div>
-
-                        <!-- 4. Precio de Lista / Cuotas - Rojo -->
-                        <div class="precio-lista">
-                            <div class="precio-lista-content">
-                                <span>Precio de Lista:</span>
-                                <strong id="precioLista"></strong>
+                            <div class="precio-local-tag"><i class="fas fa-bolt"></i> MEJOR PRECIO WEB</div>
+                            <div class="precio-local-main">
+                                <span class="precio-local-label"><i class="fas fa-money-bill-wave"></i> Efectivo (en local) / Transferencia (Unicamente abonando por la web):</span>
+                                <strong id="precioLocal"></strong>
                             </div>
-                            <button class="btn-ver-cuotas" id="btnVerCuotas">
-                                Ver cuotas
-                            </button>
+                            <div class="precio-sin-iva" id="bloquePrecionSinIva" style="display:none;">
+                                <span id="precioSinIvaLabel">Precio sin impuestos nacionales:</span>
+                                <span id="precioSinIva" class="precio-sin-iva-valor"></span>
+                            </div>
+                        </div>
+
+                        <!-- 2. Comparativa de Precios (Local y Cuotas) -->
+                        <div class="precios-secundarios-grid">
+                            <div class="precio-contado">
+                                <span><i class="fas fa-store"></i> En el Local:</span>
+                                <strong id="precioContado"></strong>
+                            </div>
+
+                            <div class="precio-lista">
+                                <div class="precio-lista-content">
+                                    <span><i class="fas fa-credit-card"></i> Precio de Lista:</span>
+                                    <strong id="precioLista"></strong>
+                                </div>
+                                <button class="btn-ver-cuotas" id="btnVerCuotas" type="button">
+                                    <i class="fas fa-calculator"></i> Ver cuotas
+                                </button>
+                            </div>
                         </div>
 
                         <div class="logos-tarjetas">
@@ -1694,6 +1774,36 @@
                         </div>
                     </div>
 
+                    <!-- ACCIONES DE COMPRA: Fila Única Horizontal (Stepper + Agregar + Consultar) -->
+                    <div class="product-actions-container">
+                        <div class="modal-buy-row">
+                            <div class="modal-qty-stepper" id="modalQtyStepper">
+                                <button type="button" class="modal-qty-btn modal-qty-minus" aria-label="Restar">−</button>
+                                <input type="number" class="modal-qty-input" id="modalQtyInput" value="0" min="0" max="99" aria-label="Cantidad">
+                                <button type="button" class="modal-qty-btn modal-qty-plus" aria-label="Sumar">+</button>
+                            </div>
+
+                            <button class="btn-add-cart" id="btnAddToCart">
+                                <i class="fas fa-shopping-cart"></i>
+                                <span class="btn-text-full">AGREGAR</span>
+                                <span class="btn-text-short">AGREGAR</span>
+                            </button>
+
+                            <a href="https://wa.me/message/EYUUSVNG5HPNF1" class="btn-wsp" id="btnWspConsultar">
+                                <i class="fab fa-whatsapp"></i>
+                                <span class="btn-text-full">CONSULTAR</span>
+                                <span class="btn-text-short">CONSULTAR</span>
+                            </a>
+                        </div>
+                    </div>
+
+                    <!-- SELLOS DE CONFIANZA Y GARANTÍA -->
+                    <div class="product-trust-grid">
+                        <div class="trust-item"><i class="fas fa-store"></i> <span>Retiro en Jujuy 412 (Edif. San Antonio) Santiago del Estero Capital</span></div>
+                        <div class="trust-item"><i class="fas fa-shield-alt"></i> <span>Producto con garantía</span></div>
+                        <div class="trust-item"><i class="fas fa-truck-fast"></i> <span>Envíos a todo el país consultanos</span></div>
+                    </div>
+
                     <button class="btn-toggle-desc" id="btnToggleDesc">
                         + Más detalles
                     </button>
@@ -1701,25 +1811,9 @@
                     <!-- CARACTERÍSTICAS: se expande inline justo debajo del botón -->
                     <div id="modalDesc" class="modal-desc"></div>
 
-
-
                     <!-- BOTONES PERSONALIZADOS -->
                     <div id="modalCustomButtons"
                         style="display:flex; flex-direction:column; gap:10px; margin-bottom:10px;"></div>
-
-                    <div class="product-actions-container">
-                        <button class="btn-add-cart" id="btnAddToCart">
-                            <i class="fas fa-plus"></i>
-                            <span class="btn-text-full">AGREGAR AL CARRITO</span>
-                            <span class="btn-text-short">AGREGAR</span>
-                        </button>
-
-                        <a href="https://wa.me/message/EYUUSVNG5HPNF1" class="btn-wsp" id="btnWspConsultar">
-                            <i class="fab fa-whatsapp"></i>
-                            <span class="btn-text-full">CONSULTAR POR WHATSAPP</span>
-                            <span class="btn-text-short">CONSULTAR</span>
-                        </a>
-                    </div>
 
                     <!-- BOTONES -->
                     <button class="btn-review" id="btnReview">Review</button>
@@ -1738,27 +1832,6 @@
                     </div>
                 </div>
 
-                <div class="modal-cuotas-detalle" id="modalCuotasDetalle">
-                    <div class="cuotas-content">
-                        <span class="cerrar-cuotas" id="cerrarCuotas">✕</span>
-                        <div class="logos-tarjetas">
-                            <img src="img/logos/mastercard.png" alt="Mastercard">
-                            <img src="img/logos/visa.png" alt="Visa">
-                            <img src="img/logos/naranja.png" alt="Naranja X">
-                            <img src="img/logos/mercadopago.png" alt="mercadopago">
-                            <img src="img/logos/logo cabal.png" alt="cabal">
-                            <img src="img/logos/logo american express.png" alt="american">
-                        </div>
-                        <h1>MERCADO PAGO</h1>
-                        <div class="cabecera-cuotas">
-                            <span>Cuotas</span>
-                            <span>Valor cuota</span>
-                            <span>Precio final</span>
-                        </div>
-
-                        <div id="listaCuotas"></div>
-                    </div>
-                </div>
             </div>
             <script>
                 // Apertura rápida instantánea de Links Compartidos (Skeleton Load)
@@ -1779,7 +1852,30 @@
             </script>
             </div> <!-- Cierre de .modal-content de modalProduct -->
         </div> <!-- Cierre de #modalProduct -->
-        <script src="js/versionalizador.js?v=1.11064"></script>
+
+        <!-- ========================= MODAL CUOTAS SUPERPUESTO (Centrado en Viewport) ========================= -->
+        <div class="modal-cuotas-detalle" id="modalCuotasDetalle">
+            <div class="cuotas-content">
+                <span class="cerrar-cuotas" id="cerrarCuotas">✕</span>
+                <div class="logos-tarjetas">
+                    <img src="img/logos/mastercard.png" alt="Mastercard">
+                    <img src="img/logos/visa.png" alt="Visa">
+                    <img src="img/logos/naranja.png" alt="Naranja X">
+                    <img src="img/logos/mercadopago.png" alt="mercadopago">
+                    <img src="img/logos/logo cabal.png" alt="cabal">
+                    <img src="img/logos/logo american express.png" alt="american">
+                </div>
+                <h1>MERCADO PAGO</h1>
+                <div class="cabecera-cuotas">
+                    <span>Cuotas</span>
+                    <span>Valor cuota</span>
+                    <span>Precio final</span>
+                </div>
+
+                <div id="listaCuotas"></div>
+            </div>
+        </div>
+        <script src="js/versionalizador.js?v=1.12032"></script>
 
 
             <!-- ========================= LIGHTBOX IMAGEN COMPLETA ========================= -->

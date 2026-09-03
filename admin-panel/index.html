@@ -171,6 +171,10 @@
         <div class="metric-val" id="metricClientesOnline" style="color: #22c55e;">0</div>
         <div class="metric-lbl" style="display: flex; align-items: center; justify-content: center; gap: 6px;"><span class="online-indicator"></span>Clientes en Línea</div>
       </div>
+      <div class="metric-card" onclick="switchMainTab('pedidos'); setTipoOperacionFilter('preventas')" style="border-color: rgba(245, 158, 11, 0.45); box-shadow: 0 0 10px rgba(245, 158, 11, 0.15);">
+        <div class="metric-val" id="metricPreventas" style="color: #fbbf24;">0</div>
+        <div class="metric-lbl" style="color: #fbbf24;">📅 Reservas Preventa</div>
+      </div>
       <div class="metric-card">
         <div class="metric-val" id="metricTotalHistorico">—</div>
         <div class="metric-lbl">Total Pedidos Web</div>
@@ -201,6 +205,13 @@
           <button class="tab-btn" id="tab-reservado" onclick="filterByTab('reservado')">Reservados</button>
           <button class="tab-btn" id="tab-completado" onclick="filterByTab('completado')">Completados</button>
           <button class="tab-btn" id="tab-rechazado" onclick="filterByTab('rechazado')">Rechazados</button>
+        </div>
+        <!-- Selector Tipo de Operación: No mezclar Ventas con Reservas de Preventa -->
+        <div class="tipo-operacion-row" style="display: flex; gap: 6px; align-items: center; width: 100%; margin-top: 4px; padding: 4px 0;">
+          <span style="font-size: 12px; color: #94a3b8; font-weight: 700; margin-right: 4px;"><i class="fas fa-filter"></i> Operación:</span>
+          <button class="tab-btn active tipo-filter-btn" id="tipoFilter-todos" onclick="setTipoOperacionFilter('todos')" style="padding: 4px 10px; font-size: 12px;">📦 Todos</button>
+          <button class="tab-btn tipo-filter-btn" id="tipoFilter-ventas" onclick="setTipoOperacionFilter('ventas')" style="padding: 4px 10px; font-size: 12px;">🛒 Ventas Regulares</button>
+          <button class="tab-btn tipo-filter-btn" id="tipoFilter-preventas" onclick="setTipoOperacionFilter('preventas')" style="padding: 4px 10px; font-size: 12px; border-color: rgba(245, 158, 11, 0.5); color: #fbbf24;">📅 Preventas / Reservas (<span id="countPreventasBadge">0</span>)</button>
         </div>
         <div style="display: flex; gap: 8px; align-items: center; width: 100%; max-width: 520px;">
           <input type="search" id="orderSearch" placeholder="Buscar por # pedido o cliente..."

@@ -393,36 +393,7 @@ body.light-mode .modal-content li {
     background: rgba(184, 184, 184, 0.85);
 }
 
-.modal-cuotas-detalle h3 {
-    color: #000000;
-}
-
-.cuotas-content {
-    background: #cccccc;
-}
-
-
-.fila-cuota {
-    background: rgba(0, 0, 0, 0.04);
-}
-
-.cuota-total {
-
-    color: #000000;
-}
-
-.fila-cuota {
-    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-}
-
-.fila-cuota span:first-child {
-    color: #000000;
-}
-
-.total-cuotas {
-    color: #07b81f;
-
-}
+/* Estilos de cuotas unificados abajo */
 
 
 /* CARRITO */
@@ -701,24 +672,39 @@ body.light-mode .modal-content li {
 }
 
 .modal-cuotas-detalle h1 {
-    color: #ffffff;
+    color: #0284c7 !important;
+    text-shadow: none !important;
 }
 
 .cuotas-content {
-    background: #646363;
+    background: #ffffff !important;
+    border: 1.5px solid #e2e8f0 !important;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15) !important;
+    color: #0f172a !important;
 }
 
 .cabecera-cuotas {
-    color: #000000;
+    color: #0284c7 !important;
+    border-bottom: 1px solid #e2e8f0 !important;
 }
 
 .fila-cuota {
-    background: #ffffff;
-    color: rgb(0, 0, 0);
+    background: #f8fafc !important;
+    border: 1px solid #e2e8f0 !important;
+    color: #1e293b !important;
+}
+
+.fila-cuota:hover {
+    background: #f1f5f9 !important;
+    border-color: #cbd5e1 !important;
+}
+
+.col-valor {
+    color: #0f172a !important;
 }
 
 .col-total {
-    color: #000000;
+    color: #047857 !important;
 }
 
 /* =========================
@@ -788,8 +774,31 @@ body.light-mode .card span.precio {
     color: #ffffff !important;
 }
 
-.search-bar i {
-    color: #ffffff !important;
+body.light-mode .search-bar {
+    background: rgba(255, 255, 255, 0.95) !important;
+    border: 1.5px solid #cbd5e1 !important;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06), inset 0 1px 1px rgba(255, 255, 255, 0.9) !important;
+}
+
+body.light-mode .search-bar:hover {
+    border-color: #94a3b8 !important;
+}
+
+body.light-mode .search-bar:focus-within {
+    border-color: #0284c7 !important;
+    box-shadow: 0 0 12px rgba(2, 132, 199, 0.25) !important;
+}
+
+body.light-mode .search-bar input {
+    color: #0f172a !important;
+}
+
+body.light-mode .search-bar input::placeholder {
+    color: #64748b !important;
+}
+
+body.light-mode .search-bar i {
+    color: #0284c7 !important;
 }
 
 @media (max-width: 768px) {
@@ -985,47 +994,307 @@ body.light-mode .card.proximo-ingreso .precio-especial {
     color: #0a7140 !important;
 }
 
-body.light-mode .card.proximo-ingreso .btn-add-cart {
-    background: #1a1a1a !important;
-    border: 1px solid #d4af37 !important;
-    color: #fff !important;
+body.light-mode .card.proximo-ingreso .card-qty-stepper {
+    background: #fefce8 !important;
+    border: 1.5px solid #d4af37 !important;
+}
+body.light-mode .card.proximo-ingreso .card-qty-btn {
+    color: #92400e !important;
+}
+body.light-mode .card.proximo-ingreso .card-qty-input {
+    color: #1e293b !important;
 }
 
-body.light-mode .card.proximo-ingreso .btn-wsp,
-body.light-mode .card.proximo-ingreso .btn-whatsapp {
-    background: linear-gradient(90deg, #b8912d, #d4af37) !important;
-    color: #000 !important;
+body.light-mode .card.proximo-ingreso .btn-add-cart,
+body.light-mode .card .btn-add-cart.btn-reservar {
+    background: linear-gradient(180deg, #f59e0b 0%, #d97706 100%) !important;
+    color: #ffffff !important;
+    box-shadow: 0 3px 0 #b45309, 0 4px 12px rgba(217, 119, 6, 0.3) !important;
+    border: none !important;
+}
+
+body.light-mode .card.proximo-ingreso .btn-add-cart:hover,
+body.light-mode .card .btn-add-cart.btn-reservar:hover {
+    background: linear-gradient(180deg, #fbbf24 0%, #f59e0b 100%) !important;
+    box-shadow: 0 4px 0 #b45309, 0 6px 16px rgba(217, 119, 6, 0.4) !important;
+}
+
+body.light-mode .card.proximo-ingreso .btn-add-cart:active,
+body.light-mode .card .btn-add-cart.btn-reservar:active {
+    transform: translateY(2px) !important;
+    box-shadow: 0 1px 0 #b45309 !important;
+}
+
+body.light-mode .card .precio-label {
+    color: #64748b !important;
 }
 
 /* ══════════════════════════════════════════════════════
-   PÁGINA DE PRODUCTO — Modo Claro: fondo y textos legibles
+   PÁGINA DE PRODUCTO — Modo Claro: fondo, contraste y botones táctiles
    ══════════════════════════════════════════════════════ */
 body.light-mode.product-page-active .modal-content {
-    background: #f4f7fb !important;
+    background: rgba(248, 250, 252, 0.96) !important;
+    backdrop-filter: blur(20px) !important;
+    -webkit-backdrop-filter: blur(20px) !important;
+    box-shadow: 0 15px 45px rgba(0, 0, 0, 0.08) !important;
 }
 
 body.light-mode .product-page-back-container {
     background: transparent !important;
-    border-bottom: 1px solid rgba(0, 0, 0, 0.08) !important;
+    border-bottom: none !important;
 }
 
+body.light-mode .product-page-back-container .modal-close {
+    background: rgba(0, 0, 0, 0.05) !important;
+    border: 1px solid rgba(0, 0, 0, 0.15) !important;
+    color: #1e293b !important;
+}
+
+body.light-mode .product-page-back-container .modal-close:hover {
+    background: rgba(0, 0, 0, 0.09) !important;
+    border-color: #0284c7 !important;
+    color: #0284c7 !important;
+}
+
+/* Galería en Modo Claro */
+body.light-mode .modal-img-zoom {
+    background: #ffffff !important;
+    border: 1.5px solid #e2e8f0 !important;
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.06) !important;
+}
+
+body.light-mode .modal-zoom-badge {
+    background: rgba(255, 255, 255, 0.92) !important;
+    border: 1px solid #cbd5e1 !important;
+    color: #0284c7 !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08) !important;
+}
+
+body.light-mode .modal-thumbs img,
+body.light-mode .modal-thumbs .pixis-video-thumb {
+    background: #ffffff !important;
+    border: 2px solid #e2e8f0 !important;
+}
+
+body.light-mode .modal-thumbs img:hover,
+body.light-mode .modal-thumbs .pixis-video-thumb:hover,
+body.light-mode .modal-thumbs img.active-thumb,
+body.light-mode .modal-thumbs .pixis-video-thumb.active-thumb {
+    border-color: #0284c7 !important;
+    box-shadow: 0 0 12px rgba(2, 132, 199, 0.35) !important;
+}
+
+/* Badges de Cabecera en Modo Claro */
+body.light-mode .product-pill-stock.in-stock {
+    background: rgba(34, 197, 94, 0.15) !important;
+    border-color: rgba(34, 197, 94, 0.45) !important;
+    color: #15803d !important;
+    box-shadow: none !important;
+}
+
+body.light-mode .product-pill-stock.sin-stock {
+    background: rgba(239, 68, 68, 0.12) !important;
+    border-color: rgba(239, 68, 68, 0.35) !important;
+    color: #b91c1c !important;
+    box-shadow: none !important;
+}
+
+body.light-mode .product-pill-stock.proximo {
+    background: rgba(245, 158, 11, 0.12) !important;
+    border-color: rgba(245, 158, 11, 0.35) !important;
+    color: #b45309 !important;
+    box-shadow: none !important;
+}
+
+body.light-mode .product-pill-category {
+    background: rgba(99, 102, 241, 0.12) !important;
+    border-color: rgba(99, 102, 241, 0.35) !important;
+    color: #4338ca !important;
+}
+
+body.light-mode .product-header-badges .product-sku-badge {
+    background: #ffffff !important;
+    border-color: #cbd5e1 !important;
+    color: #475569 !important;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04) !important;
+}
+
+body.light-mode .product-header-badges .link-producto {
+    background: #ffffff !important;
+    border-color: #cbd5e1 !important;
+    color: #334155 !important;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04) !important;
+}
+
+body.light-mode .product-header-badges .link-producto:hover {
+    background: #f1f5f9 !important;
+    border-color: #0284c7 !important;
+    color: #0284c7 !important;
+    box-shadow: 0 2px 8px rgba(2, 132, 199, 0.2) !important;
+}
+
+/* Título */
 body.light-mode .product-title-row h3 {
     color: #0f172a !important;
 }
 
+/* Tarjeta de Precios en Modo Claro */
 body.light-mode .modal-precios {
-    background: rgba(0, 0, 0, 0.03) !important;
-    border-color: rgba(0, 150, 120, 0.3) !important;
+    background: #ffffff !important;
+    border: 1.5px solid #e2e8f0 !important;
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.05) !important;
 }
 
 body.light-mode .modal-precios-title {
+    color: #0284c7 !important;
+    border-bottom: 1px solid #e2e8f0 !important;
+}
+
+body.light-mode .precio-local {
+    background: linear-gradient(135deg, rgba(2, 132, 199, 0.08) 0%, rgba(34, 197, 94, 0.06) 100%) !important;
+    border: 1.5px solid rgba(2, 132, 199, 0.3) !important;
+    box-shadow: 0 4px 15px rgba(2, 132, 199, 0.08) !important;
+}
+
+body.light-mode .precio-local-tag {
+    background: rgba(2, 132, 199, 0.12) !important;
+    border-color: rgba(2, 132, 199, 0.3) !important;
+    color: #0284c7 !important;
+}
+
+body.light-mode .precio-local-label {
+    color: #1e293b !important;
+}
+
+body.light-mode .precio-local strong {
     color: #047857 !important;
+    text-shadow: none !important;
+}
+
+body.light-mode .precio-contado {
+    background: #f8fafc !important;
+    border-color: #e2e8f0 !important;
+    color: #1e293b !important;
+}
+
+body.light-mode .precio-contado span {
+    color: #64748b !important;
+}
+
+body.light-mode .precio-contado strong {
+    color: #0f172a !important;
+}
+
+body.light-mode .precio-lista {
+    background: #f8fafc !important;
+    border-color: #e2e8f0 !important;
+    color: #1e293b !important;
+}
+
+body.light-mode .precio-lista-content span {
+    color: #64748b !important;
+}
+
+body.light-mode .precio-lista strong {
+    color: #94a3b8 !important;
+}
+
+body.light-mode .precio-lista .btn-ver-cuotas {
+    background: linear-gradient(180deg, #38bdf8 0%, #0284c7 100%) !important;
+    color: #ffffff !important;
+    border-top: 1px solid rgba(255, 255, 255, 0.5) !important;
+    box-shadow: 0 2px 0 #0369a1, 0 4px 10px rgba(2, 132, 199, 0.25) !important;
+}
+
+body.light-mode .precio-lista .btn-ver-cuotas:hover {
+    background: linear-gradient(180deg, #0ea5e9 0%, #0284c7 100%) !important;
+    box-shadow: 0 3px 0 #0369a1, 0 6px 14px rgba(2, 132, 199, 0.35) !important;
+}
+
+body.light-mode .logos-tarjetas {
+    border-top: 1px solid #e2e8f0 !important;
+}
+
+/* Botones Táctiles en Modo Claro */
+body.light-mode .modal-qty-stepper {
+    background: #ffffff !important;
+    border-color: #cbd5e1 !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04) !important;
+}
+
+body.light-mode .modal-qty-btn {
+    background: linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%) !important;
+    border-color: #e2e8f0 !important;
+    color: #1e293b !important;
+    box-shadow: 0 1px 0 rgba(0, 0, 0, 0.1) !important;
+}
+
+body.light-mode .modal-qty-btn:hover {
+    background: #e2e8f0 !important;
+    color: #0284c7 !important;
+}
+
+body.light-mode .modal-qty-input {
+    color: #0f172a !important;
+}
+
+body.light-mode .modal-buy-row .btn-add-cart {
+    background: linear-gradient(180deg, #0ea5e9 0%, #0284c7 100%) !important;
+    color: #ffffff !important;
+    border-top: 1.5px solid rgba(255, 255, 255, 0.5) !important;
+    box-shadow: 0 4px 0 #0369a1, 0 8px 22px rgba(2, 132, 199, 0.35) !important;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2) !important;
+}
+
+body.light-mode .modal-buy-row .btn-add-cart:hover {
+    background: linear-gradient(180deg, #38bdf8 0%, #0284c7 100%) !important;
+    box-shadow: 0 5px 0 #0369a1, 0 10px 25px rgba(2, 132, 199, 0.45) !important;
+}
+
+body.light-mode .modal-buy-row .btn-add-cart:active {
+    transform: translateY(3px) !important;
+    box-shadow: 0 1px 0 #0369a1 !important;
+}
+
+body.light-mode .product-actions-container .btn-wsp {
+    background: linear-gradient(180deg, #25D366 0%, #1eab52 100%) !important;
+    color: #ffffff !important;
+    border-top: 1.5px solid rgba(255, 255, 255, 0.45) !important;
+    box-shadow: 0 3px 0 #157337, 0 6px 18px rgba(37, 211, 102, 0.3) !important;
+}
+
+body.light-mode .product-actions-container .btn-wsp:hover {
+    background: linear-gradient(180deg, #2ae670 0%, #20b858 100%) !important;
+    box-shadow: 0 4px 0 #157337, 0 8px 22px rgba(37, 211, 102, 0.45) !important;
+}
+
+body.light-mode .product-actions-container .btn-wsp:active {
+    transform: translateY(2px) !important;
+    box-shadow: 0 1px 0 #157337 !important;
+}
+
+/* Sellos de Confianza en Modo Claro */
+body.light-mode .product-trust-grid {
+    background: #ffffff !important;
+    border: 1px solid #e2e8f0 !important;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.03) !important;
+}
+
+body.light-mode .trust-item {
+    color: #334155 !important;
+    font-weight: 600 !important;
+}
+
+body.light-mode .trust-item i {
+    color: #0284c7 !important;
+    filter: none !important;
 }
 
 body.light-mode .modal-desc {
-    background: rgba(0, 0, 0, 0.03) !important;
-    border-color: rgba(0, 0, 0, 0.08) !important;
+    background: #ffffff !important;
+    border-color: #e2e8f0 !important;
     color: #334155 !important;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.03) !important;
 }
 
 /* ══════════════════════════════════════════════════════
@@ -1124,4 +1393,182 @@ body.light-mode .media-nav-btn:hover {
     background: #ffffff !important;
     border-color: #7c3aed !important;
     color: #7c3aed !important;
+}
+
+/* Modal Stepper y Banners con Fondo en Modo Claro */
+body.light-mode .modal-qty-stepper {
+    background: #f1f5f9 !important;
+    border-color: #cbd5e1 !important;
+}
+
+body.light-mode .modal-qty-stepper:focus-within {
+    border-color: #7c3aed !important;
+    box-shadow: 0 0 10px rgba(124, 58, 237, 0.25) !important;
+}
+
+body.light-mode .modal-qty-btn {
+    color: #1e293b !important;
+}
+
+body.light-mode .modal-qty-btn:hover {
+    background: #e2e8f0 !important;
+    color: #7c3aed !important;
+}
+
+body.light-mode .modal-qty-input {
+    color: #0f172a !important;
+}
+
+body.light-mode .showcase-banner-card.has-custom-bg::before {
+    background: linear-gradient(to bottom, rgba(15, 23, 42, 0.45) 0%, rgba(15, 23, 42, 0.85) 100%) !important;
+}
+
+/* ── BOTÓN MI CUENTA EN MODO CLARO (DISEÑO CORPORATIVO TÁCTIL) ── */
+body.light-mode .client-login-btn {
+    background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%) !important;
+    border: 1.5px solid #7dd3fc !important;
+    border-top: 1.5px solid #bae6fd !important;
+    box-shadow: 0 3px 0 #0284c7, 0 4px 12px rgba(2, 132, 199, 0.15) !important;
+    color: #0f172a !important;
+    padding: 4px 16px !important;
+    min-width: 145px !important;
+}
+
+body.light-mode .client-login-btn:hover {
+    background: linear-gradient(135deg, #e0f2fe 0%, #bae6fd 100%) !important;
+    border-color: #38bdf8 !important;
+    box-shadow: 0 4px 0 #0369a1, 0 6px 16px rgba(2, 132, 199, 0.25) !important;
+}
+
+body.light-mode .client-login-btn:active {
+    transform: translateY(2px) !important;
+    box-shadow: 0 1px 0 #0369a1 !important;
+}
+
+body.light-mode .client-login-btn i {
+    color: #0284c7 !important;
+    background: rgba(2, 132, 199, 0.12) !important;
+    border: 1px solid rgba(2, 132, 199, 0.25) !important;
+    box-shadow: 0 0 8px rgba(2, 132, 199, 0.2) !important;
+}
+
+body.light-mode .client-login-title {
+    color: #0f172a !important;
+    text-shadow: none !important;
+}
+
+body.light-mode .client-login-sub {
+    color: #0369a1 !important;
+}
+
+/* ==========================================================================
+   BLOQUE 7: MODO CLARO - NOTIFICACIONES, PREVENTA Y FILA ÚNICA EN MODAL
+   ========================================================================== */
+
+body.light-mode .client-account-badge {
+    border-color: #ffffff !important;
+    box-shadow: 0 2px 8px rgba(225, 29, 72, 0.45) !important;
+}
+
+body.light-mode .client-social-toast {
+    background: rgba(255, 255, 255, 0.98) !important;
+    border: 1px solid rgba(168, 85, 247, 0.35) !important;
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.12), 0 0 15px rgba(168, 85, 247, 0.15) !important;
+}
+
+body.light-mode .social-toast-title {
+    color: #0284c7 !important;
+}
+
+body.light-mode .social-toast-msg {
+    color: #1e293b !important;
+}
+
+body.light-mode .social-toast-close {
+    color: #64748b !important;
+}
+
+body.light-mode .social-toast-close:hover {
+    color: #ef4444 !important;
+}
+
+/* Fila Única en Modal de Producto (Modo Claro) */
+body.light-mode .modal-buy-row .modal-qty-stepper {
+    background: #f8fafc !important;
+    border-color: #cbd5e1 !important;
+}
+
+body.light-mode .modal-buy-row .modal-qty-btn {
+    color: #334155 !important;
+    background: #f1f5f9 !important;
+    border-color: #e2e8f0 !important;
+}
+
+body.light-mode .modal-buy-row .modal-qty-input {
+    color: #0f172a !important;
+}
+
+body.light-mode .modal-buy-row .btn-add-cart {
+    background: linear-gradient(180deg, #0284c7 0%, #0369a1 100%) !important;
+    color: #ffffff !important;
+    box-shadow: 0 3px 0 #075985, 0 6px 16px rgba(2, 132, 199, 0.35) !important;
+}
+
+body.light-mode .modal-buy-row .btn-wsp {
+    background: linear-gradient(180deg, #16a34a 0%, #15803d 100%) !important;
+    color: #ffffff !important;
+    box-shadow: 0 3px 0 #166534, 0 6px 16px rgba(22, 163, 74, 0.35) !important;
+}
+
+/* Aviso de Preventa en Modo Claro */
+body.light-mode .aviso-preventa-tag {
+    background: #fefce8 !important;
+    border-color: #f59e0b !important;
+    color: #92400e !important;
+}
+
+body.light-mode .aviso-preventa-tag i {
+    color: #d97706 !important;
+}
+
+body.light-mode .pedido-badge.badge-preventa {
+    background: #fef3c7 !important;
+    color: #b45309 !important;
+    border-color: #f59e0b !important;
+}
+
+body.light-mode .muestra-reserva-container {
+    background: #fffbeb !important;
+    border-color: #fcd34d !important;
+}
+
+body.light-mode .muestra-reserva-item {
+    background: #ffffff !important;
+    border-color: #fde68a !important;
+}
+
+body.light-mode .muestra-reserva-item div {
+    color: #1e293b !important;
+}
+
+body.light-mode .aviso-rechazado-tag {
+    background: #fef2f2 !important;
+    border-color: #f87171 !important;
+    color: #991b1b !important;
+}
+
+body.light-mode .aviso-rechazado-tag i {
+    color: #dc2626 !important;
+}
+
+body.light-mode .pedido-badge.estado-rechazado {
+    background: #fee2e2 !important;
+    color: #b91c1c !important;
+    border-color: #ef4444 !important;
+}
+
+body.light-mode .pedido-badge.estado-cancelado {
+    background: #f1f5f9 !important;
+    color: #475569 !important;
+    border-color: #94a3b8 !important;
 }

@@ -178,5 +178,27 @@
       "tipo": "categoria",
       "target": "refrigeracion"
     }
+  },
+  "showcaseBanners": {
+    "destacados": {
+      "img": "",
+      "imgMobile": "",
+      "title": "Destacados"
+    },
+    "nuevos": {
+      "img": "",
+      "imgMobile": "",
+      "title": "Nuevos Ingresos"
+    },
+    "reels": {
+      "img": "",
+      "imgMobile": "",
+      "title": "Pixis Reels"
+    },
+    "aprende": {
+      "img": "",
+      "imgMobile": "",
+      "title": "Aprende con Nosotros"
+    }
   }
 }

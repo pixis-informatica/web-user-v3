@@ -150,9 +150,11 @@
              var localPrice = Number(theProd.priceLocal || theProd.price || 0);
              var transferPrice = Number(theProd.price || 0);
              
-             // Formateo de precios con decimales: $143.500,00
+             // Formateo inteligente de precios: $143.500 (o con decimales si existen)
              function fmt(num) { 
-               return '$' + Number(num).toLocaleString('es-AR', {minimumFractionDigits: 2, maximumFractionDigits: 2}); 
+               var n = Number(num || 0);
+               var hasDec = (n % 1) !== 0;
+               return '$' + n.toLocaleString('es-AR', {minimumFractionDigits: hasDec ? 2 : 0, maximumFractionDigits: 2}); 
              }
              
              var metaTitle = document.getElementById('meta-og-title');
@@ -195,7 +197,11 @@
              }
              var listaPrice = localPrice * tasa;
 
-             function fmtFull(num) { return '$ ' + Number(num).toLocaleString('es-AR', {minimumFractionDigits: 2, maximumFractionDigits: 2}); }
+             function fmtFull(num) { 
+               var n = Number(num || 0);
+               var hasDec = (n % 1) !== 0;
+               return '$ ' + n.toLocaleString('es-AR', {minimumFractionDigits: hasDec ? 2 : 0, maximumFractionDigits: 2}); 
+             }
 
              var pContado = document.getElementById('precioContado');
              if (pContado) pContado.textContent = fmtFull(transferPrice);

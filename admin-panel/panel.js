@@ -340,16 +340,29 @@ function updateMetrics() {
   const pendientes = ordersList.filter(o => o.estado === 'pendiente_revision').length;
   const reservados = ordersList.filter(o => o.estado === 'reservado').length;
   const completados = ordersList.filter(o => o.estado === 'completado').length;
+  const preventas = ordersList.filter(o => o.es_preventa === true).length;
 
-  document.getElementById('metricPendientes').textContent = pendientes;
-  document.getElementById('metricReservados').textContent = reservados;
-  document.getElementById('metricCompletados').textContent = completados;
+  if (document.getElementById('metricPendientes')) document.getElementById('metricPendientes').textContent = pendientes;
+  if (document.getElementById('metricReservados')) document.getElementById('metricReservados').textContent = reservados;
+  if (document.getElementById('metricCompletados')) document.getElementById('metricCompletados').textContent = completados;
+  if (document.getElementById('metricPreventas')) document.getElementById('metricPreventas').textContent = preventas;
+  if (document.getElementById('countPreventasBadge')) document.getElementById('countPreventasBadge').textContent = preventas;
 }
+
+let currentTipoOperacion = 'todos'; // 'todos', 'ventas', 'preventas'
+
+window.setTipoOperacionFilter = function(tipo) {
+  currentTipoOperacion = tipo;
+  document.querySelectorAll('.tipo-filter-btn').forEach(btn => btn.classList.remove('active'));
+  const activeBtn = document.getElementById(`tipoFilter-${tipo}`);
+  if (activeBtn) activeBtn.classList.add('active');
+  renderOrders();
+};
 
 function filterByTab(tab) {
   currentTab = tab;
   
-  document.querySelectorAll('.tab-btn').forEach(btn => {
+  document.querySelectorAll('.tab-btn:not(.tipo-filter-btn)').forEach(btn => {
     btn.classList.remove('active');
   });
   const activeBtn = document.getElementById(`tab-${tab}`);
@@ -363,6 +376,12 @@ function renderOrders() {
   const searchTerm = (document.getElementById('orderSearch')?.value || '').trim().toLowerCase();
   let filtered = ordersList.filter(o => o.estado === currentTab);
 
+  if (currentTipoOperacion === 'ventas') {
+    filtered = filtered.filter(o => !o.es_preventa);
+  } else if (currentTipoOperacion === 'preventas') {
+    filtered = filtered.filter(o => o.es_preventa === true);
+  }
+
   if (searchTerm) {
     filtered = filtered.filter(o =>
       String(o.id).includes(searchTerm) ||
@@ -372,7 +391,8 @@ function renderOrders() {
   }
 
   if (filtered.length === 0) {
-    container.innerHTML = `<div class="empty-state">No hay pedidos registrados en esta pestaña (${currentTab.replace('_', ' ')}).</div>`;
+    const sufijoTipo = currentTipoOperacion === 'ventas' ? ' - Solo Ventas Regulares' : (currentTipoOperacion === 'preventas' ? ' - Solo Preventas / Reservas' : '');
+    container.innerHTML = `<div class="empty-state">No hay pedidos registrados en esta pestaña (${currentTab.replace('_', ' ')}${sufijoTipo}).</div>`;
     return;
   }
 
@@ -460,16 +480,29 @@ function renderOrders() {
       </div>
     `).join('');
 
+    const preventaBadge = order.es_preventa
+      ? `<span class="status-badge" style="background: rgba(245, 158, 11, 0.2); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.5); font-weight: 800;">📅 PREVENTA / RESERVA</span>`
+      : '';
+    const preventaAviso = order.es_preventa
+      ? `<div style="grid-column: 1 / -1; background: rgba(245, 158, 11, 0.12); border: 1px solid rgba(245, 158, 11, 0.45); color: #fbbf24; border-radius: 8px; padding: 10px 14px; margin-bottom: 8px; font-size: 12.5px; line-height: 1.45;">
+          ⚠️ <strong>Pedido en Preventa:</strong> Este pedido contiene productos en próximo ingreso. Contactar al cliente para coordinar arribo del producto y cobro.
+        </div>`
+      : '';
+
     const cardHtml = `
       <div class="order-header">
         <div class="order-title">
           <span class="order-id">Pedido #${order.id}</span>
           <span class="order-date">${dateStr}</span>
         </div>
-        <span class="status-badge status-${order.estado}">${order.estado.replace('_', ' ')}</span>
+        <div style="display: flex; gap: 6px; align-items: center; flex-wrap: wrap;">
+          ${preventaBadge}
+          <span class="status-badge status-${order.estado}">${order.estado.replace('_', ' ')}</span>
+        </div>
       </div>
       
       <div class="order-grid">
+        ${preventaAviso}
         <div class="customer-info">
           <h4>Datos del Cliente:</h4>
           <div class="info-item"><span>Nombre:</span> ${order.usuario?.nombre || '—'}</div>

@@ -247,7 +247,12 @@ async function withProductsMutex(callback) {
  */
 function validarYDescontarStock(products, items) {
   for (const item of items) {
-    const product = products.find(p => p.title === item.nombre_snapshot);
+    const isItemPreventa = (item.nombre_snapshot || '').includes('[PREVENTA]') || (item.nombre_snapshot || '').includes('[RESERVA]');
+    const product = products.find(p => p.id === item.producto_id || p.title === item.nombre_snapshot || p.title === (item.nombre_snapshot || '').replace(/\[PREVENTA\]\s*/i, '').replace(/\[RESERVA\]\s*/i, ''));
+    if (isItemPreventa || (product && (product.proximoIngreso === true || product.isProximo === true))) {
+      // Las preventas/reservas no descuentan stock físico de tienda porque aún no arribó
+      continue;
+    }
     const stockActual = product && product.stock !== undefined ? product.stock : (product && product.inStock === false ? 0 : 0);
     if (stockActual < item.cantidad) {
       return { 
@@ -260,7 +265,11 @@ function validarYDescontarStock(products, items) {
     }
   }
   for (const item of items) {
-    const product = products.find(p => p.title === item.nombre_snapshot);
+    const isItemPreventa = (item.nombre_snapshot || '').includes('[PREVENTA]') || (item.nombre_snapshot || '').includes('[RESERVA]');
+    const product = products.find(p => p.id === item.producto_id || p.title === item.nombre_snapshot || p.title === (item.nombre_snapshot || '').replace(/\[PREVENTA\]\s*/i, '').replace(/\[RESERVA\]\s*/i, ''));
+    if (isItemPreventa || (product && (product.proximoIngreso === true || product.isProximo === true))) {
+      continue;
+    }
     if (product && product.stock !== undefined) {
       product.stock = Math.max(0, product.stock - item.cantidad);
       if (product.stock === 0) {
@@ -273,16 +282,20 @@ function validarYDescontarStock(products, items) {
 
 /**
  * Restaura el stock de los items en products.json.
+ * Aplica tanto a productos regulares como a reservas de preventa que descontaron stock.
+ * NO omite preventas: si el pedido tenía stock_descontado=true, se debe restaurar sin excepciones.
  */
 function restaurarStock(products, items) {
   for (const item of items) {
-    const product = products.find(p => p.title === item.nombre_snapshot);
-    if (product) {
-      if (product.stock !== undefined) {
-        product.stock += item.cantidad;
-        if (product.stock > 0) {
-          product.inStock = true;
-        }
+    const product = products.find(p => 
+      p.id === item.producto_id || 
+      p.title === item.nombre_snapshot || 
+      p.title === (item.nombre_snapshot || '').replace(/\[PREVENTA\]\s*/i, '').replace(/\[RESERVA\]\s*/i, '').trim()
+    );
+    if (product && product.stock !== undefined) {
+      product.stock += item.cantidad;
+      if (product.stock > 0) {
+        product.inStock = true;
       }
     }
   }
@@ -895,9 +908,14 @@ async function getRealProductDetailsAndTotal(items, formaPago, cuotas) {
     let subtotal = precioUnitario * item.qty;
     totalBase += subtotal;
 
+    const isPreventa = product.proximoIngreso === true || item.isReserva === true;
+    const nombreFinal = isPreventa && !product.title.includes('[PREVENTA]')
+      ? `[PREVENTA] ${product.title}`
+      : product.title;
+
     verifiedItems.push({
       producto_id: product.id || `custom-${Date.now()}`,
-      nombre_snapshot: product.title,
+      nombre_snapshot: nombreFinal,
       precio_unitario_snapshot: precioUnitario,
       cantidad: item.qty
     });
@@ -1455,9 +1473,24 @@ app.post('/api/shop/logout', (req, res) => {
   res.json({ ok: true, message: 'Sesión cerrada correctamente.' });
 });
 
+function checkEsPedidoPreventa(order, products) {
+  if (!order) return false;
+  if (order.es_preventa === true) return true;
+  if (!order.items || order.items.length === 0) return false;
+  return order.items.some(it => {
+    const nom = it.nombre_snapshot || '';
+    if (nom.includes('[PREVENTA]') || nom.includes('[RESERVA]')) return true;
+    if (it.isReserva === true) return true;
+    if (Array.isArray(products)) {
+      const p = products.find(prod => prod.id === it.producto_id || prod.title === nom.replace(/\[PREVENTA\]\s*/i, '').replace(/\[RESERVA\]\s*/i, '').trim());
+      if (p && (p.proximoIngreso === true || p.isProximo === true)) return true;
+    }
+    return false;
+  });
+}
+
 // GET /api/shop/orders (Listar pedidos del cliente)
 app.get('/api/shop/orders', verifyCustomerToken, async (req, res) => {
-
   try {
     const orders = await prisma.pedido.findMany({
       where: { usuario_id: req.user.id, oculto_cliente: false },
@@ -1467,7 +1500,12 @@ app.get('/api/shop/orders', verifyCustomerToken, async (req, res) => {
         comprobantes: true
       }
     });
-    res.json({ ok: true, orders });
+    const products = await readJsonMutex(path.join(BASE, 'data', 'products.json')) || [];
+    const ordersWithPreventa = orders.map(order => {
+      const esPreventa = checkEsPedidoPreventa(order, products);
+      return { ...order, es_preventa: !!esPreventa };
+    });
+    res.json({ ok: true, orders: ordersWithPreventa });
   } catch (e) {
     console.error('Error al listar pedidos:', e);
     res.status(500).json({ error: 'Error interno del servidor.' });
@@ -1498,7 +1536,9 @@ app.get('/api/shop/orders/:id', verifyCustomerToken, async (req, res) => {
       return res.status(403).json({ error: 'No tenés permiso para ver este pedido.' });
     }
 
-    res.json({ ok: true, order });
+    const products = await readJsonMutex(path.join(BASE, 'data', 'products.json')) || [];
+    const esPreventa = checkEsPedidoPreventa(order, products);
+    res.json({ ok: true, order: { ...order, es_preventa: !!esPreventa } });
   } catch (e) {
     console.error('Error al obtener detalle del pedido:', e);
     res.status(500).json({ error: 'Error interno del servidor.' });
@@ -2128,7 +2168,13 @@ app.get('/api/admin/orders', verifyAdminToken, async (req, res) => {
       }
     });
 
-    res.json({ ok: true, orders });
+    const products = await readJsonMutex(path.join(BASE, 'data', 'products.json')) || [];
+    const ordersWithPreventa = orders.map(order => {
+      const esPreventa = checkEsPedidoPreventa(order, products);
+      return { ...order, es_preventa: !!esPreventa };
+    });
+
+    res.json({ ok: true, orders: ordersWithPreventa });
   } catch (e) {
     console.error('Error al listar pedidos (admin):', e);
     res.status(500).json({ error: 'Error interno del servidor.' });
@@ -2166,7 +2212,10 @@ app.get('/api/admin/orders/:id', verifyAdminToken, async (req, res) => {
       return res.status(404).json({ error: 'Pedido no encontrado.' });
     }
 
-    res.json({ ok: true, order });
+    const products = await readJsonMutex(path.join(BASE, 'data', 'products.json')) || [];
+    const esPreventa = checkEsPedidoPreventa(order, products);
+
+    res.json({ ok: true, order: { ...order, es_preventa: !!esPreventa } });
   } catch (e) {
     console.error('Error al obtener pedido (admin):', e);
     res.status(500).json({ error: 'Error interno del servidor.' });

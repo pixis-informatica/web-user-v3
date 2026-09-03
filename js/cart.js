@@ -686,16 +686,42 @@ document.addEventListener('click', e => {
 
   // Leer cantidad especificada en el selector stepper de la tarjeta (si existe)
   const qtyInput = card.querySelector('.card-qty-input');
-  const addQty = qtyInput ? Math.max(1, parseInt(qtyInput.value, 10) || 1) : 1;
+  let addQty = qtyInput ? parseInt(qtyInput.value, 10) : 0;
+  if (isNaN(addQty)) addQty = 0;
+
+  // Si está en 0, solicitamos al cliente que seleccione cuántas unidades desea agregar
+  if (addQty <= 0) {
+    pixisShowStockWarning('Por favor, indicá cuántas unidades deseas agregar con + o escribiendo');
+    if (qtyInput) {
+      qtyInput.focus();
+      qtyInput.select();
+    }
+    return;
+  }
 
   // Validar stock antes de agregar considerando la cantidad a sumar
   if (!pixisCheckStock(name, currentQty + addQty - 1)) return;
 
+  const esReserva = card.dataset.proximoIngreso === 'true' || card.classList.contains('proximo-ingreso') || btn.classList.contains('btn-reservar');
   if (item) {
     item.qty += addQty;
+    if (esReserva) item.isReserva = true;
   } else {
-    cart.push({ name, price, priceLocal, img, qty: addQty });
+    cart.push({ name, price, priceLocal, img, qty: addQty, isReserva: esReserva });
   }
+
+  // Reiniciar número de la card a 0 para que el cliente vuelva a decidir la próxima cantidad
+  if (qtyInput) {
+    qtyInput.value = 0;
+  }
+  try {
+    document.querySelectorAll('.card .card-qty-input').forEach(inp => {
+      const parentCard = inp.closest('.card');
+      if (parentCard && (parentCard.dataset.title === name || parentCard.querySelector('.btn-add-cart')?.dataset.name === name)) {
+        inp.value = 0;
+      }
+    });
+  } catch (_) {}
 
   renderCart();
   animarAgregarCarrito(img, btn);
@@ -718,7 +744,8 @@ document.addEventListener('click', e => {
         const input = card.querySelector('.card-qty-input');
         if (!input) return;
 
-        let currentVal = parseInt(input.value, 10) || 1;
+        let currentVal = parseInt(input.value, 10);
+        if (isNaN(currentVal)) currentVal = 0;
         const maxStock = parseInt(input.getAttribute('max'), 10) || 999;
 
         if (qtyBtn.classList.contains('qty-plus')) {
@@ -728,7 +755,7 @@ document.addEventListener('click', e => {
             pixisShowStockWarning(maxStock);
           }
         } else if (qtyBtn.classList.contains('qty-minus')) {
-          if (currentVal > 1) {
+          if (currentVal > 0) {
             input.value = currentVal - 1;
           }
         }
@@ -741,14 +768,17 @@ document.addEventListener('click', e => {
   }, { capture: true });
 });
 
-// Sanitización de entrada manual de cantidad
+// Sanitización de entrada manual de cantidad en cards (permite borrar y tipear)
 document.addEventListener('input', e => {
   if (e.target.classList.contains('card-qty-input')) {
     e.stopPropagation();
+    // Si el usuario borró todo para escribir, permitimos el campo vacío mientras tipea
+    if (e.target.value === '') return;
+
     let val = parseInt(e.target.value, 10);
     const maxStock = parseInt(e.target.getAttribute('max'), 10) || 999;
-    if (isNaN(val) || val < 1) {
-      val = 1;
+    if (isNaN(val) || val < 0) {
+      val = 0;
     } else if (val > maxStock) {
       val = maxStock;
       pixisShowStockWarning(maxStock);
@@ -756,6 +786,15 @@ document.addEventListener('input', e => {
     e.target.value = val;
   }
 });
+
+// Al salir del campo de la card (blur), si quedó vacío se restablece a 0
+document.addEventListener('blur', e => {
+  if (e.target && e.target.classList && e.target.classList.contains('card-qty-input')) {
+    if (e.target.value === '' || isNaN(parseInt(e.target.value, 10)) || parseInt(e.target.value, 10) < 0) {
+      e.target.value = 0;
+    }
+  }
+}, true);
 
 // Proteger eventos de teclado en el input de cantidad
 document.addEventListener('keydown', e => {
@@ -1187,6 +1226,24 @@ function redondearPrecioLocal(valor) {
 
 }
 /* =========================
+   FORMATEO INTELIGENTE DE PRECIOS
+   (Enteros sin decimales superfluos ej: $7.000, centavos sólo si existen ej: $7.000,50)
+========================= */
+function formatPriceSmart(amount) {
+  if (amount === undefined || amount === null || amount === '') return '$ 0';
+  const num = typeof amount === 'number' ? amount : parseFloat(String(amount).replace(/\./g, '').replace(',', '.').replace(/[^\d.-]/g, ''));
+  if (isNaN(num)) return '$ 0';
+  const hasDecimals = (Math.abs(num) % 1) !== 0;
+  return num.toLocaleString('es-AR', {
+    style: 'currency',
+    currency: 'ARS',
+    minimumFractionDigits: hasDecimals ? 2 : 0,
+    maximumFractionDigits: 2
+  });
+}
+window.formatPriceSmart = formatPriceSmart;
+
+/* =========================
    ACTUALIZAR PRECIOS
 ========================= */
 function actualizarPreciosModal(precioBase, precioLocalRaw, ivaStr) {
@@ -1200,13 +1257,13 @@ function actualizarPreciosModal(precioBase, precioLocalRaw, ivaStr) {
   const lista = precioNumerico * (tasasCuotas[6] || 1.31);
 
   document.getElementById("precioContado").textContent =
-    (!isNaN(contado) ? contado : 0).toLocaleString("es-AR", { style: "currency", currency: "ARS" });
+    formatPriceSmart(!isNaN(contado) ? contado : 0);
 
   document.getElementById("precioLocal").textContent =
-    (!isNaN(local) ? local : 0).toLocaleString("es-AR", { style: "currency", currency: "ARS" });
+    formatPriceSmart(!isNaN(local) ? local : 0);
 
   document.getElementById("precioLista").textContent =
-    (!isNaN(lista) ? lista : 0).toLocaleString("es-AR", { style: "currency", currency: "ARS" });
+    formatPriceSmart(!isNaN(lista) ? lista : 0);
 
   generarDetalleCuotas(precioNumerico);
 
@@ -1255,10 +1312,7 @@ function generarPreviewCuotas(precioBase) {
     const precioConInteres = precioNumerico * tasa;
     const valorCuota = precioConInteres / cuotas;
 
-    const cuotaFormateada = valorCuota.toLocaleString("es-AR", {
-      style: "currency",
-      currency: "ARS"
-    });
+    const cuotaFormateada = formatPriceSmart(valorCuota);
 
     const div = document.createElement("div");
     div.classList.add("cuota-item");
@@ -1299,23 +1353,36 @@ function generarDetalleCuotas(precioBase) {
 </span>
 
   <span class="col-valor">
-    ${valorCuota.toLocaleString("es-AR", {
-      style: "currency",
-      currency: "ARS"
-    })}
+    ${formatPriceSmart(valorCuota)}
   </span>
 
   <span class="col-total">
-    ${total.toLocaleString("es-AR", {
-      style: "currency",
-      currency: "ARS"
-    })}
+    ${formatPriceSmart(total)}
   </span>
 `;
 
     lista.appendChild(fila);
   });
 }
+
+/* ========================================================
+   BLINDAJE TOTAL DEL STEPPER EN CARDS (FASE DE CAPTURA)
+   Intercepta el evento en la bajada ANTES de que cualquier
+   handler inline o burbujeo lo detenga, previniendo la
+   navegación nativa del enlace <a> padre.
+======================================================== */
+document.addEventListener('click', function (e) {
+  if (e.target.closest('.card-qty-stepper') || e.target.closest('.card-qty-btn') || (e.target.classList && e.target.classList.contains('card-qty-input'))) {
+    e.preventDefault();
+    e.stopPropagation();
+  }
+}, true);
+
+document.addEventListener('mousedown', function (e) {
+  if (e.target.closest('.card-qty-stepper') || e.target.closest('.card-qty-btn') || (e.target.classList && e.target.classList.contains('card-qty-input'))) {
+    e.stopPropagation();
+  }
+}, true);
 
 /* =========================
    ABRIR MODAL
@@ -1327,15 +1394,20 @@ document.addEventListener('click', function (e) {
     btnToggleDesc.textContent = "+ Más detalles";
   }
 
+  // Si el click es en el selector de cantidad de la card, prevenimos la navegación del enlace <a> nativo
+  const cardStepperTarget = e.target.closest('.card-qty-stepper') || e.target.closest('.card-qty-btn') || e.target.closest('.card-qty-input');
+  if (cardStepperTarget) {
+    e.preventDefault();
+    e.stopPropagation();
+    return;
+  }
+
   // Si el click es en botones específicos, dejamos que actúen
   if (
     e.target.closest('.btn-add-cart') ||
     e.target.closest('.btn-wsp') ||
     e.target.closest('.btn-whatsapp') ||
     e.target.closest('.btn-config') ||
-    e.target.closest('.card-qty-stepper') ||
-    e.target.closest('.card-qty-btn') ||
-    e.target.closest('.card-qty-input') ||
     e.target.closest('.showcase-banner-card') ||
     e.target.closest('.pixis-edit-card-btn') ||
     e.target.closest('.pixis-delete-card-btn') ||
@@ -1364,6 +1436,16 @@ document.addEventListener('click', function (e) {
 
   window.openProductModal(card, true);
 });
+
+// Prevenir que la tecla Enter en inputs de cantidad dispare navegación o recarga
+document.addEventListener('keydown', function (e) {
+  if (e.target && e.target.classList && (e.target.classList.contains('card-qty-input') || e.target.classList.contains('modal-qty-input'))) {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      e.target.blur();
+    }
+  }
+}, true);
 
 window.openProductModal = function (card, pushToHistory = true) {
   if (card.classList.contains('sin-stock')) return;
@@ -1419,23 +1501,24 @@ window.openProductModal = function (card, pushToHistory = true) {
   resetZoom();
   resetZoomMobile();
 
-  // [VIDEO SUPPORT] Helper interno: normaliza cualquier URL de YouTube/Vimeo al formato embed
-  function pixisGetEmbedUrl(url) {
+  // [VIDEO SUPPORT] Helper interno: normaliza cualquier URL de YouTube/Vimeo al formato embed (con soporte de muted autoplay)
+  function pixisGetEmbedUrl(url, muted = false) {
     if (!url) return null;
-    // YouTube Shorts  (/shorts/VIDEO_ID)  ← NUEVO
+    const muteParam = muted ? '&mute=1' : '';
+    // YouTube Shorts  (/shorts/VIDEO_ID)
     const ytShorts = url.match(/youtube\.com\/shorts\/([a-zA-Z0-9_-]{11})/);
-    if (ytShorts) return `https://www.youtube.com/embed/${ytShorts[1]}?autoplay=1&rel=0`;
+    if (ytShorts) return `https://www.youtube.com/embed/${ytShorts[1]}?autoplay=1${muteParam}&rel=0&enablejsapi=1`;
     // YouTube watch?v=
     const ytWatch = url.match(/[?&]v=([a-zA-Z0-9_-]{11})/);
-    if (ytWatch) return `https://www.youtube.com/embed/${ytWatch[1]}?autoplay=1&rel=0`;
+    if (ytWatch) return `https://www.youtube.com/embed/${ytWatch[1]}?autoplay=1${muteParam}&rel=0&enablejsapi=1`;
     // YouTube youtu.be/
     const ytShort = url.match(/youtu\.be\/([a-zA-Z0-9_-]{11})/);
-    if (ytShort) return `https://www.youtube.com/embed/${ytShort[1]}?autoplay=1&rel=0`;
+    if (ytShort) return `https://www.youtube.com/embed/${ytShort[1]}?autoplay=1${muteParam}&rel=0&enablejsapi=1`;
     // YouTube /embed/ (ya normalizado)
-    if (url.includes('youtube.com/embed/')) return url;
+    if (url.includes('youtube.com/embed/')) return url + (url.includes('?') ? `&autoplay=1${muteParam}` : `?autoplay=1${muteParam}`);
     // Vimeo
     const vimeo = url.match(/vimeo\.com\/(\d+)/);
-    if (vimeo) return `https://player.vimeo.com/video/${vimeo[1]}?autoplay=1`;
+    if (vimeo) return `https://player.vimeo.com/video/${vimeo[1]}?autoplay=1${muted ? '&muted=1' : ''}`;
     // TikTok
     const tiktok = url.match(/tiktok\.com\/(?:.*\/video\/|v\/|t\/|embed\/)(\d+)/);
     if (tiktok) return `https://www.tiktok.com/embed/${tiktok[1]}`;
@@ -1476,7 +1559,7 @@ window.openProductModal = function (card, pushToHistory = true) {
   window._pixisDesmontarVideo = pixisDesmontarVideo;
 
   // [VIDEO SUPPORT] Función para montar el player en el visor con detección automática de orientación
-  function pixisMontarVideo(videoUrl) {
+  function pixisMontarVideo(videoUrl, muted = false) {
     const wrapper = document.getElementById('modalVideoWrapper');
     if (!wrapper) return;
     wrapper.innerHTML = ''; // limpiar por si había algo
@@ -1486,7 +1569,7 @@ window.openProductModal = function (card, pushToHistory = true) {
     wrapper.classList.remove('pixis-video-horizontal', 'pixis-video-vertical');
     wrapper.classList.add(esVertical ? 'pixis-video-vertical' : 'pixis-video-horizontal');
 
-    const embedUrl = pixisGetEmbedUrl(videoUrl);
+    const embedUrl = pixisGetEmbedUrl(videoUrl, muted);
 
     if (embedUrl) {
       // iframe para YouTube / Vimeo / Shorts
@@ -1498,13 +1581,13 @@ window.openProductModal = function (card, pushToHistory = true) {
       iframe.className = 'pixis-video-embed';
       wrapper.appendChild(iframe);
     } else {
-      // <video> nativo para .mp4 — detectar orientación por metadata al cargar
+      // <video> nativo para .mp4
       const video = document.createElement('video');
       video.src = videoUrl;
       video.controls = true;
       video.autoplay = true;
+      video.muted = muted;
       video.className = 'pixis-video-embed';
-      // Para .mp4 esperamos el metadata para saber si es vertical
       video.addEventListener('loadedmetadata', () => {
         if (video.videoHeight > video.videoWidth) {
           wrapper.classList.remove('pixis-video-horizontal');
@@ -1525,29 +1608,14 @@ window.openProductModal = function (card, pushToHistory = true) {
     resetZoom(); // limpiar zoom residual
   }
 
-  images.forEach(src => {
-    const thumb = document.createElement("img");
-    thumb.src = src.trim();
-
-    thumb.addEventListener("click", () => {
-      // [VIDEO SUPPORT] Al hacer click en una imagen, desmontar video si estaba activo
-      pixisDesmontarVideo();
-      modalImg.src = src.trim();
-      resetZoom();
-      resetZoomMobile();
-    });
-
-    thumbsContainer.appendChild(thumb);
-  });
-
-  // [VIDEO SUPPORT] Si el producto tiene video_url, inyectar miniatura al FINAL
+  // [VIDEO SUPPORT] Si el producto tiene video_url, inyectar miniatura en PRIMER LUGAR (Slide 1)
   const videoUrl = card.dataset.videoUrl;
+  let videoThumbEl = null;
   if (videoUrl) {
     const videoThumb = document.createElement('div');
     const esVerticalThumb = pixisIsVerticalUrl(videoUrl);
-    videoThumb.className = 'pixis-video-thumb' + (esVerticalThumb ? ' pixis-video-thumb--vertical' : '');
+    videoThumb.className = 'pixis-video-thumb active-thumb' + (esVerticalThumb ? ' pixis-video-thumb--vertical' : '');
 
-    // Extraer ID de YouTube (watch?v=, youtu.be/ Y /shorts/) para mostrar thumbnail real
     const ytIdMatch =
       videoUrl.match(/youtube\.com\/shorts\/([a-zA-Z0-9_-]{11})/) ||
       videoUrl.match(/[?&]v=([a-zA-Z0-9_-]{11})/) ||
@@ -1555,12 +1623,10 @@ window.openProductModal = function (card, pushToHistory = true) {
 
     if (ytIdMatch) {
       const thumbImg = document.createElement('img');
-      // mqdefault = 320x180, hqdefault = 480x360 — ambas funcionan para Shorts
       thumbImg.src = `https://img.youtube.com/vi/${ytIdMatch[1]}/mqdefault.jpg`;
       thumbImg.alt = 'Video';
       videoThumb.appendChild(thumbImg);
     } else {
-      // Para Vimeo u otros: fondo con ícono centrado (sin imagen)
       videoThumb.style.background = '#1a001a';
     }
 
@@ -1571,14 +1637,39 @@ window.openProductModal = function (card, pushToHistory = true) {
     videoThumb.appendChild(playIcon);
 
     videoThumb.addEventListener('click', () => {
-      pixisMontarVideo(videoUrl);
+      thumbsContainer.querySelectorAll('.pixis-video-thumb, img').forEach(el => el.classList.remove('active-thumb'));
+      videoThumb.classList.add('active-thumb');
+      pixisMontarVideo(videoUrl, false);
     });
 
     thumbsContainer.appendChild(videoThumb);
+    videoThumbEl = videoThumb;
   }
 
-  // [VIDEO SUPPORT] Desmontar cualquier video de sesión anterior al abrir un producto nuevo
+  images.forEach(src => {
+    const thumb = document.createElement("img");
+    thumb.src = src.trim();
+
+    thumb.addEventListener("click", () => {
+      thumbsContainer.querySelectorAll('.pixis-video-thumb, img').forEach(el => el.classList.remove('active-thumb'));
+      thumb.classList.add('active-thumb');
+      pixisDesmontarVideo();
+      modalImg.src = src.trim();
+      resetZoom();
+      resetZoomMobile();
+    });
+
+    thumbsContainer.appendChild(thumb);
+  });
+
+  // Si tiene video, arranca el video en autoplay muted (estilo Mercado Libre). Si no, muestra la primera imagen.
   pixisDesmontarVideo();
+  if (videoUrl) {
+    pixisMontarVideo(videoUrl, true);
+  } else {
+    modalImg.src = images[0];
+    if (thumbsContainer.firstChild) thumbsContainer.firstChild.classList.add('active-thumb');
+  }
 
   resetZoom();
   resetZoomMobile();
@@ -1589,14 +1680,61 @@ window.openProductModal = function (card, pushToHistory = true) {
   if (modalSkuVal) {
     modalSkuVal.textContent = card.dataset.pixisId || productoActual.id || '—';
   }
+
+  // Inyección dinámica de Categoría en la cabecera
+  const modalCategoryBadge = document.getElementById('modalCategoryBadge');
+  if (modalCategoryBadge) {
+    const rawCat = card.dataset.subcategoria || card.querySelector('.card-subcat')?.textContent || card.dataset.category || '';
+    const cleanCat = rawCat.trim();
+    if (cleanCat) {
+      modalCategoryBadge.textContent = cleanCat;
+      modalCategoryBadge.style.display = 'inline-flex';
+    } else {
+      modalCategoryBadge.style.display = 'none';
+    }
+  }
+
+  // Inyección dinámica de Estado de Stock en la cabecera
+  const modalStockBadge = document.getElementById('modalStockBadge');
+  const modalStockText = document.getElementById('modalStockText');
+  const isProximo = card.classList.contains('proximo-ingreso') || card.dataset.proximoIngreso === 'true';
+  const esSinStock = card.classList.contains('sin-stock') || 
+                     (card.dataset.stock !== undefined && card.dataset.stock !== null && card.dataset.stock !== '' && Number(card.dataset.stock) === 0);
+
+  if (modalStockBadge) {
+    modalStockBadge.classList.remove('in-stock', 'sin-stock', 'proximo');
+    if (isProximo) {
+      modalStockBadge.classList.add('proximo');
+      if (modalStockText) modalStockText.textContent = 'PRÓXIMO INGRESO';
+    } else if (esSinStock) {
+      modalStockBadge.classList.add('sin-stock');
+      if (modalStockText) modalStockText.textContent = 'SIN STOCK';
+    } else {
+      modalStockBadge.classList.add('in-stock');
+      if (modalStockText) modalStockText.textContent = 'EN STOCK';
+    }
+  }
+
   actualizarPreciosModal(btn.dataset.price, btn.dataset.priceLocal, card.dataset.iva || '');
-  
+
+  // Inicializar selector de cantidad en el modal (PC y Móvil en 0, igual a la card)
+  const modalQtyInput = document.getElementById("modalQtyInput");
+  if (modalQtyInput) {
+    modalQtyInput.value = 0;
+    const stock = parseInt(card.dataset.stock, 10) || 99;
+    modalQtyInput.max = stock;
+  }
+
   // WhatsApp Dinámico del Producto
   const btnWspConsultar = document.getElementById("btnWspConsultar");
   if (btnWspConsultar) {
-    const waPhone = window.PixisState?.state?.site?.whatsappPhone || '5493856970135';
-    const msg = `Hola! 👋\nQuiero consultar por este producto:\n\n🖥️ ${productoActual.name}\n💰 Precio: $${productoActual.price.toLocaleString("es-AR")}\n\n¿Está disponible?`;
-    btnWspConsultar.href = `https://wa.me/${waPhone}?text=${encodeURIComponent(msg)}`;
+    if (typeof window.actualizarWspModal === 'function') {
+      window.actualizarWspModal(1);
+    } else {
+      const waPhone = window.PixisState?.state?.site?.whatsappPhone || '5493856970135';
+      const msg = `Hola! 👋\nQuiero consultar por este producto:\n\n🖥️ ${productoActual.name}\n💰 Precio: $${productoActual.price.toLocaleString("es-AR")}\n\n¿Está disponible?`;
+      btnWspConsultar.href = `https://wa.me/${waPhone}?text=${encodeURIComponent(msg)}`;
+    }
   }
 
   generarPreviewCuotas(card.dataset.price);
@@ -1890,8 +2028,80 @@ window.addEventListener('resize', () => {
 });
 
 /* =========================
-   BOTÓN AGREGAR AL CARRITO
+   SELECTOR DE CANTIDAD DEL MODAL & BOTÓN AGREGAR AL CARRITO
 ========================= */
+
+window.actualizarWspModal = function(qty) {
+  const btnWsp = document.getElementById("btnWspConsultar");
+  if (!btnWsp || !window.productoActual) return;
+  const waPhone = window.PixisState?.state?.site?.whatsappPhone || '5493856970135';
+  const n = parseInt(qty, 10) || 0;
+  const unidadesTexto = n > 1 ? ` (${n} unidades)` : '';
+  const msg = `Hola! 👋\nQuiero consultar por este producto:\n\n🖥️ ${window.productoActual.name}${unidadesTexto}\n💰 Precio: $${window.productoActual.price.toLocaleString("es-AR")}\n\n¿Está disponible?`;
+  btnWsp.href = `https://wa.me/${waPhone}?text=${encodeURIComponent(msg)}`;
+};
+
+// Eventos de botones + y - en el stepper del modal
+document.addEventListener('click', function (e) {
+  const minusBtn = e.target.closest('#modalQtyStepper .modal-qty-minus');
+  const plusBtn = e.target.closest('#modalQtyStepper .modal-qty-plus');
+  const input = document.getElementById('modalQtyInput');
+
+  if (minusBtn && input) {
+    e.preventDefault();
+    e.stopPropagation();
+    let val = parseInt(input.value, 10);
+    if (isNaN(val)) val = 0;
+    if (val > 0) {
+      input.value = val - 1;
+      window.actualizarWspModal(input.value);
+    }
+    return;
+  }
+
+  if (plusBtn && input) {
+    e.preventDefault();
+    e.stopPropagation();
+    let val = parseInt(input.value, 10);
+    if (isNaN(val)) val = 0;
+    const max = parseInt(input.max, 10) || 99;
+    if (val < max) {
+      input.value = val + 1;
+      window.actualizarWspModal(input.value);
+    } else {
+      pixisShowStockWarning(max);
+    }
+    return;
+  }
+});
+
+// Sanitización de escritura manual en el stepper del modal (permite borrar y tipear)
+document.addEventListener('input', function (e) {
+  if (e.target && e.target.id === 'modalQtyInput') {
+    // Si el usuario borró todo para escribir su cantidad, permitimos el campo vacío mientras tipea
+    if (e.target.value === '') return;
+
+    let val = parseInt(e.target.value, 10);
+    const max = parseInt(e.target.max, 10) || 99;
+    if (isNaN(val) || val < 0) val = 0;
+    if (val > max) {
+      val = max;
+      pixisShowStockWarning(max);
+    }
+    e.target.value = val;
+    window.actualizarWspModal(val);
+  }
+});
+
+// Al salir del campo del modal (blur), si quedó vacío se restaura a 0 (igual a la card)
+document.addEventListener('blur', function (e) {
+  if (e.target && e.target.id === 'modalQtyInput') {
+    if (e.target.value === '' || isNaN(parseInt(e.target.value, 10)) || parseInt(e.target.value, 10) < 0) {
+      e.target.value = 0;
+      window.actualizarWspModal(0);
+    }
+  }
+}, true);
 
 const btnAddModal = document.getElementById("btnAddToCart");
 
@@ -1902,19 +2112,43 @@ btnAddToCart?.addEventListener("click", () => {
   const item = cart.find(p => p.name === productoActual.name);
   const currentQty = item ? item.qty : 0;
 
-  // Validar stock antes de agregar desde el modal
-  if (!pixisCheckStock(productoActual.name, currentQty)) return;
+  // Leer cantidad seleccionada desde el stepper del modal
+  const modalQtyInput = document.getElementById("modalQtyInput");
+  let qtyToAdd = modalQtyInput ? parseInt(modalQtyInput.value, 10) : 0;
+  if (isNaN(qtyToAdd)) qtyToAdd = 0;
 
+  // Si está en 0, solicitamos al cliente que seleccione cuántas unidades desea agregar
+  if (qtyToAdd <= 0) {
+    pixisShowStockWarning('Por favor, indicá cuántas unidades deseas agregar con + o escribiendo');
+    if (modalQtyInput) {
+      modalQtyInput.focus();
+      modalQtyInput.select();
+    }
+    return;
+  }
+
+  // Validar stock antes de agregar desde el modal
+  if (!pixisCheckStock(productoActual.name, currentQty + qtyToAdd - 1)) return;
+
+  const esReservaModal = (typeof productoActual !== 'undefined' && productoActual) ? (productoActual.proximoIngreso === true || productoActual.isReserva === true) : false;
   if (item) {
-    item.qty++;
+    item.qty += qtyToAdd;
+    if (esReservaModal) item.isReserva = true;
   } else {
     cart.push({
-  name: productoActual.name,
-  price: parseFloat(productoActual.price),
-  priceLocal: parseFloat(productoActual.priceLocal) || parseFloat(productoActual.price),
-  img: productoActual.img,
-  qty: 1
-});
+      name: productoActual.name,
+      price: parseFloat(productoActual.price),
+      priceLocal: parseFloat(productoActual.priceLocal) || parseFloat(productoActual.price),
+      img: productoActual.img,
+      qty: qtyToAdd,
+      isReserva: esReservaModal
+    });
+  }
+
+  // Reiniciar número del modal a 0 tras agregar exitosamente (igual a la card)
+  if (modalQtyInput) {
+    modalQtyInput.value = 0;
+    window.actualizarWspModal(0);
   }
 
   renderCart();
@@ -4317,6 +4551,24 @@ window.closePixisMenu = function() {
   if (categoriasNav) categoriasNav.classList.remove("active");
 };
 
+window.positionPixisMenuInProductPage = function() {
+  if (document.body.classList.contains('product-page-active') && window.innerWidth > 768) {
+    const backContainer = document.querySelector('.product-page-back-container');
+    const nav = document.querySelector('.categorias-nav');
+    if (backContainer && nav) {
+      const rect = backContainer.getBoundingClientRect();
+      const topPos = Math.max(165, Math.round(rect.bottom + 12));
+      nav.style.setProperty('top', `${topPos}px`, 'important');
+    }
+  }
+};
+
+window.addEventListener('resize', () => {
+  if (typeof window.positionPixisMenuInProductPage === 'function') {
+    window.positionPixisMenuInProductPage();
+  }
+});
+
 window.togglePixisMenu = function(e) {
   if (e) {
     e.stopPropagation();
@@ -4339,6 +4591,11 @@ window.togglePixisMenu = function(e) {
     const overlay = document.querySelector(".menu-overlay");
 
     if (categorias.classList.contains("active")) {
+      // Calibrar posición exacta debajo de los botones en página de producto
+      if (typeof window.positionPixisMenuInProductPage === 'function') {
+        window.positionPixisMenuInProductPage();
+      }
+
       // Marcar que el menú acaba de abrirse (bloquea el scroll-close por 400ms)
       window._menuJustOpened = true;
       setTimeout(() => { window._menuJustOpened = false; }, 400);
@@ -5914,6 +6171,362 @@ onPixisDOMReady(() => {
   window.checkSession = checkSession;
   checkSession();
 
+  // ── SISTEMA INTELIGENTE DE NOTIFICACIONES TIPO RED SOCIAL EN "MI CUENTA" (BLOQUE 7) ──
+
+  window.renderClientAccountBadge = function(count) {
+    const btn = document.getElementById('btn-client-login');
+    if (!btn) return;
+    let badge = btn.querySelector('.client-account-badge');
+    if (!badge) {
+      badge = document.createElement('span');
+      badge.id = 'clientAccountBadge';
+      badge.className = 'client-account-badge';
+      btn.appendChild(badge);
+    }
+    const num = parseInt(count, 10) || 0;
+    if (num > 0) {
+      badge.textContent = num > 9 ? '9+' : String(num);
+      badge.classList.remove('hidden');
+      badge.classList.add('visible', 'active');
+      badge.style.setProperty('display', 'flex', 'important');
+    } else {
+      badge.textContent = '0';
+      badge.classList.remove('visible', 'active');
+      badge.classList.add('hidden');
+      badge.style.setProperty('display', 'none', 'important');
+    }
+  };
+
+  // ── FUNCIONES AUXILIARES DE NOTIFICACIONES (ÁMBITO COMPARTIDO Y GLOBAL) ──
+  function _detectarEsPreventa(order) {
+    if (!order) return false;
+    if (order.es_preventa === true) return true;
+    if (!order.items) return false;
+    return order.items.some(it => {
+      const nom = it.nombre_snapshot || '';
+      if (nom.includes('[PREVENTA]') || nom.includes('[RESERVA]')) return true;
+      if (it.isReserva === true) return true;
+      const prods = (window.PixisState && window.PixisState.state && window.PixisState.state.products) || [];
+      const p = prods.find(pr => pr.id === it.producto_id || pr.title === nom.replace(/\[PREVENTA\]\s*/i, '').replace(/\[RESERVA\]\s*/i, '').trim());
+      return p && (p.proximoIngreso === true || p.isProximo === true);
+    });
+  }
+  window._detectarEsPreventa = _detectarEsPreventa;
+
+  function _generarHashPedido(order) {
+    if (!order) return '';
+    const tieneComp = order.comprobantes && order.comprobantes.length > 0;
+    const esPrev = _detectarEsPreventa(order);
+    return `${order.estado}:${tieneComp ? 'con_comp' : 'sin_comp'}:${esPrev ? 'prev' : 'reg'}`;
+  }
+  window._generarHashPedido = _generarHashPedido;
+
+  window.actualizarNotificacionesCuenta = async function(forzarMostrarToast = false) {
+    try {
+      const toast = document.getElementById('clientSocialToast');
+      const toastMsg = document.getElementById('socialToastMsg');
+      
+      // 1. Obtener registro de notificaciones vistas desde localStorage
+      let vistas = {};
+      try {
+        vistas = JSON.parse(localStorage.getItem('pixis_notif_vistas') || '{}');
+      } catch (_) { vistas = {}; }
+
+      // 2. Obtener lista de pedidos activos
+      let orders = [];
+      try {
+        const res = await fetch('/api/shop/orders', { credentials: 'include' });
+        if (res.ok) {
+          const data = await res.json();
+          orders = data.orders || [];
+          window._ultimosPedidosCargados = orders;
+        }
+      } catch (_) {}
+
+      // Fallback para pedidos locales recientes
+      if (orders.length === 0) {
+        try {
+          const localOrder = JSON.parse(localStorage.getItem('pixis_pedido_reciente') || 'null');
+          if (localOrder && localOrder.id) {
+            orders = [localOrder];
+          }
+        } catch (_) {}
+      }
+
+      if (orders.length === 0) {
+        window.renderClientAccountBadge(0);
+        if (toast) toast.style.display = 'none';
+        return;
+      }
+
+      // Si el modal de Mis Pedidos está abierto por el usuario, marcar automáticamente como visto
+      const modalMisPedidos = document.getElementById('modalMisPedidos');
+      if (modalMisPedidos && (modalMisPedidos.style.display === 'flex' || modalMisPedidos.classList.contains('active'))) {
+        window.marcarNotificacionesComoVistas(orders);
+        return;
+      }
+
+  // 3. Evaluar novedades que no han sido vistas por el cliente
+  // ...
+      // 3. Evaluar novedades que no han sido vistas por el cliente
+      let novedadesNoVistas = [];
+      let novedadUrgente = null;
+
+      orders.forEach(order => {
+        const estadoHash = _generarHashPedido(order);
+        const esPreventa = _detectarEsPreventa(order);
+
+        if (vistas[order.id] !== estadoHash) {
+          novedadesNoVistas.push({ order, estadoHash });
+
+          if (!novedadUrgente) {
+            if (order.estado === 'rechazado') {
+              novedadUrgente = {
+                titulo: esPreventa ? 'Reserva Rechazada' : 'Pedido Rechazado',
+                msg: `❌ Tu ${esPreventa ? 'reserva' : 'pedido'} #${order.id} fue rechazado. Tocá aquí para ver el motivo.`,
+                orderId: order.id
+              };
+            } else if (esPreventa) {
+              novedadUrgente = {
+                titulo: 'Reserva de Preventa Registrada',
+                msg: `✨ Tu reserva #${order.id} fue realizada con éxito. Nos comunicaremos con vos para finalizar tu compra.`,
+                orderId: order.id
+              };
+            } else if (order.estado === 'pendiente_revision') {
+              const tieneComp = order.comprobantes && order.comprobantes.length > 0;
+              if (order.forma_pago === 'transferencia' && !tieneComp) {
+                novedadUrgente = {
+                  titulo: 'Pedido pendiente de pago',
+                  msg: `Tenés el pedido #${order.id} pendiente de abono por transferencia. Tocá aquí para ver detalles.`,
+                  orderId: order.id
+                };
+              } else {
+                novedadUrgente = {
+                  titulo: 'Pedido registrado',
+                  msg: `Pedido #${order.id} registrado con éxito. Pendiente de confirmación de stock.`,
+                  orderId: order.id
+                };
+              }
+            } else if (order.estado === 'reservado') {
+              novedadUrgente = {
+                titulo: '¡Pedido confirmado!',
+                msg: `Tu pedido #${order.id} está reservado y listo para retirar.`,
+                orderId: order.id
+              };
+            }
+          }
+        }
+      });
+
+      const cantNovedades = novedadesNoVistas.length;
+
+      // 4. Renderizar badge y toast
+      window.renderClientAccountBadge(cantNovedades);
+
+      if (cantNovedades > 0) {
+        if (toast && novedadUrgente && (forzarMostrarToast || (!sessionStorage.getItem('pixis_toast_descartado') && !localStorage.getItem('pixis_notif_silenciadas')))) {
+          if (toastMsg) toastMsg.textContent = novedadUrgente.msg;
+          const toastTitle = toast.querySelector('.social-toast-title');
+          if (toastTitle) toastTitle.textContent = novedadUrgente.titulo;
+          toast.classList.remove('hidden');
+          toast.classList.add('visible', 'active');
+          toast.style.setProperty('display', 'flex', 'important');
+        }
+      } else {
+        if (toast) {
+          toast.classList.remove('active', 'visible');
+          toast.classList.add('hidden');
+          toast.style.setProperty('display', 'none', 'important');
+        }
+      }
+    } catch (err) {
+      console.error('[NotificacionesCuenta] Error al actualizar:', err);
+    }
+  };
+
+  // Al interactuar: marcar como visto y abrir pedidos
+  window.interactuarNotificacionCuenta = function(e) {
+    if (e) {
+      if (typeof e.stopPropagation === 'function') e.stopPropagation();
+      if (typeof e.stopImmediatePropagation === 'function') e.stopImmediatePropagation();
+      if (typeof e.preventDefault === 'function') e.preventDefault();
+    }
+    const toast = document.getElementById('clientSocialToast');
+    if (toast) {
+      toast.classList.remove('active', 'visible');
+      toast.classList.add('hidden');
+      toast.style.setProperty('display', 'none', 'important');
+    }
+    window.renderClientAccountBadge(0);
+    window.marcarNotificacionesComoVistas();
+    const btnLogin = document.getElementById('btn-client-login');
+    const action = btnLogin?.dataset?.action || 'abrirMisPedidos';
+    if (typeof window[action] === 'function') {
+      window[action]();
+    } else if (typeof window.abrirMisPedidos === 'function') {
+      window.abrirMisPedidos();
+    }
+  };
+
+  // Marcar como vistas en localStorage (no vuelve a molestar)
+  window.marcarNotificacionesComoVistas = async function(ordersParam) {
+    try {
+      let vistas = {};
+      try {
+        vistas = JSON.parse(localStorage.getItem('pixis_notif_vistas') || '{}');
+      } catch (_) { vistas = {}; }
+
+      let orders = ordersParam || window._ultimosPedidosCargados;
+      if (!orders || orders.length === 0) {
+        try {
+          const res = await fetch('/api/shop/orders', { credentials: 'include' });
+          if (res.ok) {
+            const data = await res.json();
+            orders = data.orders || [];
+            window._ultimosPedidosCargados = orders;
+          }
+        } catch (_) {}
+      }
+      orders = orders || [];
+
+      orders.forEach(order => {
+        if (!order || !order.id) return;
+        const hash = _generarHashPedido(order);
+        if (hash) {
+          vistas[order.id] = hash;
+          vistas[String(order.id)] = hash;
+        }
+      });
+
+      try {
+        const localOrder = JSON.parse(localStorage.getItem('pixis_pedido_reciente') || 'null');
+        if (localOrder && localOrder.id) {
+          const hashLocal = _generarHashPedido(localOrder);
+          if (hashLocal) {
+            vistas[localOrder.id] = hashLocal;
+            vistas[String(localOrder.id)] = hashLocal;
+          }
+        }
+      } catch (_) {}
+
+      localStorage.setItem('pixis_notif_vistas', JSON.stringify(vistas));
+
+      // Apagado físico e inmediato del badge en pantalla
+      window.renderClientAccountBadge(0);
+      document.querySelectorAll('.client-account-badge, #clientAccountBadge').forEach(badge => {
+        badge.textContent = '0';
+        badge.classList.remove('visible', 'active');
+        badge.classList.add('hidden');
+        badge.style.setProperty('display', 'none', 'important');
+      });
+
+      // Ocultar toast si estaba visible
+      const toast = document.getElementById('clientSocialToast');
+      if (toast) {
+        toast.classList.remove('active', 'visible');
+        toast.classList.add('hidden');
+        toast.style.setProperty('display', 'none', 'important');
+      }
+    } catch (err) {
+      console.error('[NotificacionesCuenta] Error al marcar vistas:', err);
+    }
+  };
+
+  window.descartarNotificacionCuenta = function(e) {
+    if (e) {
+      if (typeof e.stopPropagation === 'function') e.stopPropagation();
+      if (typeof e.stopImmediatePropagation === 'function') e.stopImmediatePropagation();
+      if (typeof e.preventDefault === 'function') e.preventDefault();
+    }
+    const toast = document.getElementById('clientSocialToast');
+    if (toast) {
+      toast.classList.remove('active', 'visible');
+      toast.classList.add('hidden');
+      toast.style.setProperty('display', 'none', 'important');
+    }
+    window.renderClientAccountBadge(0);
+    try {
+      sessionStorage.setItem('pixis_toast_descartado', 'true');
+      localStorage.setItem('pixis_notif_silenciadas', 'true');
+    } catch (_) {}
+    window.marcarNotificacionesComoVistas();
+  };
+
+  // Sincronización en segundo plano: si el modal de Mis Pedidos está abierto, refrescarlo sin parpadeos
+  window.sincronizarPedidosSilencioso = async function() {
+    const modal = document.getElementById('modalMisPedidos');
+    if (!modal || modal.style.display === 'none') return;
+
+    try {
+      const container = document.getElementById('pedidosListContainer');
+      if (container) {
+        const prevScroll = container.scrollTop;
+        await window.cargarMisPedidos(true); // silencioso = true, sin spinner
+        container.scrollTop = prevScroll;
+      }
+    } catch (_) {}
+  };
+
+  // Sincronización de stock público del catálogo (sin recargar la pestaña de nadie)
+  window.sincronizarStockCatalogo = async function() {
+    if (!window.PixisState || !window.PixisState.state || !Array.isArray(window.PixisState.state.products)) return;
+    try {
+      const res = await fetch('/data/products.json?_=' + Date.now(), { cache: 'no-store' });
+      if (!res.ok) return;
+      const freshProducts = await res.json();
+      const currentProducts = window.PixisState.state.products;
+
+      freshProducts.forEach(fp => {
+        const cp = currentProducts.find(c => c.id === fp.id || c.title === fp.title);
+        if (cp && (cp.stock !== fp.stock || cp.inStock !== fp.inStock)) {
+          if (typeof window.refrescarStockEnCards === 'function') {
+            window.refrescarStockEnCards(fp.id, fp.stock, fp.inStock);
+          }
+        }
+      });
+    } catch (_) {}
+  };
+
+  // Listener para refrescar notificaciones cuando la pestaña vuelve a tener foco
+  document.addEventListener('visibilitychange', () => {
+    if (!document.hidden) {
+      if (typeof window.actualizarNotificacionesCuenta === 'function') {
+        window.actualizarNotificacionesCuenta();
+      }
+      if (typeof window.sincronizarPedidosSilencioso === 'function') {
+        window.sincronizarPedidosSilencioso();
+      }
+      if (typeof window.sincronizarStockCatalogo === 'function') {
+        window.sincronizarStockCatalogo();
+      }
+    }
+  });
+
+  // Polling suave y ligero (cada 30s solo con pestaña visible)
+  setInterval(() => {
+    if (!document.hidden) {
+      // 1. Notificaciones privadas del cliente autenticado
+      if (typeof window.actualizarNotificacionesCuenta === 'function') {
+        window.actualizarNotificacionesCuenta();
+      }
+      // 2. Sincronización silenciosa del modal de pedidos (si está abierto)
+      if (typeof window.sincronizarPedidosSilencioso === 'function') {
+        window.sincronizarPedidosSilencioso();
+      }
+      // 3. Sincronización de stock público del catálogo
+      if (typeof window.sincronizarStockCatalogo === 'function') {
+        window.sincronizarStockCatalogo();
+      }
+    }
+  }, 30000);
+
+  // Ejecución inicial tras carga
+  setTimeout(() => {
+    if (typeof window.actualizarNotificacionesCuenta === 'function') {
+      window.actualizarNotificacionesCuenta();
+    }
+  }, 1000);
+
   window.openClientAuthModal = function(fromCheckout = false) {
     window._isCheckoutAuthFlow = (fromCheckout === true);
     const modal = document.getElementById('modalClientAuth');
@@ -6362,7 +6975,7 @@ onPixisDOMReady(() => {
       console.warn('Pixis: Intento de reserva con carrito vacío bloqueado preventivamente.');
       return;
     }
-    const items = cart.map(i => ({ name: i.name, qty: i.qty }));
+    const items = cart.map(i => ({ name: i.name, qty: i.qty, isReserva: !!i.isReserva }));
     try {
       const preCheck = await fetch(`/api/shop/stock/check?items=${encodeURIComponent(JSON.stringify(items))}`);
       const preData = await preCheck.json();
@@ -6468,7 +7081,27 @@ onPixisDOMReady(() => {
       try { localStorage.removeItem('cuponAplicado'); } catch(_) {}
       if (typeof renderCart === 'function') renderCart();
       
-      if (forma_pago === 'transferencia') {
+      // Guardar pedido reciente para notificaciones locales
+      const contienePreventa = items.some(i => i.isReserva);
+      try {
+        localStorage.setItem('pixis_pedido_reciente', JSON.stringify({
+          id: data.orderId,
+          estado: 'pendiente_revision',
+          forma_pago: forma_pago,
+          total: data.total,
+          es_preventa: contienePreventa,
+          fecha: Date.now()
+        }));
+      } catch (_) {}
+
+      // Disparar actualización inmediata de la notificación en "Mi Cuenta"
+      if (typeof window.actualizarNotificacionesCuenta === 'function') {
+        window.actualizarNotificacionesCuenta(true);
+      }
+      
+      if (contienePreventa) {
+        alert(`✨ ¡Su reserva ha sido realizada con éxito! Pedido #${data.orderId}.\nNos estaremos comunicando con usted para que pueda finalizar su compra.`);
+      } else if (forma_pago === 'transferencia') {
         // Transferencia: el cliente debe subir el comprobante para que el stock se descuente
         alert(`🎉 ¡Reserva registrada con éxito! Pedido #${data.orderId}.\nPor favor sube tu comprobante de pago para confirmar la reserva.`);
         if (typeof mostrarSeccionSubidaComprobante === 'function') {
@@ -6631,6 +7264,15 @@ onPixisDOMReady(() => {
         return;
       }
       alert('✅ ¡Excelente! Tu reserva quedó guardada.\n\nUno de nuestros vendedores se comunicará para confirmar y coordinar tu retiro durante el día en nuestro local.');
+      if (typeof window.renderClientAccountBadge === 'function') {
+        window.renderClientAccountBadge(0);
+      }
+      const toast = document.getElementById('clientSocialToast');
+      if (toast) {
+        toast.classList.remove('active', 'visible');
+        toast.classList.add('hidden');
+        toast.style.setProperty('display', 'none', 'important');
+      }
       await cargarMisPedidos();
       const vistaDetalle = document.getElementById('vistaDetallePedido');
       if (vistaDetalle && vistaDetalle.style.display !== 'none') {
@@ -6815,7 +7457,7 @@ onPixisDOMReady(() => {
   }
 
   function fmtPrecio(num) {
-    return '$' + Number(num).toLocaleString('es-AR', { minimumFractionDigits: 2 });
+    return formatPriceSmart(num);
   }
 
   function fmtFormaPagoAmigable() {
@@ -6854,6 +7496,18 @@ onPixisDOMReady(() => {
   // ── Apertura / cierre del modal ──
 
   window.abrirMisPedidos = async function () {
+    const toast = document.getElementById('clientSocialToast');
+    if (toast) {
+      toast.classList.remove('active', 'visible');
+      toast.classList.add('hidden');
+      toast.style.setProperty('display', 'none', 'important');
+    }
+    if (typeof window.renderClientAccountBadge === 'function') {
+      window.renderClientAccountBadge(0);
+    }
+    if (typeof window.marcarNotificacionesComoVistas === 'function') {
+      window.marcarNotificacionesComoVistas();
+    }
     const modal = document.getElementById('modalMisPedidos');
     if (!modal) return;
     modal.classList.add('active');
@@ -6868,6 +7522,12 @@ onPixisDOMReady(() => {
     modal.classList.remove('active');
     modal.style.display = 'none';
     pedidosSeleccionados.clear();
+    if (typeof window.renderClientAccountBadge === 'function') {
+      window.renderClientAccountBadge(0);
+    }
+    if (typeof window.marcarNotificacionesComoVistas === 'function') {
+      window.marcarNotificacionesComoVistas();
+    }
     // Resetear vistas internas para que al reabrir no se amontonen
     const vistaEditar = document.getElementById('vistaEditarDatos');
     if (vistaEditar) vistaEditar.style.display = 'none';
@@ -6892,11 +7552,14 @@ onPixisDOMReady(() => {
 
   // ── Cargar y renderizar lista de pedidos ──
 
-  window.cargarMisPedidos = async function () {
+  window.cargarMisPedidos = async function (silencioso = false) {
     const container = document.getElementById('pedidosListContainer');
     if (!container) return;
 
-    container.innerHTML = '<div class="pedidos-loading"><i class="fas fa-spinner"></i><br><br>Cargando pedidos...</div>';
+    // Solo mostrar spinner si NO es una sincronización silenciosa
+    if (!silencioso) {
+      container.innerHTML = '<div class="pedidos-loading"><i class="fas fa-spinner"></i><br><br>Cargando pedidos...</div>';
+    }
 
     try {
       const res = await fetch('/api/shop/orders', { credentials: 'include' });
@@ -6911,6 +7574,12 @@ onPixisDOMReady(() => {
       }
       const data = await res.json();
       const orders = data.orders || [];
+
+      // Guardar pedidos en memoria y apagar badge inmediatamente
+      window._ultimosPedidosCargados = orders;
+      if (typeof window.marcarNotificacionesComoVistas === 'function') {
+        window.marcarNotificacionesComoVistas(orders);
+      }
 
       if (orders.length === 0) {
         container.innerHTML = `
@@ -6962,7 +7631,51 @@ onPixisDOMReady(() => {
           formaPagoInfo = fmtFormaPagoAmigable();
         }
 
-        if (order.estado === 'pendiente_revision') {
+        // Detección estricta e inteligente de Preventa / Reserva
+        const esPreventa = order.es_preventa === true || (order.items && order.items.some(it => {
+          const nom = it.nombre_snapshot || '';
+          if (nom.includes('[PREVENTA]') || nom.includes('[RESERVA]')) return true;
+          if (it.isReserva === true) return true;
+          const prods = (window.PixisState && window.PixisState.state && window.PixisState.state.products) || [];
+          const p = prods.find(pr => pr.id === it.producto_id || pr.title === nom.replace(/\[PREVENTA\]\s*/i, '').replace(/\[RESERVA\]\s*/i, '').trim());
+          return p && (p.proximoIngreso === true || p.isProximo === true);
+        }));
+
+        // ── EVALUACIÓN RIGUROSA DE ESTADOS (Rechazado y Cancelado tienen MÁXIMA prioridad) ──
+        if (order.estado === 'rechazado') {
+          estadoTexto = 'RECHAZADO';
+          estadoCls = 'estado-rechazado';
+          const motivoRaw = order.motivo_rechazo && order.motivo_rechazo.trim() !== '' ? order.motivo_rechazo : '';
+          const tempDiv = document.createElement('div');
+          tempDiv.textContent = motivoRaw;
+          const motivoEscaped = tempDiv.innerHTML;
+          const motivoStr = motivoEscaped !== ''
+            ? `Motivo: <strong>${motivoEscaped}</strong>`
+            : 'No ha sido posible confirmar la disponibilidad para este producto.';
+          avisoPendienteTag = `
+            <div class="pedido-aviso-inline aviso-rechazado-tag">
+              <i class="fas fa-times-circle"></i>
+              <div>
+                <strong>❌ ${esPreventa ? 'Reserva Rechazada' : 'Pedido Rechazado'}:</strong>
+                <span>${motivoStr}</span>
+                <div style="margin-top: 4px; font-size: 11.5px; opacity: 0.9;">
+                  Si tenés dudas, podés contactarnos por WhatsApp indicando el pedido #${String(order.id).padStart(4, '0')}.
+                </div>
+              </div>
+            </div>`;
+        } else if (order.estado === 'cancelado') {
+          estadoTexto = 'CANCELADO';
+          estadoCls = 'estado-cancelado';
+          avisoPendienteTag = `
+            <div class="pedido-aviso-inline aviso-rechazado-tag">
+              <i class="fas fa-ban"></i>
+              <div><strong>${esPreventa ? 'Reserva Cancelada' : 'Pedido Cancelado'}:</strong> Esta operación fue cancelada.</div>
+            </div>`;
+        } else if (esPreventa) {
+          // Solo asignar badge dorado si NO está rechazado ni cancelado
+          estadoTexto = 'RESERVA REGISTRADA';
+          estadoCls = 'badge-preventa';
+        } else if (order.estado === 'pendiente_revision') {
           if (order.forma_pago === 'efectivo') {
             avisoPendienteTag = `
               <div class="pedido-aviso-inline aviso-efectivo-tag">
@@ -6984,8 +7697,8 @@ onPixisDOMReady(() => {
             </div>`;
         }
 
-        // Timer en vivo para pedidos pendientes de transferencia
-        const timerVisible = order.estado === 'pendiente_revision' && order.forma_pago === 'transferencia' && order.reservado_hasta;
+        // Timer en vivo: SOLO para ventas regulares pendientes de transferencia (NUNCA en preventas)
+        const timerVisible = !esPreventa && order.estado === 'pendiente_revision' && order.forma_pago === 'transferencia' && order.reservado_hasta;
         const timerHtml = timerVisible
           ? `<div class="pedido-timer-banner" data-timer-order-id="${order.id}" data-timer-end="${order.reservado_hasta}">
                <i class="fas fa-hourglass-half"></i>
@@ -6994,8 +7707,8 @@ onPixisDOMReady(() => {
              </div>`
           : '';
 
-        // Botones de elección de pago (solo si pendiente + transferencia + sin comprobante)
-        const puedeElegirPago = order.estado === 'pendiente_revision'
+        // Botones de elección de pago: SOLO para ventas regulares (NUNCA en preventas)
+        const puedeElegirPago = !esPreventa && order.estado === 'pendiente_revision'
           && order.forma_pago === 'transferencia'
           && (!order.comprobantes || order.comprobantes.length === 0);
         const botonesAccion = puedeElegirPago
@@ -7009,11 +7722,60 @@ onPixisDOMReady(() => {
              </div>`
           : '';
 
+        // Muestra de la Reserva (Productos Precomprados / Próximo Ingreso)
+        let muestraReservaHtml = '';
+        if (esPreventa && order.items && order.items.length > 0) {
+          const prods = (window.PixisState && window.PixisState.state && window.PixisState.state.products) || [];
+          const itemsListHtml = order.items.map(it => {
+            const nomLimpio = (it.nombre_snapshot || '').replace(/\[PREVENTA\]\s*/i, '').replace(/\[RESERVA\]\s*/i, '').trim();
+            const prodCatalog = prods.find(pr => pr.id === it.producto_id || pr.title === nomLimpio);
+            const imgUrl = (prodCatalog && prodCatalog.img) || 'img/TECH24.png';
+            const subtotalItem = (it.precio_unitario_snapshot || 0) * (it.cantidad || 1);
+            return `
+              <div class="muestra-reserva-item" style="display: flex; align-items: center; gap: 10px; padding: 8px 10px; background: rgba(0,0,0,0.35); border: 1px solid rgba(245, 158, 11, 0.3); border-radius: 8px; margin-top: 6px;">
+                <img src="${imgUrl}" alt="${nomLimpio}" style="width: 44px; height: 44px; object-fit: contain; border-radius: 6px; background: rgba(255,255,255,0.06); padding: 2px; flex-shrink: 0;">
+                <div style="flex: 1; min-width: 0;">
+                  <div style="font-weight: 700; font-size: 12.5px; color: #f8fafc; line-height: 1.3;">${nomLimpio}</div>
+                  <div style="font-size: 11.5px; color: #fbbf24; font-weight: 600; margin-top: 2px;">
+                    Reserva de Próximo Ingreso &bull; <strong>x${it.cantidad}</strong> &bull; $${subtotalItem.toLocaleString('es-AR')}
+                  </div>
+                </div>
+              </div>
+            `;
+          }).join('');
+
+          muestraReservaHtml = `
+            <div class="muestra-reserva-container" style="margin: 10px 0; padding: 10px 12px; background: rgba(245, 158, 11, 0.08); border: 1px solid rgba(245, 158, 11, 0.4); border-radius: 8px;">
+              <div style="font-size: 11.5px; font-weight: 800; color: #fbbf24; text-transform: uppercase; letter-spacing: 0.5px; display: flex; align-items: center; gap: 6px;">
+                <i class="fas fa-boxes"></i> Muestra de la Reserva (Productos Precomprados):
+              </div>
+              ${itemsListHtml}
+            </div>
+          `;
+        }
+
+        // Aviso formal de Preventa: SOLO si el pedido SIGUE en pendiente_revision
+        // NUNCA mostrar si fue rechazado, cancelado, completado o vencido
+        let avisoPreventaTag = '';
+        if (esPreventa && order.estado === 'pendiente_revision') {
+          avisoPreventaTag = `
+            <div class="pedido-aviso-inline aviso-preventa-tag" style="background: rgba(245, 158, 11, 0.15) !important; border: 1.5px solid rgba(245, 158, 11, 0.5) !important; color: #fbbf24 !important; border-radius: 8px; padding: 10px 14px; margin-top: 8px; font-size: 12.5px; line-height: 1.45; display: flex; align-items: flex-start; gap: 8px;">
+              <i class="fas fa-calendar-check" style="font-size: 16px; margin-top: 2px; color: #fbbf24; flex-shrink: 0;"></i>
+              <div>
+                <strong style="color: #fbbf24; display: block; margin-bottom: 2px;">✨ Reserva de Preventa</strong>
+                Su reserva ha sido realizada con éxito, nos estaremos comunicando con usted para que pueda finalizar su compra.
+              </div>
+            </div>`;
+        }
+
+        const preventaBadgeHtml = esPreventa ? `<span class="pedido-badge badge-preventa">📅 Reserva de Preventa</span>` : '';
+
         return `
           <div class="pedido-card" onclick="verDetallePedido(${order.id})" role="button" tabindex="0"
                onkeydown="if(event.key==='Enter') verDetallePedido(${order.id})">
             <div class="pedido-card-header">
               <span class="pedido-card-num">#${String(order.id).padStart(4,'0')}</span>
+              ${preventaBadgeHtml}
               <span class="pedido-badge ${estadoCls}">${estadoTexto}</span>
               <span class="pedido-card-date">${fechaFmt}</span>
               ${checkboxHtml}
@@ -7021,6 +7783,8 @@ onPixisDOMReady(() => {
             <div class="pedido-card-total">Total: <strong>${totalFmt}</strong></div>
             <div class="pedido-card-pago">Forma de pago: <span>${formaPagoInfo}</span></div>
             ${timerHtml}
+            ${muestraReservaHtml}
+            ${avisoPreventaTag}
             ${avisoPendienteTag}
             ${botonesAccion}
             ${compTag}
@@ -7760,14 +8524,14 @@ window.parseReelEmbed = function(url, platform) {
 
   // Direct MP4/WebM video
   if (platform === 'mp4' || /\.(mp4|webm|ogg)$/i.test(u)) {
-    return `<video src="${u}" controls playsinline loop preload="metadata" style="width:100%;height:100%;object-fit:cover;"></video>`;
+    return `<video src="${u}" controls playsinline autoplay muted loop preload="metadata" style="width:100%;height:100%;object-fit:cover;"></video>`;
   }
 
   // YouTube Shorts / Video
   const ytMatch = u.match(/(?:youtube\.com\/shorts\/|youtu\.be\/|youtube\.com\/watch\?v=)([a-zA-Z0-9_\-]+)/);
   if (platform === 'youtube' || ytMatch) {
     const vid = ytMatch ? ytMatch[1] : u;
-    return `<iframe src="https://www.youtube-nocookie.com/embed/${vid}?autoplay=0&loop=1&rel=0&modestbranding=1" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen loading="lazy" style="width:100%;height:100%;border:none;"></iframe>`;
+    return `<iframe src="https://www.youtube-nocookie.com/embed/${vid}?autoplay=1&mute=1&loop=1&playlist=${vid}&rel=0&modestbranding=1" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen loading="lazy" style="width:100%;height:100%;border:none;"></iframe>`;
   }
 
   // Instagram Reels
@@ -7781,17 +8545,17 @@ window.parseReelEmbed = function(url, platform) {
   const ttMatch = u.match(/tiktok\.com\/(?:@[^/]+\/video\/|v\/|embed\/)(\d+)/);
   if (platform === 'tiktok' || ttMatch) {
     const ttId = ttMatch ? ttMatch[1] : u;
-    return `<iframe src="https://www.tiktok.com/embed/v2/${ttId}" frameborder="0" allow="fullscreen" loading="lazy" style="width:100%;height:100%;border:none;"></iframe>`;
+    return `<iframe src="https://www.tiktok.com/embed/v2/${ttId}" frameborder="0" allow="fullscreen; autoplay" loading="lazy" style="width:100%;height:100%;border:none;"></iframe>`;
   }
 
   // Facebook Reel
   if (platform === 'facebook' || /facebook\.com|fb\.watch/i.test(u)) {
     const encoded = encodeURIComponent(u);
-    return `<iframe src="https://www.facebook.com/plugins/video.php?href=${encoded}&show_text=0" frameborder="0" allowfullscreen="true" allow="autoplay; clipboard-write; encrypted-media; picture-in-picture; web-share" loading="lazy" style="width:100%;height:100%;border:none;"></iframe>`;
+    return `<iframe src="https://www.facebook.com/plugins/video.php?href=${encoded}&show_text=0&autoplay=true&mute=1" frameborder="0" allowfullscreen="true" allow="autoplay; clipboard-write; encrypted-media; picture-in-picture; web-share" loading="lazy" style="width:100%;height:100%;border:none;"></iframe>`;
   }
 
   // Fallback: Embed genérico iframe
-  return `<iframe src="${u}" frameborder="0" loading="lazy" style="width:100%;height:100%;border:none;"></iframe>`;
+  return `<iframe src="${u}" frameborder="0" allow="autoplay" loading="lazy" style="width:100%;height:100%;border:none;"></iframe>`;
 };
 
 window.renderLateralBannersAndReels = function() {
