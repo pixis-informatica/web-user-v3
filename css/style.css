@@ -747,33 +747,87 @@ html {
   cursor: pointer;
 }
 
-.showcase-banner-card.has-custom-bg {
-  position: relative !important;
-  background-image: linear-gradient(to bottom, rgba(14, 0, 22, 0.45) 0%, rgba(14, 0, 22, 0.85) 100%), var(--banner-bg-pc) !important;
-  background-size: cover !important;
-  background-position: center !important;
-  background-repeat: no-repeat !important;
-  overflow: hidden !important;
-  border-radius: 18px !important;
-}
-
-.showcase-banner-card.has-custom-bg::before {
-  content: "" !important;
+/* Fondo Multimedia Dinámico (Imágenes, GIFs animados y Videos en bucle) */
+.showcase-banner-media-bg {
   position: absolute !important;
-  inset: 0 !important;
-  background: linear-gradient(to bottom, rgba(14, 0, 22, 0.45) 0%, rgba(14, 0, 22, 0.85) 100%) !important;
-  z-index: 1 !important;
-  transition: opacity 0.3s ease !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  overflow: hidden !important;
+  border-radius: inherit !important;
+  z-index: 0 !important;
   pointer-events: none !important;
 }
 
-.showcase-banner-card.has-custom-bg:hover::before {
-  opacity: 0.9 !important;
+.showcase-banner-media-bg .showcase-bg-media {
+  position: absolute !important;
+  top: 0 !important;
+  left: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: cover !important;
+  object-position: center !important;
+  display: block !important;
+  border-radius: inherit !important;
+  transition: transform 0.4s ease !important;
 }
 
-.showcase-banner-card.has-custom-bg .showcase-banner-content {
+.showcase-banner-card:hover .showcase-banner-media-bg .showcase-bg-media {
+  transform: scale(1.05) !important;
+}
+
+/* Sombra y contraste para preservar legibilidad absoluta de textos e iconos */
+.showcase-banner-media-overlay {
+  position: absolute !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  background: linear-gradient(180deg, rgba(14, 0, 22, 0.45) 0%, rgba(14, 0, 22, 0.72) 50%, rgba(14, 0, 22, 0.90) 100%) !important;
+  z-index: 1 !important;
+  pointer-events: none !important;
+  transition: background 0.3s ease !important;
+}
+
+.showcase-banner-card:hover .showcase-banner-media-overlay {
+  background: linear-gradient(180deg, rgba(14, 0, 22, 0.35) 0%, rgba(14, 0, 22, 0.62) 50%, rgba(14, 0, 22, 0.85) 100%) !important;
+}
+
+.showcase-banner-card.reels-banner-card.has-custom-bg,
+.showcase-banner-card.aprende-banner-card.has-custom-bg,
+.showcase-banner-card.destacados-banner-card.has-custom-bg,
+.showcase-banner-card.nuevos-banner-card.has-custom-bg,
+.showcase-banner-card.has-custom-bg {
+  background: #0e0016 !important;
+  border-color: rgba(255, 255, 255, 0.25) !important;
+}
+
+.showcase-banner-card .showcase-banner-content {
   position: relative !important;
   z-index: 2 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  height: 100% !important;
+  justify-content: space-between !important;
+}
+
+/* Soporte de variantes PC y Celular */
+.showcase-media-mobile {
+  display: none !important;
+}
+
+@media (max-width: 900px) {
+  .showcase-media-pc.has-mobile-alt {
+    display: none !important;
+  }
+  .showcase-media-mobile {
+    display: block !important;
+  }
 }
 
 .showcase-banner-card.has-custom-img {
@@ -800,13 +854,13 @@ html {
   transform: translateY(-4px);
 }
 
-.destacados-banner-card {
+.destacados-banner-card:not(.has-custom-bg) {
   background: linear-gradient(160deg, #ff416c 0%, #ff4b2b 40%, #800020 100%);
   border: 1px solid rgba(255, 255, 255, 0.2);
   box-shadow: 0 10px 30px rgba(255, 75, 43, 0.3);
 }
 
-.nuevos-banner-card {
+.nuevos-banner-card:not(.has-custom-bg) {
   background: linear-gradient(160deg, #f77062 0%, #fe5196 50%, #5e022b 100%);
   border: 1px solid rgba(255, 255, 255, 0.2);
   box-shadow: 0 10px 30px rgba(254, 81, 150, 0.3);
@@ -5958,7 +6012,7 @@ body.modal-open {
    ══════════════════════════════════════════════════════════════ */
 
 /* Banners Showcase Temáticos */
-.showcase-banner-card.reels-banner-card {
+.showcase-banner-card.reels-banner-card:not(.has-custom-bg) {
   background: linear-gradient(145deg, #180026 0%, #3b0764 50%, #701a75 100%) !important;
   border: 1px solid rgba(216, 70, 239, 0.45) !important;
   box-shadow: 0 8px 30px rgba(168, 85, 247, 0.25) !important;
@@ -5985,7 +6039,7 @@ body.modal-open {
   box-shadow: 0 0 20px rgba(216, 70, 239, 0.8) !important;
 }
 
-.showcase-banner-card.aprende-banner-card {
+.showcase-banner-card.aprende-banner-card:not(.has-custom-bg) {
   background: linear-gradient(145deg, #021526 0%, #0369a1 50%, #0d9488 100%) !important;
   border: 1px solid rgba(0, 255, 213, 0.45) !important;
   box-shadow: 0 8px 30px rgba(0, 255, 213, 0.25) !important;

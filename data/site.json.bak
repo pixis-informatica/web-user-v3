@@ -135,7 +135,7 @@
       "t": "nuevos ingresos pronto"
     }
   },
-  "cacheVersion": 1788286790631,
+  "cacheVersion": 1788475862989,
   "lateralBanners": {
     "enabled": true,
     "count": 1,
@@ -177,6 +177,28 @@
       "title": "asdasdasdasdasd",
       "tipo": "categoria",
       "target": "refrigeracion"
+    }
+  },
+  "showcaseBanners": {
+    "destacados": {
+      "img": "img/uploads/showcase_destacados_pc_1788475752341_banner_destacados.png",
+      "imgMobile": "",
+      "title": "Destacados"
+    },
+    "nuevos": {
+      "img": "img/uploads/showcase_nuevos_pc_1788475776734_banner_destacados.png",
+      "imgMobile": "",
+      "title": "Nuevos Ingresos"
+    },
+    "reels": {
+      "img": "img/uploads/showcase_reels_pc_1788475801403_45545555.png",
+      "imgMobile": "",
+      "title": "Pixis Reels"
+    },
+    "aprende": {
+      "img": "img/uploads/showcase_aprende_pc_1788475811750_96655.png",
+      "imgMobile": "",
+      "title": "Aprende con Nosotros"
     }
   }
 }

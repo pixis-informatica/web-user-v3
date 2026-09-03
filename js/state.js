@@ -1528,46 +1528,79 @@ window.PixisState = {
       window.initPixisBanners();
     }
 
-    // 5d. Banners Showcase Personalizados Duales (Destacados, Nuevos Ingresos, Reels y Aprende)
-    if (site.showcaseBanners) {
-      const applyBannerBg = (id, bannerData) => {
-        const card = document.getElementById(id);
-        if (!card) return;
-        const pcImg = bannerData?.img || bannerData?.imgPc || '';
-        const mobileImg = bannerData?.imgMobile || pcImg;
+  // 5d. Banners Showcase Personalizados Duales (Destacados, Nuevos Ingresos, Reels y Aprende)
+  window.applyShowcaseBannerMedia = function(cardId, bannerData) {
+    const card = document.getElementById(cardId);
+    if (!card) return;
 
-        if (pcImg || mobileImg) {
-          card.classList.add('has-custom-bg');
-          card.classList.remove('has-custom-img');
-          if (pcImg) {
-            card.style.setProperty('--banner-bg-pc', `url("${pcImg}")`);
-          } else {
-            card.style.removeProperty('--banner-bg-pc');
-          }
-          if (mobileImg) {
-            card.style.setProperty('--banner-bg-mobile', `url("${mobileImg}")`);
-          } else {
-            card.style.removeProperty('--banner-bg-mobile');
-          }
-          // Limpiar inline style rígido para que las reglas CSS con variables manden
-          card.style.backgroundImage = '';
-          card.style.backgroundSize = 'cover';
-          card.style.backgroundPosition = 'center';
-        } else {
-          card.classList.remove('has-custom-bg', 'has-custom-img');
-          card.style.removeProperty('--banner-bg-pc');
-          card.style.removeProperty('--banner-bg-mobile');
-          card.style.backgroundImage = '';
-          card.style.backgroundSize = '';
-          card.style.backgroundPosition = '';
-        }
-      };
+    const pcMedia = (bannerData?.img || bannerData?.imgPc || '').trim();
+    const mobileMedia = (bannerData?.imgMobile || '').trim() || pcMedia;
+    const title = (bannerData?.title || '').trim();
 
-      applyBannerBg('showcaseBannerDestacados', site.showcaseBanners.destacados);
-      applyBannerBg('showcaseBannerNuevos', site.showcaseBanners.nuevos);
-      applyBannerBg('showcaseBannerReels', site.showcaseBanners.reels);
-      applyBannerBg('showcaseBannerAprende', site.showcaseBanners.aprende);
+    const isVideo = (url) => {
+      if (!url) return false;
+      const clean = url.split('?')[0].toLowerCase();
+      return clean.endsWith('.mp4') || clean.endsWith('.webm') || clean.endsWith('.ogg') || clean.endsWith('.mov') || clean.includes('/video/');
+    };
+
+    let mediaBg = card.querySelector('.showcase-banner-media-bg');
+
+    if (!pcMedia && !mobileMedia) {
+      if (mediaBg) mediaBg.remove();
+      card.classList.remove('has-custom-bg', 'has-custom-img', 'has-custom-video');
+      card.style.removeProperty('--banner-bg-pc');
+      card.style.removeProperty('--banner-bg-mobile');
+      card.style.backgroundImage = '';
+      return;
     }
+
+    card.classList.add('has-custom-bg');
+    if (isVideo(pcMedia) || isVideo(mobileMedia)) {
+      card.classList.add('has-custom-video');
+    } else {
+      card.classList.remove('has-custom-video');
+    }
+
+    if (!mediaBg) {
+      mediaBg = document.createElement('div');
+      mediaBg.className = 'showcase-banner-media-bg';
+      const content = card.querySelector('.showcase-banner-content');
+      if (content) {
+        card.insertBefore(mediaBg, content);
+      } else {
+        card.appendChild(mediaBg);
+      }
+    }
+
+    const isPcVideo = isVideo(pcMedia);
+    const hasMobileAlt = Boolean(mobileMedia && mobileMedia !== pcMedia);
+    const isMobVideo = isVideo(mobileMedia);
+    let html = '';
+
+    if (isPcVideo) {
+      html += `<video class="showcase-bg-media showcase-media-pc${hasMobileAlt ? ' has-mobile-alt' : ''}" autoplay loop muted playsinline src="${pcMedia}"></video>`;
+    } else if (pcMedia) {
+      html += `<img class="showcase-bg-media showcase-media-pc${hasMobileAlt ? ' has-mobile-alt' : ''}" src="${pcMedia}" alt="${title || 'Banner'}" loading="lazy" />`;
+    }
+
+    if (hasMobileAlt) {
+      if (isMobVideo) {
+        html += `<video class="showcase-bg-media showcase-media-mobile" autoplay loop muted playsinline src="${mobileMedia}"></video>`;
+      } else {
+        html += `<img class="showcase-bg-media showcase-media-mobile" src="${mobileMedia}" alt="${title || 'Banner'}" loading="lazy" />`;
+      }
+    }
+
+    html += `<div class="showcase-banner-media-overlay"></div>`;
+    mediaBg.innerHTML = html;
+  };
+
+  if (site.showcaseBanners) {
+    window.applyShowcaseBannerMedia('showcaseBannerDestacados', site.showcaseBanners.destacados);
+    window.applyShowcaseBannerMedia('showcaseBannerNuevos', site.showcaseBanners.nuevos);
+    window.applyShowcaseBannerMedia('showcaseBannerReels', site.showcaseBanners.reels);
+    window.applyShowcaseBannerMedia('showcaseBannerAprende', site.showcaseBanners.aprende);
+  }
 
     // 5c. Menú Lateral de Categorías (Dinámico y con auto-ocultado)
     if (this.state.categories && this.state.categories.length > 0) {

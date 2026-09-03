@@ -7051,14 +7051,14 @@ function openBannersLateralesPanel() {
         <!-- PC -->
         <div class="panel-field" style="margin-bottom:10px;">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:2px;">
-            <label class="panel-label" style="font-size:11px;font-weight:600;color:#e2e8f0;">🖥️ Imagen para PC (Vertical)</label>
+            <label class="panel-label" style="font-size:11px;font-weight:600;color:#e2e8f0;">🖥️ Fondo para PC (Imagen, GIF o Video)</label>
             <span style="font-size:10px;color:#38bdf8;font-weight:bold;">260 × 900 px</span>
           </div>
           <div style="display:flex;gap:6px;align-items:center;">
-            <input type="text" class="panel-input" id="showcaseBannerImg_destacados" value="${escHtml(showcaseBanners.destacados?.img || showcaseBanners.destacados?.imgPc || '')}" placeholder="img/uploads/... o URL" style="flex:1;font-size:12px;">
+            <input type="text" class="panel-input" id="showcaseBannerImg_destacados" value="${escHtml(showcaseBanners.destacados?.img || showcaseBanners.destacados?.imgPc || '')}" placeholder="img/uploads/... o URL (Img, GIF o Video)" style="flex:1;font-size:12px;">
             <label class="panel-btn" style="padding:4px 8px;font-size:11px;cursor:pointer;white-space:nowrap;margin:0;">
               📁 Subir PC
-              <input type="file" accept="image/*" class="showcase-banner-file-input" data-type="destacados" data-device="pc" style="display:none;">
+              <input type="file" accept="image/*,video/mp4,video/webm,video/*" class="showcase-banner-file-input" data-type="destacados" data-device="pc" style="display:none;">
             </label>
           </div>
           <div style="font-size:10px;color:#94a3b8;margin-top:2px;">Visible en computadoras y pantallas de escritorio.</div>
@@ -7067,14 +7067,14 @@ function openBannersLateralesPanel() {
         <!-- MÓVIL -->
         <div class="panel-field" style="margin-bottom:10px;">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:2px;">
-            <label class="panel-label" style="font-size:11px;font-weight:600;color:#e2e8f0;">📱 Imagen para Celular (Apaisada)</label>
+            <label class="panel-label" style="font-size:11px;font-weight:600;color:#e2e8f0;">📱 Fondo para Celular (Imagen, GIF o Video)</label>
             <span style="font-size:10px;color:#4ade80;font-weight:bold;">720 × 320 px</span>
           </div>
           <div style="display:flex;gap:6px;align-items:center;">
             <input type="text" class="panel-input" id="showcaseBannerImgMobile_destacados" value="${escHtml(showcaseBanners.destacados?.imgMobile || '')}" placeholder="img/uploads/... o URL (Opcional)" style="flex:1;font-size:12px;">
             <label class="panel-btn" style="padding:4px 8px;font-size:11px;cursor:pointer;white-space:nowrap;margin:0;">
               📁 Subir Celular
-              <input type="file" accept="image/*" class="showcase-banner-file-input" data-type="destacados" data-device="mobile" style="display:none;">
+              <input type="file" accept="image/*,video/mp4,video/webm,video/*" class="showcase-banner-file-input" data-type="destacados" data-device="mobile" style="display:none;">
             </label>
           </div>
           <div style="font-size:10px;color:#94a3b8;margin-top:2px;">Se adapta 100% al ancho del celular sin recortes de zoom.</div>
@@ -7096,14 +7096,14 @@ function openBannersLateralesPanel() {
         <!-- PC -->
         <div class="panel-field" style="margin-bottom:10px;">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:2px;">
-            <label class="panel-label" style="font-size:11px;font-weight:600;color:#e2e8f0;">🖥️ Imagen para PC (Vertical)</label>
+            <label class="panel-label" style="font-size:11px;font-weight:600;color:#e2e8f0;">🖥️ Fondo para PC (Imagen, GIF o Video)</label>
             <span style="font-size:10px;color:#38bdf8;font-weight:bold;">260 × 900 px</span>
           </div>
           <div style="display:flex;gap:6px;align-items:center;">
-            <input type="text" class="panel-input" id="showcaseBannerImg_nuevos" value="${escHtml(showcaseBanners.nuevos?.img || showcaseBanners.nuevos?.imgPc || '')}" placeholder="img/uploads/... o URL" style="flex:1;font-size:12px;">
+            <input type="text" class="panel-input" id="showcaseBannerImg_nuevos" value="${escHtml(showcaseBanners.nuevos?.img || showcaseBanners.nuevos?.imgPc || '')}" placeholder="img/uploads/... o URL (Img, GIF o Video)" style="flex:1;font-size:12px;">
             <label class="panel-btn" style="padding:4px 8px;font-size:11px;cursor:pointer;white-space:nowrap;margin:0;">
               📁 Subir PC
-              <input type="file" accept="image/*" class="showcase-banner-file-input" data-type="nuevos" data-device="pc" style="display:none;">
+              <input type="file" accept="image/*,video/mp4,video/webm,video/*" class="showcase-banner-file-input" data-type="nuevos" data-device="pc" style="display:none;">
             </label>
           </div>
           <div style="font-size:10px;color:#94a3b8;margin-top:2px;">Visible en computadoras y pantallas de escritorio.</div>
@@ -7112,14 +7112,14 @@ function openBannersLateralesPanel() {
         <!-- MÓVIL -->
         <div class="panel-field" style="margin-bottom:10px;">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:2px;">
-            <label class="panel-label" style="font-size:11px;font-weight:600;color:#e2e8f0;">📱 Imagen para Celular (Apaisada)</label>
+            <label class="panel-label" style="font-size:11px;font-weight:600;color:#e2e8f0;">📱 Fondo para Celular (Imagen, GIF o Video)</label>
             <span style="font-size:10px;color:#4ade80;font-weight:bold;">720 × 320 px</span>
           </div>
           <div style="display:flex;gap:6px;align-items:center;">
             <input type="text" class="panel-input" id="showcaseBannerImgMobile_nuevos" value="${escHtml(showcaseBanners.nuevos?.imgMobile || '')}" placeholder="img/uploads/... o URL (Opcional)" style="flex:1;font-size:12px;">
             <label class="panel-btn" style="padding:4px 8px;font-size:11px;cursor:pointer;white-space:nowrap;margin:0;">
               📁 Subir Celular
-              <input type="file" accept="image/*" class="showcase-banner-file-input" data-type="nuevos" data-device="mobile" style="display:none;">
+              <input type="file" accept="image/*,video/mp4,video/webm,video/*" class="showcase-banner-file-input" data-type="nuevos" data-device="mobile" style="display:none;">
             </label>
           </div>
           <div style="font-size:10px;color:#94a3b8;margin-top:2px;">Se adapta 100% al ancho del celular sin recortes de zoom.</div>
@@ -7141,14 +7141,14 @@ function openBannersLateralesPanel() {
         <!-- PC -->
         <div class="panel-field" style="margin-bottom:10px;">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:2px;">
-            <label class="panel-label" style="font-size:11px;font-weight:600;color:#e2e8f0;">🖥️ Imagen para PC (Vertical)</label>
+            <label class="panel-label" style="font-size:11px;font-weight:600;color:#e2e8f0;">🖥️ Fondo para PC (Imagen, GIF o Video)</label>
             <span style="font-size:10px;color:#38bdf8;font-weight:bold;">260 × 900 px</span>
           </div>
           <div style="display:flex;gap:6px;align-items:center;">
-            <input type="text" class="panel-input" id="showcaseBannerImg_reels" value="${escHtml(showcaseBanners.reels?.img || showcaseBanners.reels?.imgPc || '')}" placeholder="img/uploads/... o URL" style="flex:1;font-size:12px;">
+            <input type="text" class="panel-input" id="showcaseBannerImg_reels" value="${escHtml(showcaseBanners.reels?.img || showcaseBanners.reels?.imgPc || '')}" placeholder="img/uploads/... o URL (Img, GIF o Video)" style="flex:1;font-size:12px;">
             <label class="panel-btn" style="padding:4px 8px;font-size:11px;cursor:pointer;white-space:nowrap;margin:0;">
               📁 Subir PC
-              <input type="file" accept="image/*" class="showcase-banner-file-input" data-type="reels" data-device="pc" style="display:none;">
+              <input type="file" accept="image/*,video/mp4,video/webm,video/*" class="showcase-banner-file-input" data-type="reels" data-device="pc" style="display:none;">
             </label>
           </div>
           <div style="font-size:10px;color:#94a3b8;margin-top:2px;">Visible en computadoras y pantallas de escritorio.</div>
@@ -7157,14 +7157,14 @@ function openBannersLateralesPanel() {
         <!-- MÓVIL -->
         <div class="panel-field" style="margin-bottom:10px;">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:2px;">
-            <label class="panel-label" style="font-size:11px;font-weight:600;color:#e2e8f0;">📱 Imagen para Celular (Apaisada)</label>
+            <label class="panel-label" style="font-size:11px;font-weight:600;color:#e2e8f0;">📱 Fondo para Celular (Imagen, GIF o Video)</label>
             <span style="font-size:10px;color:#4ade80;font-weight:bold;">720 × 320 px</span>
           </div>
           <div style="display:flex;gap:6px;align-items:center;">
             <input type="text" class="panel-input" id="showcaseBannerImgMobile_reels" value="${escHtml(showcaseBanners.reels?.imgMobile || '')}" placeholder="img/uploads/... o URL (Opcional)" style="flex:1;font-size:12px;">
             <label class="panel-btn" style="padding:4px 8px;font-size:11px;cursor:pointer;white-space:nowrap;margin:0;">
               📁 Subir Celular
-              <input type="file" accept="image/*" class="showcase-banner-file-input" data-type="reels" data-device="mobile" style="display:none;">
+              <input type="file" accept="image/*,video/mp4,video/webm,video/*" class="showcase-banner-file-input" data-type="reels" data-device="mobile" style="display:none;">
             </label>
           </div>
           <div style="font-size:10px;color:#94a3b8;margin-top:2px;">Se adapta 100% al ancho del celular sin recortes de zoom.</div>
@@ -7186,14 +7186,14 @@ function openBannersLateralesPanel() {
         <!-- PC -->
         <div class="panel-field" style="margin-bottom:10px;">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:2px;">
-            <label class="panel-label" style="font-size:11px;font-weight:600;color:#e2e8f0;">🖥️ Imagen para PC (Vertical)</label>
+            <label class="panel-label" style="font-size:11px;font-weight:600;color:#e2e8f0;">🖥️ Fondo para PC (Imagen, GIF o Video)</label>
             <span style="font-size:10px;color:#38bdf8;font-weight:bold;">260 × 900 px</span>
           </div>
           <div style="display:flex;gap:6px;align-items:center;">
-            <input type="text" class="panel-input" id="showcaseBannerImg_aprende" value="${escHtml(showcaseBanners.aprende?.img || showcaseBanners.aprende?.imgPc || '')}" placeholder="img/uploads/... o URL" style="flex:1;font-size:12px;">
+            <input type="text" class="panel-input" id="showcaseBannerImg_aprende" value="${escHtml(showcaseBanners.aprende?.img || showcaseBanners.aprende?.imgPc || '')}" placeholder="img/uploads/... o URL (Img, GIF o Video)" style="flex:1;font-size:12px;">
             <label class="panel-btn" style="padding:4px 8px;font-size:11px;cursor:pointer;white-space:nowrap;margin:0;">
               📁 Subir PC
-              <input type="file" accept="image/*" class="showcase-banner-file-input" data-type="aprende" data-device="pc" style="display:none;">
+              <input type="file" accept="image/*,video/mp4,video/webm,video/*" class="showcase-banner-file-input" data-type="aprende" data-device="pc" style="display:none;">
             </label>
           </div>
           <div style="font-size:10px;color:#94a3b8;margin-top:2px;">Visible en computadoras y pantallas de escritorio.</div>
@@ -7202,14 +7202,14 @@ function openBannersLateralesPanel() {
         <!-- MÓVIL -->
         <div class="panel-field" style="margin-bottom:10px;">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:2px;">
-            <label class="panel-label" style="font-size:11px;font-weight:600;color:#e2e8f0;">📱 Imagen para Celular (Apaisada)</label>
+            <label class="panel-label" style="font-size:11px;font-weight:600;color:#e2e8f0;">📱 Fondo para Celular (Imagen, GIF o Video)</label>
             <span style="font-size:10px;color:#4ade80;font-weight:bold;">720 × 320 px</span>
           </div>
           <div style="display:flex;gap:6px;align-items:center;">
             <input type="text" class="panel-input" id="showcaseBannerImgMobile_aprende" value="${escHtml(showcaseBanners.aprende?.imgMobile || '')}" placeholder="img/uploads/... o URL (Opcional)" style="flex:1;font-size:12px;">
             <label class="panel-btn" style="padding:4px 8px;font-size:11px;cursor:pointer;white-space:nowrap;margin:0;">
               📁 Subir Celular
-              <input type="file" accept="image/*" class="showcase-banner-file-input" data-type="aprende" data-device="mobile" style="display:none;">
+              <input type="file" accept="image/*,video/mp4,video/webm,video/*" class="showcase-banner-file-input" data-type="aprende" data-device="mobile" style="display:none;">
             </label>
           </div>
           <div style="font-size:10px;color:#94a3b8;margin-top:2px;">Se adapta 100% al ancho del celular sin recortes de zoom.</div>
@@ -7459,15 +7459,57 @@ function openBannersLateralesPanel() {
         });
         const data = await res.json();
         if (data.ok && data.url) {
-          if (textInput) textInput.value = data.url;
-          window.PixisOverlay.showToast(`✅ Banner Showcase (${type} - ${device}) subido con éxito`, 'success');
+          if (textInput) {
+            textInput.value = data.url;
+            textInput.dispatchEvent(new Event('input', { bubbles: true }));
+          }
+          window.PixisOverlay.showToast(`✅ Fondo Showcase (${type} - ${device}) subido con éxito`, 'success');
+
+          const bannerMap = {
+            destacados: 'showcaseBannerDestacados',
+            nuevos: 'showcaseBannerNuevos',
+            reels: 'showcaseBannerReels',
+            aprende: 'showcaseBannerAprende'
+          };
+          const cardId = bannerMap[type];
+          if (cardId && typeof window.applyShowcaseBannerMedia === 'function') {
+            const currentData = {
+              img: document.getElementById(`showcaseBannerImg_${type}`)?.value.trim() || '',
+              imgMobile: document.getElementById(`showcaseBannerImgMobile_${type}`)?.value.trim() || '',
+              title: document.getElementById(`showcaseBannerTitle_${type}`)?.value.trim() || ''
+            };
+            window.applyShowcaseBannerMedia(cardId, currentData);
+          }
         } else {
-          window.PixisOverlay.showToast('❌ Error al subir imagen', 'error');
+          window.PixisOverlay.showToast('❌ Error al subir archivo', 'error');
         }
       } catch (err) {
-        window.PixisOverlay.showToast('❌ Error de conexión al subir imagen', 'error');
+        window.PixisOverlay.showToast('❌ Error de conexión al subir archivo', 'error');
       }
     });
+  });
+
+  // Previsualización reactiva en tiempo real al escribir o pegar enlaces
+  ['destacados', 'nuevos', 'reels', 'aprende'].forEach(type => {
+    const bannerMap = {
+      destacados: 'showcaseBannerDestacados',
+      nuevos: 'showcaseBannerNuevos',
+      reels: 'showcaseBannerReels',
+      aprende: 'showcaseBannerAprende'
+    };
+    const cardId = bannerMap[type];
+    const triggerUpdate = () => {
+      if (cardId && typeof window.applyShowcaseBannerMedia === 'function') {
+        const currentData = {
+          img: document.getElementById(`showcaseBannerImg_${type}`)?.value.trim() || '',
+          imgMobile: document.getElementById(`showcaseBannerImgMobile_${type}`)?.value.trim() || '',
+          title: document.getElementById(`showcaseBannerTitle_${type}`)?.value.trim() || ''
+        };
+        window.applyShowcaseBannerMedia(cardId, currentData);
+      }
+    };
+    document.getElementById(`showcaseBannerImg_${type}`)?.addEventListener('input', triggerUpdate);
+    document.getElementById(`showcaseBannerImgMobile_${type}`)?.addEventListener('input', triggerUpdate);
   });
 
   // Save handler
@@ -7587,42 +7629,12 @@ function openBannersLateralesPanel() {
     }
 
     // Actualización inmediata en el DOM del Showcase preservando textos, emojis y botones
-    const applyEditorBannerBg = (id, bannerData) => {
-      const card = document.getElementById(id);
-      if (!card) return;
-      const pcImg = bannerData?.img || bannerData?.imgPc || '';
-      const mobileImg = bannerData?.imgMobile || pcImg;
-
-      if (pcImg || mobileImg) {
-        card.classList.add('has-custom-bg');
-        card.classList.remove('has-custom-img');
-        if (pcImg) {
-          card.style.setProperty('--banner-bg-pc', `url("${pcImg}")`);
-        } else {
-          card.style.removeProperty('--banner-bg-pc');
-        }
-        if (mobileImg) {
-          card.style.setProperty('--banner-bg-mobile', `url("${mobileImg}")`);
-        } else {
-          card.style.removeProperty('--banner-bg-mobile');
-        }
-        card.style.backgroundImage = '';
-        card.style.backgroundSize = 'cover';
-        card.style.backgroundPosition = 'center';
-      } else {
-        card.classList.remove('has-custom-bg', 'has-custom-img');
-        card.style.removeProperty('--banner-bg-pc');
-        card.style.removeProperty('--banner-bg-mobile');
-        card.style.backgroundImage = '';
-        card.style.backgroundSize = '';
-        card.style.backgroundPosition = '';
-      }
-    };
-
-    applyEditorBannerBg('showcaseBannerDestacados', newShowcaseBanners.destacados);
-    applyEditorBannerBg('showcaseBannerNuevos', newShowcaseBanners.nuevos);
-    applyEditorBannerBg('showcaseBannerReels', newShowcaseBanners.reels);
-    applyEditorBannerBg('showcaseBannerAprende', newShowcaseBanners.aprende);
+    if (typeof window.applyShowcaseBannerMedia === 'function') {
+      window.applyShowcaseBannerMedia('showcaseBannerDestacados', newShowcaseBanners.destacados);
+      window.applyShowcaseBannerMedia('showcaseBannerNuevos', newShowcaseBanners.nuevos);
+      window.applyShowcaseBannerMedia('showcaseBannerReels', newShowcaseBanners.reels);
+      window.applyShowcaseBannerMedia('showcaseBannerAprende', newShowcaseBanners.aprende);
+    }
 
     window.PixisOverlay.markUnsaved();
     if (typeof saveAllData === 'function') {
