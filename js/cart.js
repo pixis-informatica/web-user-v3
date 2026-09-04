@@ -2380,6 +2380,9 @@ let posX = 0;
 let posY = 0;
 let startX = 0;
 let startY = 0;
+let normalTouchStartX = 0;
+let normalTouchStartY = 0;
+let normalIsSwiping = false;
 
 zoomContainer.addEventListener("touchstart", (e) => {
 
@@ -2394,6 +2397,11 @@ zoomContainer.addEventListener("touchstart", (e) => {
     // 🔥 DRAG START
     startX = e.touches[0].clientX - posX;
     startY = e.touches[0].clientY - posY;
+  } else if (e.touches.length === 1 && currentScale <= 1.05) {
+    // 🔥 SWIPE GALLERY START
+    normalTouchStartX = e.touches[0].clientX;
+    normalTouchStartY = e.touches[0].clientY;
+    normalIsSwiping = false;
   }
 
 }, { passive: false });
@@ -2444,11 +2452,17 @@ zoomContainer.addEventListener("touchmove", (e) => {
     posY = e.touches[0].clientY - startY;
 
     applyTransform();
+  } else if (e.touches.length === 1 && currentScale <= 1.05) {
+    const dX = e.touches[0].clientX - normalTouchStartX;
+    const dY = e.touches[0].clientY - normalTouchStartY;
+    if (Math.abs(dX) > 10 && Math.abs(dX) > Math.abs(dY)) {
+      normalIsSwiping = true;
+    }
   }
 
 }, { passive: false });
 
-zoomContainer.addEventListener("touchend", () => {
+zoomContainer.addEventListener("touchend", (e) => {
 
   if (!isMobile) return;
 
@@ -2456,6 +2470,24 @@ zoomContainer.addEventListener("touchend", () => {
 
   if (currentScale <= 1.05) {
     resetZoomMobile();
+    // 🔥 Si se deslizó horizontalmente en escala normal, cambiar de miniatura
+    if (normalIsSwiping && e.changedTouches && e.changedTouches.length > 0) {
+      const endX = e.changedTouches[0].clientX;
+      const endY = e.changedTouches[0].clientY;
+      const diffX = endX - normalTouchStartX;
+      const diffY = endY - normalTouchStartY;
+      if (Math.abs(diffX) > Math.abs(diffY) && Math.abs(diffX) > 40) {
+        const thumbs = Array.from(document.querySelectorAll("#modalThumbs img, #modalThumbs .pixis-video-thumb"));
+        if (thumbs.length > 1) {
+          const currentIdx = thumbs.findIndex(t => t.classList.contains('active-thumb'));
+          if (currentIdx !== -1) {
+            const nextIdx = diffX < 0 ? (currentIdx + 1) % thumbs.length : (currentIdx - 1 + thumbs.length) % thumbs.length;
+            thumbs[nextIdx].click();
+          }
+        }
+      }
+      setTimeout(() => { normalIsSwiping = false; }, 200);
+    }
   }
 
 });
@@ -5467,6 +5499,8 @@ document.addEventListener('auxclick', e => {
     let sbTracking = false;
 
     function haySubvistaActiva() {
+      // Si el lightbox de imagen está activo, NO procesar gesto swipe back para proteger la galería
+      if (document.getElementById('pixisLightbox')?.classList.contains('active')) return false;
       if (document.body.classList.contains('product-page-active')) return true;
       if (window._bannerActualId) return true;
       if (window._categoriaActiva) return true;
@@ -5857,6 +5891,7 @@ onPixisDOMReady(() => {
 
   // Abrir Lightbox al hacer click en la imagen principal del modal
   modalImg.addEventListener('click', (e) => {
+    if (typeof normalIsSwiping !== 'undefined' && normalIsSwiping) return;
     // Si la imagen no está visible (ej. se está reproduciendo un video), abrir lightbox con el video
     e.stopPropagation();
     initLightbox();
@@ -5933,14 +5968,11 @@ onPixisDOMReady(() => {
       videoWrap.innerHTML = '';
       videoWrap.style.display = 'none';
     }
-    lightboxImg.style.display = 'none';
-    
-    lightboxImg.style.opacity = '0';
-    lightboxImg.style.transform = 'scale(0.95)';
     
     const activeItem = images[currentIndex];
 
     if (activeItem.type === 'video') {
+      lightboxImg.style.display = 'none';
       const videoUrl = activeItem.url;
       const embedUrl = lightboxGetEmbedUrl(videoUrl);
       
@@ -5968,12 +6000,32 @@ onPixisDOMReady(() => {
         }
       }
     } else {
+      // Imagen: NUNCA usar display='none' para evitar que clics sintéticos tras swipe caigan en el contenedor wrap
       lightboxImg.style.display = 'block';
+      lightboxImg.style.opacity = '0';
+      lightboxImg.style.transform = 'scale(0.95)';
+      
+      const targetUrl = activeItem.url;
+      const tempImg = new Image();
+      tempImg.onload = () => {
+        if (images[currentIndex] && images[currentIndex].url === targetUrl) {
+          lightboxImg.src = targetUrl;
+          requestAnimationFrame(() => {
+            lightboxImg.style.opacity = '1';
+            lightboxImg.style.transform = 'scale(1)';
+          });
+        }
+      };
+      tempImg.src = targetUrl;
+
+      // Fallback para imágenes en caché local
       setTimeout(() => {
-        lightboxImg.src = activeItem.url;
-        lightboxImg.style.opacity = '1';
-        lightboxImg.style.transform = 'scale(1)';
-      }, 100);
+        if (images[currentIndex] && images[currentIndex].url === targetUrl) {
+          lightboxImg.src = targetUrl;
+          lightboxImg.style.opacity = '1';
+          lightboxImg.style.transform = 'scale(1)';
+        }
+      }, 50);
     }
 
     if (images.length <= 1) {
@@ -6049,9 +6101,16 @@ onPixisDOMReady(() => {
     closeLightbox();
   });
 
-  // Cerrar al hacer click en el fondo
+  // Timestamp del último swipe táctil para descartar clics sintéticos del navegador
+  let recentlySwipedTime = 0;
+
+  // Cerrar al hacer click exclusivamente en el fondo exterior (#pixisLightbox)
+  // NUNCA cerrar si se toca o hace clic en el área de imagen (#pixisLightboxImgWrap o #pixisLightboxImg)
   lightbox.addEventListener('click', (e) => {
-    if (e.target === lightbox || e.target === document.getElementById('pixisLightboxImgWrap')) {
+    if (Date.now() - recentlySwipedTime < 450) {
+      return; // Clic sintético generado por swipe táctil descartado
+    }
+    if (e.target === lightbox) {
       closeLightbox();
     }
   });
@@ -6069,33 +6128,45 @@ onPixisDOMReady(() => {
     }
   });
 
-  // Gestos Swipe (Táctil en móviles)
+  // Gestos Swipe (Táctil en móviles) con soporte preciso y prevención de cierre accidental
+  let lbTouchStartX = 0;
+  let lbTouchStartY = 0;
+  let lbIsSwiping = false;
+
   lightbox.addEventListener('touchstart', (e) => {
-    touchStartX = e.changedTouches[0].screenX;
-    touchStartY = e.changedTouches[0].screenY;
+    if (e.touches.length !== 1) return;
+    lbTouchStartX = e.touches[0].clientX;
+    lbTouchStartY = e.touches[0].clientY;
+    lbIsSwiping = false;
+  }, { passive: true });
+
+  lightbox.addEventListener('touchmove', (e) => {
+    if (e.touches.length !== 1) return;
+    const diffX = e.touches[0].clientX - lbTouchStartX;
+    const diffY = e.touches[0].clientY - lbTouchStartY;
+    if (Math.abs(diffX) > 10 || Math.abs(diffY) > 10) {
+      lbIsSwiping = true;
+    }
   }, { passive: true });
 
   lightbox.addEventListener('touchend', (e) => {
-    touchEndX = e.changedTouches[0].screenX;
-    touchEndY = e.changedTouches[0].screenY;
-    handleSwipe();
-  }, { passive: true });
-
-  function handleSwipe() {
-    const diffX = touchEndX - touchStartX;
-    const diffY = touchEndY - touchStartY;
+    if (e.changedTouches.length === 0) return;
+    const touchEndX = e.changedTouches[0].clientX;
+    const touchEndY = e.changedTouches[0].clientY;
+    const diffX = touchEndX - lbTouchStartX;
+    const diffY = touchEndY - lbTouchStartY;
 
     // Solo procesar si el movimiento es predominantemente horizontal
-    if (Math.abs(diffX) > Math.abs(diffY)) {
-      if (Math.abs(diffX) > 50) { // Umbral de 50px
-        if (diffX > 0) {
-          showPrev(); // Deslizar hacia la derecha -> imagen anterior
-        } else {
-          showNext(); // Deslizar hacia la izquierda -> imagen siguiente
-        }
+    if (Math.abs(diffX) > Math.abs(diffY) && Math.abs(diffX) > 40) {
+      recentlySwipedTime = Date.now();
+      if (diffX < 0) {
+        showNext(); // Deslizar hacia la izquierda -> siguiente imagen
+      } else {
+        showPrev(); // Deslizar hacia la derecha -> imagen anterior
       }
     }
-  }
+    setTimeout(() => { lbIsSwiping = false; }, 200);
+  }, { passive: true });
 
   // Ajustar visibilidad de botones al cambiar tamaño de pantalla
   window.addEventListener('resize', () => {

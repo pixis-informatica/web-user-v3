@@ -7307,17 +7307,19 @@ html, body {
 .cart-modal {
     width: 100% !important;
     max-width: 100% !important;
-    top: 115px !important;
+    top: 0 !important;
     left: 0 !important;
     right: 0 !important;
     bottom: 0 !important;
-    height: calc(100dvh - 115px) !important;
-    max-height: calc(100dvh - 115px) !important;
+    height: 100% !important;
+    height: 100vh !important;
+    height: 100dvh !important;
+    max-height: 100dvh !important;
     margin: 0 !important;
     border-radius: 0 !important;
     transform: translateY(30px) !important;
     border: none !important;
-    border-top: 2px solid #b026ff !important;
+    border-top: none !important;
     box-sizing: border-box !important;
     z-index: 50000 !important;
     display: flex !important;
@@ -7329,14 +7331,17 @@ html, body {
     transform: translateY(0) !important;
   }
 
-/* 📱 CART HEADER MOBILE — simétrico y sin superposición */
+/* 📱 CART HEADER MOBILE — simétrico, centrado y con Safe Area superior */
 .cart-header {
     flex: 0 0 auto !important;
     flex-wrap: wrap !important;
     justify-content: center !important;
+    align-items: center !important;
     gap: 8px !important;
-    padding: 12px 15px !important;
+    padding: max(14px, env(safe-area-inset-top, 14px)) 16px 12px 16px !important;
     position: relative !important;
+    border-bottom: 1px solid rgba(176, 38, 255, 0.3) !important;
+    box-sizing: border-box !important;
   }
 
 .cart-header h3 {
@@ -7344,71 +7349,213 @@ html, body {
     transform: none !important;
     width: 100% !important;
     text-align: center !important;
-    font-size: 16px !important;
+    font-size: 1.15rem !important;
+    font-weight: 800 !important;
+    color: #f5c518 !important;
+    margin: 0 !important;
+    padding: 0 36px !important; /* Margen simétrico para no colisionar con close-cart */
     order: 1 !important;
+    box-sizing: border-box !important;
   }
 
 .cart-header-actions {
     width: 100% !important;
+    display: flex !important;
     justify-content: center !important;
-    gap: 12px !important;
+    align-items: center !important;
     order: 2 !important;
+    margin-top: 2px !important;
   }
 
 .btn-collapse-cart {
     font-size: 12px !important;
-    padding: 5px 10px !important;
+    padding: 6px 14px !important;
+    border-radius: 8px !important;
+    background: rgba(176, 38, 255, 0.15) !important;
+    border: 1px solid rgba(176, 38, 255, 0.5) !important;
+    color: #e5ccff !important;
+    cursor: pointer !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 6px !important;
   }
 
 .close-cart {
     position: absolute !important;
-    top: 10px !important;
-    right: 12px !important;
+    top: max(12px, env(safe-area-inset-top, 12px)) !important;
+    right: 14px !important;
+    width: 36px !important;
+    height: 36px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
     font-size: 22px !important;
+    cursor: pointer !important;
+    color: #e5ccff !important;
+    z-index: 10 !important;
   }
 
 /* ── BLOQUEO DE SCROLL DE FONDO CUANDO EL CARRITO ESTÁ ABIERTO ── */
-/* CSS puro con :has() — sin tocar JS ni HTML */
 body:has(#toggle-cart:checked) {
     overflow: hidden !important;
-    /* Reserva el espacio de la scrollbar para evitar layout shift */
     scrollbar-gutter: stable;
   }
 
+/* 📱 CART BODY MOBILE — scroll elástico con márgenes simétricos */
 .cart-body {
-    padding: 12px 15px !important;
+    padding: 10px 16px !important;
     height: auto !important;
-    max-height: 38dvh !important;
-    min-height: 80px !important;
+    max-height: 35dvh !important;
+    min-height: 60px !important;
     overflow-y: auto !important;
     flex: 0 1 auto !important;
     border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
     -webkit-overflow-scrolling: touch !important;
+    box-sizing: border-box !important;
+  }
+
+.cart-modal.collapsed .cart-body {
+    height: 80px !important;
+    max-height: 80px !important;
+    min-height: 80px !important;
+    padding: 8px 16px !important;
+    border-bottom: 1px solid rgba(176, 38, 255, 0.3) !important;
+    overflow: hidden !important;
+  }
+
+.cart-items {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 8px !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
   }
 
 .cart-item {
-    padding: 6px 8px;
+    padding: 8px 12px !important;
+    border-radius: 10px !important;
+    background: rgba(255, 255, 255, 0.04) !important;
+    border: 1px solid rgba(176, 38, 255, 0.2) !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 10px !important;
+    box-sizing: border-box !important;
   }
 
 .cart-item img {
-    width: 45px;
-    height: 45px;
+    width: 48px !important;
+    height: 48px !important;
+    border-radius: 8px !important;
+    object-fit: contain !important;
+    flex-shrink: 0 !important;
   }
 
 .cart-item h4 {
-    font-size: 13px;
+    font-size: 13px !important;
+    line-height: 1.3 !important;
+    margin: 0 !important;
+    flex: 1 !important;
   }
 
+/* 📱 CART FOOTER MOBILE — estructura simétrica con safe-area inferior */
 .cart-footer {
     height: auto !important;
     max-height: none !important;
     overflow-y: auto !important;
     flex: 1 1 auto !important;
-    padding: 15px 15px calc(env(safe-area-inset-bottom, 20px) + 36px) 15px !important;
+    padding: 14px 16px max(24px, env(safe-area-inset-bottom, 24px)) 16px !important;
     -webkit-overflow-scrolling: touch !important;
     display: flex !important;
     flex-direction: column !important;
     gap: 12px !important;
+    box-sizing: border-box !important;
+  }
+
+.cart-footer > .cart-section,
+.cart-footer > #wrapperCuponCheckout,
+.cart-footer > #wrapperDesgloseTotales {
+    width: 100% !important;
+    box-sizing: border-box !important;
+    margin: 0 !important;
+  }
+
+.cart-footer .cart-section {
+    background: rgba(14, 0, 22, 0.6) !important;
+    border: 1px solid rgba(176, 38, 255, 0.25) !important;
+    border-radius: 12px !important;
+    padding: 12px 14px !important;
+  }
+
+.cart-footer .cart-section h4 {
+    font-size: 0.92rem !important;
+    font-weight: 700 !important;
+    margin-bottom: 8px !important;
+    color: #00e676 !important;
+  }
+
+.cart-total {
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    padding: 10px 0 !important;
+    margin: 2px 0 !important;
+    border-top: 1px solid rgba(0, 230, 118, 0.3) !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+  }
+
+.cart-total span {
+    font-size: 1.1rem !important;
+    font-weight: 700 !important;
+    color: #ffffff !important;
+  }
+
+.cart-total strong {
+    font-size: 1.35rem !important;
+    font-weight: 800 !important;
+    color: #00e676 !important;
+    letter-spacing: 0.5px !important;
+  }
+
+.cart-terminos {
+    width: 100% !important;
+    margin: 2px 0 !important;
+    box-sizing: border-box !important;
+  }
+
+.cart-terminos .terminos-check {
+    display: flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+    font-size: 0.84rem !important;
+    line-height: 1.3 !important;
+  }
+
+.btn-reserve,
+#btn-reserve-online {
+    width: 100% !important;
+    height: 48px !important;
+    border-radius: 10px !important;
+    font-size: 1rem !important;
+    font-weight: 700 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    margin: 0 !important;
+    box-sizing: border-box !important;
+  }
+
+#btn-clear-cart {
+    width: 100% !important;
+    height: 44px !important;
+    border-radius: 10px !important;
+    font-size: 0.95rem !important;
+    font-weight: 700 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    margin: 0 !important;
+    box-sizing: border-box !important;
   }
 
 .cuota-item-carrito {
@@ -7525,8 +7672,11 @@ body:has(#toggle-cart:checked) {
   }
 
 .cart-warning {
-    font-size: 12px;
-    margin: 10px 15px 0 15px;
+    font-size: 12px !important;
+    margin: 10px 16px 0 16px !important;
+    padding: 10px 34px 10px 12px !important;
+    border-radius: 10px !important;
+    box-sizing: border-box !important;
   }
 
 /* 🌙 BOTÓN CAMBIO DE TEMA */
