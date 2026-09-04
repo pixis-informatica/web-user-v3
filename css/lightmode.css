@@ -1382,6 +1382,29 @@ body.light-mode .media-card {
     box-shadow: 0 4px 14px rgba(0, 0, 0, 0.08) !important;
 }
 
+body.light-mode .video-card-premium {
+    background: #ffffff !important;
+    border-color: #e2e8f0 !important;
+}
+
+body.light-mode .video-card-premium .media-card-info {
+    background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%) !important;
+    border-top: 1px solid #e2e8f0 !important;
+}
+
+body.light-mode .video-card-premium .media-card-title {
+    color: #0f172a !important;
+    text-shadow: none !important;
+}
+
+body.light-mode .video-card-premium .media-card-subtitle {
+    color: #64748b !important;
+}
+
+body.light-mode .video-card-action-link {
+    color: #0284c7 !important;
+}
+
 body.light-mode .media-nav-btn {
     background: rgba(255, 255, 255, 0.9) !important;
     color: #0f172a !important;
@@ -1431,8 +1454,52 @@ body.light-mode .client-login-btn {
     border-top: 1.5px solid #bae6fd !important;
     box-shadow: 0 3px 0 #0284c7, 0 4px 12px rgba(2, 132, 199, 0.15) !important;
     color: #0f172a !important;
+}
+
+@media (min-width: 769px) {
+  body.light-mode .client-login-btn {
     padding: 4px 16px !important;
     min-width: 145px !important;
+    max-width: 170px !important;
+    height: 40px !important;
+  }
+}
+
+@media (max-width: 768px) {
+  body.light-mode .client-login-btn {
+    width: 36px !important;
+    min-width: 36px !important;
+    max-width: 36px !important;
+    height: 36px !important;
+    min-height: 36px !important;
+    padding: 0 !important;
+    margin: 0 4px 0 0 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    border-radius: 50% !important;
+    background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%) !important;
+    border: 1.5px solid #7dd3fc !important;
+    box-shadow: 0 2px 6px rgba(2, 132, 199, 0.25) !important;
+  }
+
+  body.light-mode .client-login-btn .client-login-text {
+    display: none !important;
+  }
+
+  body.light-mode .client-login-btn i {
+    width: 26px !important;
+    height: 26px !important;
+    font-size: 14px !important;
+    margin: 0 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    color: #0284c7 !important;
+    background: rgba(2, 132, 199, 0.12) !important;
+    border: 1px solid rgba(2, 132, 199, 0.25) !important;
+    border-radius: 50% !important;
+  }
 }
 
 body.light-mode .client-login-btn:hover {
@@ -1572,4 +1639,89 @@ body.light-mode .pedido-badge.estado-cancelado {
     background: #f1f5f9 !important;
     color: #475569 !important;
     border-color: #94a3b8 !important;
+}
+
+/* ── PESTAÑAS DE MIS PEDIDOS Y TÉRMINOS DE GARANTÍA EN MODO CLARO ── */
+body.light-mode .mis-pedidos-tab {
+  background: #f1f5f9 !important;
+  border-color: #cbd5e1 !important;
+  color: #475569 !important;
+}
+
+body.light-mode .mis-pedidos-tab:hover {
+  background: #e2e8f0 !important;
+  color: #0f172a !important;
+  border-color: #94a3b8 !important;
+}
+
+body.light-mode .mis-pedidos-tab.active {
+  background: #ede9fe !important;
+  border-color: #8b5cf6 !important;
+  color: #5b21b6 !important;
+  box-shadow: 0 2px 8px rgba(139, 92, 246, 0.2) !important;
+}
+
+body.light-mode .mis-pedidos-tab.tab-garantia {
+  background: #f0fdfa !important;
+  border-color: #99f6e4 !important;
+  color: #0f766e !important;
+}
+
+body.light-mode .mis-pedidos-tab.tab-garantia:hover {
+  background: #ccfbf1 !important;
+  border-color: #14b8a6 !important;
+  color: #0f766e !important;
+}
+
+body.light-mode .mis-pedidos-tab.tab-garantia.active {
+  background: #ccfbf1 !important;
+  border-color: #14b8a6 !important;
+  color: #115e59 !important;
+  box-shadow: 0 2px 8px rgba(20, 184, 166, 0.2) !important;
+}
+
+body.light-mode .mis-pedidos-tab .tab-badge {
+  background: #e2e8f0 !important;
+  color: #475569 !important;
+}
+
+body.light-mode .mis-pedidos-tab.active .tab-badge {
+  background: #8b5cf6 !important;
+  color: #ffffff !important;
+}
+
+body.light-mode .garantia-panel-corporate {
+  color: #1e293b !important;
+}
+
+body.light-mode .garantia-header {
+  background: linear-gradient(135deg, #f0fdfa 0%, #f5f3ff 100%) !important;
+  border-color: #99f6e4 !important;
+}
+
+body.light-mode .garantia-header h4 {
+  color: #0f172a !important;
+}
+
+body.light-mode .garantia-header span {
+  color: #64748b !important;
+}
+
+body.light-mode .garantia-card {
+  background: #f8fafc !important;
+  border-color: #e2e8f0 !important;
+}
+
+body.light-mode .garantia-card-title {
+  color: #6b21a8 !important;
+}
+
+body.light-mode .garantia-card ul,
+body.light-mode .garantia-card p {
+  color: #334155 !important;
+}
+
+body.light-mode .garantia-card ul li strong,
+body.light-mode .garantia-card p strong {
+  color: #0f172a !important;
 }

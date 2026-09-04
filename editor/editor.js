@@ -2859,7 +2859,7 @@ function openSiteDataPanel() {
         <div style="font-size:11px;color:#888;margin-bottom:8px;">Gestioná las imágenes rotativas de arriba de todo.</div>
         <div style="background:rgba(176,38,255,0.1);border:1px solid rgba(176,38,255,0.3);padding:8px 10px;border-radius:6px;font-size:11px;color:#d8b4fe;margin-bottom:12px;display:flex;align-items:center;gap:6px;">
           <span>📐</span>
-          <div><strong>Medidas recomendadas:</strong> 1720 × 540 px (PC) | 800 × 600 px (Móvil)</div>
+          <div><strong>Medidas recomendadas:</strong> 1460 × 440 px (o 1920 × 580 px HD) | 800 × 600 px (Móvil)</div>
         </div>
         <div id="carouselTopContainer">
           ${renderCarouselEditor(site.carouselTop || [], 'top')}
@@ -6827,10 +6827,10 @@ function openBannersLateralesPanel() {
   }
   if (!site.showcaseBanners) {
     site.showcaseBanners = {
-      destacados: { img: '', imgMobile: '', title: 'Destacados' },
-      nuevos: { img: '', imgMobile: '', title: 'Nuevos Ingresos' },
-      reels: { img: '', imgMobile: '', title: 'Pixis Reels' },
-      aprende: { img: '', imgMobile: '', title: 'Aprende con Nosotros' }
+      destacados: { img: '', imgMobile: '', tag: '', emoji: '', title: 'Destacados', desc: '', btnText: '', headerTitle: '' },
+      nuevos: { img: '', imgMobile: '', tag: '', emoji: '', title: 'Nuevos Ingresos', desc: '', btnText: '', headerTitle: '' },
+      reels: { img: '', imgMobile: '', tag: '', emoji: '', title: 'Pixis Reels', desc: '', btnText: '', headerTitle: '' },
+      aprende: { img: '', imgMobile: '', tag: '', emoji: '', title: 'Aprende con Nosotros', desc: '', btnText: '', headerTitle: '' }
     };
   }
 
@@ -7024,6 +7024,49 @@ function openBannersLateralesPanel() {
     `;
   };
 
+  const renderShowcaseFields = (type, b, defTitle, defTag, defEmoji, defDesc, defBtn, defHeader) => {
+    const tagVal = escHtml(b?.tag !== undefined && b?.tag !== '' ? b.tag : defTag);
+    const emojiVal = escHtml(b?.emoji !== undefined && b?.emoji !== '' ? b.emoji : defEmoji);
+    const titleVal = escHtml(b?.title !== undefined && b?.title !== '' ? b.title : defTitle);
+    const descVal = escHtml(b?.desc !== undefined && b?.desc !== '' ? b.desc : defDesc);
+    const btnVal = escHtml(b?.btnText !== undefined && b?.btnText !== '' ? b.btnText : defBtn);
+    const headVal = escHtml(b?.headerTitle !== undefined && b?.headerTitle !== '' ? b.headerTitle : defHeader);
+
+    return `
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;">
+        <div class="panel-field" style="margin:0;">
+          <label class="panel-label" style="font-size:11px;font-weight:600;color:#e2e8f0;">🏷️ Etiqueta / Píldora</label>
+          <input type="text" class="panel-input" id="showcaseBannerTag_${type}" value="${tagVal}" placeholder="${defTag}" style="font-size:12px;">
+        </div>
+        <div class="panel-field" style="margin:0;">
+          <label class="panel-label" style="font-size:11px;font-weight:600;color:#e2e8f0;">✨ Emoji o Icono</label>
+          <input type="text" class="panel-input" id="showcaseBannerEmoji_${type}" value="${emojiVal}" placeholder="${defEmoji}" style="font-size:12px;">
+        </div>
+      </div>
+
+      <div class="panel-field" style="margin-bottom:8px;">
+        <label class="panel-label" style="font-size:11px;font-weight:600;color:#e2e8f0;">📝 Título de la Tarjeta</label>
+        <input type="text" class="panel-input" id="showcaseBannerTitle_${type}" value="${titleVal}" placeholder="${defTitle}" style="font-size:12px;">
+      </div>
+
+      <div class="panel-field" style="margin-bottom:8px;">
+        <label class="panel-label" style="font-size:11px;font-weight:600;color:#e2e8f0;">💬 Descripción Comercial</label>
+        <input type="text" class="panel-input" id="showcaseBannerDesc_${type}" value="${descVal}" placeholder="${defDesc}" style="font-size:12px;">
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:4px;">
+        <div class="panel-field" style="margin:0;">
+          <label class="panel-label" style="font-size:11px;font-weight:600;color:#e2e8f0;">🔘 Texto del Botón</label>
+          <input type="text" class="panel-input" id="showcaseBannerBtnText_${type}" value="${btnVal}" placeholder="${defBtn}" style="font-size:12px;">
+        </div>
+        <div class="panel-field" style="margin:0;">
+          <label class="panel-label" style="font-size:11px;font-weight:600;color:#e2e8f0;">🔝 Cabecera Interactiva</label>
+          <input type="text" class="panel-input" id="showcaseBannerHeader_${type}" value="${headVal}" placeholder="${defHeader}" style="font-size:12px;">
+        </div>
+      </div>
+    `;
+  };
+
   const html = `
     <div class="panel-tabs" style="margin-bottom:15px;display:flex;gap:6px;">
       <button class="panel-tab active" id="tabBtnShowcaseBanners" style="flex:1;padding:8px 4px;font-size:11px;font-weight:bold;">🔥 Banners Showcase</button>
@@ -7038,7 +7081,7 @@ function openBannersLateralesPanel() {
         📐 <strong>Medidas recomendadas para diseñadores / encargados:</strong><br>
         🖥️ <strong>PC (Escritorio):</strong> <strong>260 × 900 px</strong> (o <strong>520 × 1800 px @2x</strong> para nitidez HD).<br>
         📱 <strong>Móvil (Celular):</strong> <strong>720 × 320 px</strong> (o <strong>1080 × 480 px @2x</strong>).<br>
-        💡 <em>La foto subida se adapta automáticamente como fondo (<code>cover</code>). El título, tag, emoji y botón se conservarán siempre visibles y legibles sobre tu foto gracias a la capa protectora.</em>
+        💡 <em>La foto subida se adapta automáticamente como fondo (<code>cover</code>). Los títulos, tags, emojis y botones se conservarán siempre visibles, legibles y actualizados según los configures abajo.</em>
       </div>
 
       <!-- BANNER DESTACADOS -->
@@ -7080,10 +7123,8 @@ function openBannersLateralesPanel() {
           <div style="font-size:10px;color:#94a3b8;margin-top:2px;">Se adapta 100% al ancho del celular sin recortes de zoom.</div>
         </div>
 
-        <div class="panel-field" style="margin-bottom:4px;">
-          <label class="panel-label" style="font-size:11px;">Título / Texto Alternativo</label>
-          <input type="text" class="panel-input" id="showcaseBannerTitle_destacados" value="${escHtml(showcaseBanners.destacados?.title || 'Destacados')}" placeholder="Ej: Top Ventas Pixis" style="font-size:12px;">
-        </div>
+        <!-- CAMPOS EDITABLES: TAG, EMOJI, TÍTULO, DESC, BOTÓN Y CABECERA -->
+        ${renderShowcaseFields('destacados', showcaseBanners.destacados, 'Destacados_', 'TOP VENTAS', '🔥', 'Los productos más elegidos y recomendados de nuestra tienda.', 'Ver todos', '🔥 DESTACADOS 🔥')}
       </div>
 
       <!-- BANNER NUEVOS INGRESOS -->
@@ -7125,10 +7166,8 @@ function openBannersLateralesPanel() {
           <div style="font-size:10px;color:#94a3b8;margin-top:2px;">Se adapta 100% al ancho del celular sin recortes de zoom.</div>
         </div>
 
-        <div class="panel-field" style="margin-bottom:4px;">
-          <label class="panel-label" style="font-size:11px;">Título / Texto Alternativo</label>
-          <input type="text" class="panel-input" id="showcaseBannerTitle_nuevos" value="${escHtml(showcaseBanners.nuevos?.title || 'Nuevos Ingresos')}" placeholder="Ej: Novedades Tecnológicas" style="font-size:12px;">
-        </div>
+        <!-- CAMPOS EDITABLES: TAG, EMOJI, TÍTULO, DESC, BOTÓN Y CABECERA -->
+        ${renderShowcaseFields('nuevos', showcaseBanners.nuevos, 'Nuevos ingresos_', 'RECIÉN LLEGADO', '🚚', 'Descubrí lo último que entró a Pixis Informática.', 'Ver todas', '🔥 NUEVOS INGRESOS 🔥')}
       </div>
 
       <!-- BANNER REELS -->
@@ -7170,10 +7209,8 @@ function openBannersLateralesPanel() {
           <div style="font-size:10px;color:#94a3b8;margin-top:2px;">Se adapta 100% al ancho del celular sin recortes de zoom.</div>
         </div>
 
-        <div class="panel-field" style="margin-bottom:4px;">
-          <label class="panel-label" style="font-size:11px;">Título / Texto Alternativo</label>
-          <input type="text" class="panel-input" id="showcaseBannerTitle_reels" value="${escHtml(showcaseBanners.reels?.title || 'Pixis Reels')}" placeholder="Ej: Shorts y Reviews" style="font-size:12px;">
-        </div>
+        <!-- CAMPOS EDITABLES: TAG, EMOJI, TÍTULO, DESC, BOTÓN Y CABECERA -->
+        ${renderShowcaseFields('reels', showcaseBanners.reels, 'Pixis Reels_', '⚡ SHORTS & REELS', '▶️', 'Reviews rápidas de 60s, pruebas de rendimiento y unboxings en vivo.', 'Ver en Shorts', '⚡ PIXIS REELS ⚡')}
       </div>
 
       <!-- BANNER APRENDE CON NOSOTROS -->
@@ -7215,10 +7252,8 @@ function openBannersLateralesPanel() {
           <div style="font-size:10px;color:#94a3b8;margin-top:2px;">Se adapta 100% al ancho del celular sin recortes de zoom.</div>
         </div>
 
-        <div class="panel-field" style="margin-bottom:4px;">
-          <label class="panel-label" style="font-size:11px;">Título / Texto Alternativo</label>
-          <input type="text" class="panel-input" id="showcaseBannerTitle_aprende" value="${escHtml(showcaseBanners.aprende?.title || 'Aprende con Nosotros')}" placeholder="Ej: Pixis Academy" style="font-size:12px;">
-        </div>
+        <!-- CAMPOS EDITABLES: TAG, EMOJI, TÍTULO, DESC, BOTÓN Y CABECERA -->
+        ${renderShowcaseFields('aprende', showcaseBanners.aprende, 'Aprende con Nosotros_', '🎓 PIXIS ACADEMY', '🔧', 'Guías paso a paso de armado, mantenimiento preventivo y optimización de hardware.', 'Suscribirse al Canal', '🎓 APRENDE CON NOSOTROS 🎓')}
       </div>
     </div>
 
@@ -7384,27 +7419,77 @@ function openBannersLateralesPanel() {
     });
   });
 
+  // Compresor de imágenes cliente para banners (evita error 413 de NGINX en fotos móviles grandes)
+  async function _comprimirBannerAntesDeSubir(file) {
+    if (!file || !file.type || !file.type.startsWith('image/') || file.type.includes('gif')) {
+      return file;
+    }
+    return new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          let width = img.width;
+          let height = img.height;
+          const MAX_DIM = 1600; // Máxima resolución nítida para banners
+
+          if (width > MAX_DIM || height > MAX_DIM) {
+            if (width > height) {
+              height = Math.round((height * MAX_DIM) / width);
+              width = MAX_DIM;
+            } else {
+              width = Math.round((width * MAX_DIM) / height);
+              height = MAX_DIM;
+            }
+          }
+
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          ctx.imageSmoothingEnabled = true;
+          ctx.imageSmoothingQuality = 'high';
+          ctx.drawImage(img, 0, 0, width, height);
+
+          canvas.toBlob((blob) => {
+            resolve(blob || file);
+          }, 'image/jpeg', 0.90);
+        };
+        img.onerror = () => resolve(file);
+        img.src = e.target.result;
+      };
+      reader.onerror = () => resolve(file);
+      reader.readAsDataURL(file);
+    });
+  }
+
   // Image file uploads (Catálogo)
   document.querySelectorAll('.lat-banner-file-input').forEach(input => {
     input.addEventListener('change', async (e) => {
-      const file = e.target.files[0];
-      if (!file) return;
+      const rawFile = e.target.files?.[0];
+      if (!rawFile) return;
       const idx = e.target.dataset.idx;
       const textInput = document.getElementById(`latBannerImg_${idx}`);
-      window.PixisOverlay.showToast('Subiendo banner lateral en calidad original...', 'info');
+      window.PixisOverlay.showToast('Procesando y subiendo banner lateral...', 'info');
 
       try {
-        const filename = `latbanner_${Date.now()}_${file.name.replace(/[^a-zA-Z0-9.]/g, '_')}`;
-        const res = await fetch(`/api/upload-image?filename=${filename}&folder=img/uploads`, {
+        const fileToUpload = await _comprimirBannerAntesDeSubir(rawFile);
+        const safeExt = rawFile.type && rawFile.type.includes('gif') ? 'gif' : 'jpg';
+        const cleanName = (rawFile.name || 'banner').split('.')[0].replace(/[^a-zA-Z0-9]/g, '_').toLowerCase();
+        const filename = `latbanner_${Date.now()}_${cleanName}.${safeExt}`;
+
+        const url = `/api/upload-image?filename=${encodeURIComponent(filename)}&folder=${encodeURIComponent('img/uploads')}`;
+        const res = await fetch(url, {
           method: 'POST',
-          body: file
+          body: fileToUpload,
+          credentials: 'include'
         });
         const data = await res.json();
         if (data.ok && data.url) {
           if (textInput) textInput.value = data.url;
           window.PixisOverlay.showToast(`✅ Imagen de Banner #${parseInt(idx, 10) + 1} subida`, 'success');
         } else {
-          window.PixisOverlay.showToast('❌ Error al subir imagen', 'error');
+          window.PixisOverlay.showToast(`❌ Error: ${data.error || 'No se pudo subir'}`, 'error');
         }
       } catch (err) {
         window.PixisOverlay.showToast('❌ Error de conexión al subir imagen', 'error');
@@ -7415,24 +7500,30 @@ function openBannersLateralesPanel() {
   // Image file uploads (Fanpage)
   document.querySelectorAll('.fanpage-banner-file-input').forEach(input => {
     input.addEventListener('change', async (e) => {
-      const file = e.target.files[0];
-      if (!file) return;
+      const rawFile = e.target.files?.[0];
+      if (!rawFile) return;
       const side = e.target.dataset.side;
       const textInput = document.getElementById(`fanpageBannerImg_${side}`);
-      window.PixisOverlay.showToast('Subiendo banner de Nuevos Ingresos...', 'info');
+      window.PixisOverlay.showToast('Procesando y subiendo banner de Nuevos Ingresos...', 'info');
 
       try {
-        const filename = `fanpage_lat_${side}_${Date.now()}_${file.name.replace(/[^a-zA-Z0-9.]/g, '_')}`;
-        const res = await fetch(`/api/upload-image?filename=${filename}&folder=img/uploads`, {
+        const fileToUpload = await _comprimirBannerAntesDeSubir(rawFile);
+        const safeExt = rawFile.type && rawFile.type.includes('gif') ? 'gif' : 'jpg';
+        const cleanName = (rawFile.name || 'banner').split('.')[0].replace(/[^a-zA-Z0-9]/g, '_').toLowerCase();
+        const filename = `fanpage_lat_${side}_${Date.now()}_${cleanName}.${safeExt}`;
+
+        const url = `/api/upload-image?filename=${encodeURIComponent(filename)}&folder=${encodeURIComponent('img/uploads')}`;
+        const res = await fetch(url, {
           method: 'POST',
-          body: file
+          body: fileToUpload,
+          credentials: 'include'
         });
         const data = await res.json();
         if (data.ok && data.url) {
           if (textInput) textInput.value = data.url;
           window.PixisOverlay.showToast(`✅ Banner Lateral ${side === 'left' ? 'Izquierdo' : 'Derecho'} subido`, 'success');
         } else {
-          window.PixisOverlay.showToast('❌ Error al subir imagen', 'error');
+          window.PixisOverlay.showToast(`❌ Error: ${data.error || 'No se pudo subir'}`, 'error');
         }
       } catch (err) {
         window.PixisOverlay.showToast('❌ Error de conexión al subir imagen', 'error');
@@ -7443,19 +7534,25 @@ function openBannersLateralesPanel() {
   // Image file uploads (Showcase Banners: Destacados, Nuevos, Reels, Aprende — PC y Móvil)
   document.querySelectorAll('.showcase-banner-file-input').forEach(input => {
     input.addEventListener('change', async (e) => {
-      const file = e.target.files?.[0];
-      if (!file) return;
+      const rawFile = e.target.files?.[0];
+      if (!rawFile) return;
       const type = input.dataset.type;
       const device = input.dataset.device || 'pc';
       const inputId = device === 'mobile' ? `showcaseBannerImgMobile_${type}` : `showcaseBannerImg_${type}`;
       const textInput = document.getElementById(inputId);
-      window.PixisOverlay.showToast(`Subiendo banner showcase (${type} - ${device})...`, 'info');
+      window.PixisOverlay.showToast(`Procesando y subiendo banner (${type} - ${device})...`, 'info');
 
       try {
-        const filename = `showcase_${type}_${device}_${Date.now()}_${file.name.replace(/[^a-zA-Z0-9.]/g, '_')}`;
-        const res = await fetch(`/api/upload-image?filename=${filename}&folder=img/uploads`, {
+        const fileToUpload = await _comprimirBannerAntesDeSubir(rawFile);
+        const safeExt = rawFile.type && rawFile.type.includes('gif') ? 'gif' : ((rawFile.type && rawFile.type.startsWith('video/')) ? (rawFile.name.split('.').pop() || 'mp4') : 'jpg');
+        const cleanName = (rawFile.name || 'banner').split('.')[0].replace(/[^a-zA-Z0-9]/g, '_').toLowerCase();
+        const filename = `showcase_${type}_${device}_${Date.now()}_${cleanName}.${safeExt}`;
+
+        const url = `/api/upload-image?filename=${encodeURIComponent(filename)}&folder=${encodeURIComponent('img/uploads')}`;
+        const res = await fetch(url, {
           method: 'POST',
-          body: file
+          body: fileToUpload,
+          credentials: 'include'
         });
         const data = await res.json();
         if (data.ok && data.url) {
@@ -7476,12 +7573,17 @@ function openBannersLateralesPanel() {
             const currentData = {
               img: document.getElementById(`showcaseBannerImg_${type}`)?.value.trim() || '',
               imgMobile: document.getElementById(`showcaseBannerImgMobile_${type}`)?.value.trim() || '',
-              title: document.getElementById(`showcaseBannerTitle_${type}`)?.value.trim() || ''
+              tag: document.getElementById(`showcaseBannerTag_${type}`)?.value.trim() || '',
+              emoji: document.getElementById(`showcaseBannerEmoji_${type}`)?.value.trim() || '',
+              title: document.getElementById(`showcaseBannerTitle_${type}`)?.value.trim() || '',
+              desc: document.getElementById(`showcaseBannerDesc_${type}`)?.value.trim() || '',
+              btnText: document.getElementById(`showcaseBannerBtnText_${type}`)?.value.trim() || '',
+              headerTitle: document.getElementById(`showcaseBannerHeader_${type}`)?.value.trim() || ''
             };
             window.applyShowcaseBannerMedia(cardId, currentData);
           }
         } else {
-          window.PixisOverlay.showToast('❌ Error al subir archivo', 'error');
+          window.PixisOverlay.showToast(`❌ Error: ${data.error || 'No se pudo subir archivo'}`, 'error');
         }
       } catch (err) {
         window.PixisOverlay.showToast('❌ Error de conexión al subir archivo', 'error');
@@ -7503,13 +7605,19 @@ function openBannersLateralesPanel() {
         const currentData = {
           img: document.getElementById(`showcaseBannerImg_${type}`)?.value.trim() || '',
           imgMobile: document.getElementById(`showcaseBannerImgMobile_${type}`)?.value.trim() || '',
-          title: document.getElementById(`showcaseBannerTitle_${type}`)?.value.trim() || ''
+          tag: document.getElementById(`showcaseBannerTag_${type}`)?.value.trim() || '',
+          emoji: document.getElementById(`showcaseBannerEmoji_${type}`)?.value.trim() || '',
+          title: document.getElementById(`showcaseBannerTitle_${type}`)?.value.trim() || '',
+          desc: document.getElementById(`showcaseBannerDesc_${type}`)?.value.trim() || '',
+          btnText: document.getElementById(`showcaseBannerBtnText_${type}`)?.value.trim() || '',
+          headerTitle: document.getElementById(`showcaseBannerHeader_${type}`)?.value.trim() || ''
         };
         window.applyShowcaseBannerMedia(cardId, currentData);
       }
     };
-    document.getElementById(`showcaseBannerImg_${type}`)?.addEventListener('input', triggerUpdate);
-    document.getElementById(`showcaseBannerImgMobile_${type}`)?.addEventListener('input', triggerUpdate);
+    ['Img', 'ImgMobile', 'Tag', 'Title', 'Emoji', 'Desc', 'BtnText', 'Header'].forEach(fieldKey => {
+      document.getElementById(`showcaseBanner${fieldKey}_${type}`)?.addEventListener('input', triggerUpdate);
+    });
   });
 
   // Save handler
@@ -7519,22 +7627,42 @@ function openBannersLateralesPanel() {
       destacados: {
         img: document.getElementById('showcaseBannerImg_destacados')?.value.trim() || '',
         imgMobile: document.getElementById('showcaseBannerImgMobile_destacados')?.value.trim() || '',
-        title: document.getElementById('showcaseBannerTitle_destacados')?.value.trim() || 'Destacados'
+        tag: document.getElementById('showcaseBannerTag_destacados')?.value.trim() || '',
+        emoji: document.getElementById('showcaseBannerEmoji_destacados')?.value.trim() || '',
+        title: document.getElementById('showcaseBannerTitle_destacados')?.value.trim() || 'Destacados',
+        desc: document.getElementById('showcaseBannerDesc_destacados')?.value.trim() || '',
+        btnText: document.getElementById('showcaseBannerBtnText_destacados')?.value.trim() || '',
+        headerTitle: document.getElementById('showcaseBannerHeader_destacados')?.value.trim() || ''
       },
       nuevos: {
         img: document.getElementById('showcaseBannerImg_nuevos')?.value.trim() || '',
         imgMobile: document.getElementById('showcaseBannerImgMobile_nuevos')?.value.trim() || '',
-        title: document.getElementById('showcaseBannerTitle_nuevos')?.value.trim() || 'Nuevos Ingresos'
+        tag: document.getElementById('showcaseBannerTag_nuevos')?.value.trim() || '',
+        emoji: document.getElementById('showcaseBannerEmoji_nuevos')?.value.trim() || '',
+        title: document.getElementById('showcaseBannerTitle_nuevos')?.value.trim() || 'Nuevos Ingresos',
+        desc: document.getElementById('showcaseBannerDesc_nuevos')?.value.trim() || '',
+        btnText: document.getElementById('showcaseBannerBtnText_nuevos')?.value.trim() || '',
+        headerTitle: document.getElementById('showcaseBannerHeader_nuevos')?.value.trim() || ''
       },
       reels: {
         img: document.getElementById('showcaseBannerImg_reels')?.value.trim() || '',
         imgMobile: document.getElementById('showcaseBannerImgMobile_reels')?.value.trim() || '',
-        title: document.getElementById('showcaseBannerTitle_reels')?.value.trim() || 'Pixis Reels'
+        tag: document.getElementById('showcaseBannerTag_reels')?.value.trim() || '',
+        emoji: document.getElementById('showcaseBannerEmoji_reels')?.value.trim() || '',
+        title: document.getElementById('showcaseBannerTitle_reels')?.value.trim() || 'Pixis Reels',
+        desc: document.getElementById('showcaseBannerDesc_reels')?.value.trim() || '',
+        btnText: document.getElementById('showcaseBannerBtnText_reels')?.value.trim() || '',
+        headerTitle: document.getElementById('showcaseBannerHeader_reels')?.value.trim() || ''
       },
       aprende: {
         img: document.getElementById('showcaseBannerImg_aprende')?.value.trim() || '',
         imgMobile: document.getElementById('showcaseBannerImgMobile_aprende')?.value.trim() || '',
-        title: document.getElementById('showcaseBannerTitle_aprende')?.value.trim() || 'Aprende con Nosotros'
+        tag: document.getElementById('showcaseBannerTag_aprende')?.value.trim() || '',
+        emoji: document.getElementById('showcaseBannerEmoji_aprende')?.value.trim() || '',
+        title: document.getElementById('showcaseBannerTitle_aprende')?.value.trim() || 'Aprende con Nosotros',
+        desc: document.getElementById('showcaseBannerDesc_aprende')?.value.trim() || '',
+        btnText: document.getElementById('showcaseBannerBtnText_aprende')?.value.trim() || '',
+        headerTitle: document.getElementById('showcaseBannerHeader_aprende')?.value.trim() || ''
       }
     };
 

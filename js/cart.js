@@ -7550,6 +7550,349 @@ onPixisDOMReady(() => {
     window.location.reload();
   };
 
+  // ── Filtro activo de Mis Pedidos y Cambio de Pestañas ──
+  window._filtroMisPedidosActivo = 'todas';
+
+  // Clasificación precisa de pedidos para pestañas
+  function _clasificarTipoPedido(order) {
+    if (!order) return 'reservas';
+    const est = (order.estado || '').toLowerCase();
+    if (est === 'entregado' || est === 'completado' || est === 'aprobado' || est === 'concretado') {
+      return 'compras';
+    }
+    const esPreventa = order.es_preventa === true || (order.items && order.items.some(it => {
+      const nom = it.nombre_snapshot || '';
+      return nom.includes('[PREVENTA]') || nom.includes('[RESERVA]') || it.isReserva === true;
+    }));
+    if (esPreventa) {
+      return 'precompras';
+    }
+    return 'reservas';
+  }
+
+  window.cambiarFiltroMisPedidos = function(tab) {
+    window._filtroMisPedidosActivo = tab || 'todas';
+    const tabs = document.querySelectorAll('.mis-pedidos-tab');
+    tabs.forEach(btn => {
+      btn.classList.toggle('active', btn.dataset.tab === tab);
+    });
+    window.renderMisPedidosFiltrados();
+  };
+
+  // ── Generador de tarjeta HTML para cada pedido ──
+  window._renderCardPedidoHtml = function(order) {
+    let { texto: estadoTexto, cls: estadoCls } = ESTADO_LABELS[order.estado] || { texto: order.estado, cls: '' };
+    
+    if (order.estado === 'reservado') {
+      const tieneCompSinRevisar = order.forma_pago === 'transferencia'
+        && order.comprobantes && order.comprobantes.some(c => !c.revisado_en);
+      if (tieneCompSinRevisar) {
+        estadoTexto = "Reservado, pendiente a comprobar el pago realizado";
+      } else {
+        estadoTexto = "Reservado, listo para retirar";
+      }
+    }
+
+    const tieneComp = order.comprobantes && order.comprobantes.length > 0;
+    const totalFmt = fmtPrecio(order.total);
+    const fechaFmt = fmtFecha(order.creado_en);
+    const compTag = tieneComp
+      ? `<div class="comp-subido-tag"><i class="fas fa-check-circle"></i> Comprobante enviado</div>`
+      : '';
+
+    const esEliminable = ESTADOS_ELIMINABLES.includes(order.estado);
+    const checkboxHtml = esEliminable ? `
+      <label class="pedido-check-label" onclick="event.stopPropagation()" title="Seleccionar para eliminar">
+        <input type="checkbox"
+          class="pedido-check"
+          ${pedidosSeleccionados.has(order.id) ? 'checked' : ''}
+          onchange="toggleSeleccionPedido(${order.id}, this)"
+          onclick="event.stopPropagation()">
+      </label>` : '';
+
+    // Desglose de forma de pago unificado
+    let formaPagoInfo = order.forma_pago || 'N/A';
+    let avisoPendienteTag = '';
+
+    if (order.forma_pago === 'tarjeta' && order.cuotas && order.cuotas > 0) {
+      const valorCuota = order.total / order.cuotas;
+      formaPagoInfo = `Tarjeta (${order.cuotas} cuotas de ${fmtPrecio(valorCuota)})`;
+    } else {
+      formaPagoInfo = fmtFormaPagoAmigable();
+    }
+
+    // Detección estricta e inteligente de Preventa / Reserva
+    const esPreventa = order.es_preventa === true || (order.items && order.items.some(it => {
+      const nom = it.nombre_snapshot || '';
+      if (nom.includes('[PREVENTA]') || nom.includes('[RESERVA]')) return true;
+      if (it.isReserva === true) return true;
+      const prods = (window.PixisState && window.PixisState.state && window.PixisState.state.products) || [];
+      const p = prods.find(pr => pr.id === it.producto_id || pr.title === nom.replace(/\[PREVENTA\]\s*/i, '').replace(/\[RESERVA\]\s*/i, '').trim());
+      return p && (p.proximoIngreso === true || p.isProximo === true);
+    }));
+
+    // ── EVALUACIÓN RIGUROSA DE ESTADOS (Rechazado y Cancelado tienen MÁXIMA prioridad) ──
+    if (order.estado === 'rechazado') {
+      estadoTexto = 'RECHAZADO';
+      estadoCls = 'estado-rechazado';
+      const motivoRaw = order.motivo_rechazo && order.motivo_rechazo.trim() !== '' ? order.motivo_rechazo : '';
+      const tempDiv = document.createElement('div');
+      tempDiv.textContent = motivoRaw;
+      const motivoEscaped = tempDiv.innerHTML;
+      const motivoStr = motivoEscaped !== ''
+        ? `Motivo: <strong>${motivoEscaped}</strong>`
+        : 'No ha sido posible confirmar la disponibilidad para este producto.';
+      avisoPendienteTag = `
+        <div class="pedido-aviso-inline aviso-rechazado-tag">
+          <i class="fas fa-times-circle"></i>
+          <div>
+            <strong>❌ ${esPreventa ? 'Reserva Rechazada' : 'Pedido Rechazado'}:</strong>
+            <span>${motivoStr}</span>
+            <div style="margin-top: 4px; font-size: 11.5px; opacity: 0.9;">
+              Si tenés dudas, podés contactarnos por WhatsApp indicando el pedido #${String(order.id).padStart(4, '0')}.
+            </div>
+          </div>
+        </div>`;
+    } else if (order.estado === 'cancelado') {
+      estadoTexto = 'CANCELADO';
+      estadoCls = 'estado-cancelado';
+      avisoPendienteTag = `
+        <div class="pedido-aviso-inline aviso-rechazado-tag">
+          <i class="fas fa-ban"></i>
+          <div><strong>${esPreventa ? 'Reserva Cancelada' : 'Pedido Cancelado'}:</strong> Esta operación fue cancelada.</div>
+        </div>`;
+    } else if (esPreventa) {
+      // Solo asignar badge dorado si NO está rechazado ni cancelado
+      estadoTexto = 'RESERVA REGISTRADA';
+      estadoCls = 'badge-preventa';
+    } else if (order.estado === 'pendiente_revision') {
+      if (order.forma_pago === 'efectivo') {
+        avisoPendienteTag = `
+          <div class="pedido-aviso-inline aviso-efectivo-tag">
+            <i class="fas fa-info-circle"></i> Pendiente a confirmación del vendedor. Nos pondremos en contacto con usted.
+          </div>`;
+      } else if (order.forma_pago === 'tarjeta') {
+        const detalleCuotaStr = (order.cuotas && order.cuotas > 0)
+          ? ` para abonar en ${order.cuotas} cuotas de ${fmtPrecio(order.total / order.cuotas)}`
+          : '';
+        avisoPendienteTag = `
+          <div class="pedido-aviso-inline aviso-tarjeta-tag">
+            <i class="fas fa-credit-card"></i> Pendiente a confirmación. Le enviaremos el Link de pago${detalleCuotaStr} una vez confirmado.
+          </div>`;
+      }
+    } else if (order.estado === 'vencido') {
+      avisoPendienteTag = `
+        <div class="pedido-aviso-inline aviso-vencido-tag">
+          <i class="fas fa-clock"></i> Tu reserva se venció por falta de pago dentro del plazo establecido. El stock fue liberado.
+        </div>`;
+    }
+
+    // Timer en vivo: SOLO para ventas regulares pendientes de transferencia (NUNCA en preventas)
+    const timerVisible = !esPreventa && order.estado === 'pendiente_revision' && order.forma_pago === 'transferencia' && order.reservado_hasta;
+    const timerHtml = timerVisible
+      ? `<div class="pedido-timer-banner" data-timer-order-id="${order.id}" data-timer-end="${order.reservado_hasta}">
+           <i class="fas fa-hourglass-half"></i>
+           <span class="timer-msg">⏳ Tiempo restante:</span>
+           <strong class="timer-clock">--:--</strong>
+         </div>`
+      : '';
+
+    // Botones de elección de pago: SOLO para ventas regulares (NUNCA en preventas)
+    const puedeElegirPago = !esPreventa && order.estado === 'pendiente_revision'
+      && order.forma_pago === 'transferencia'
+      && (!order.comprobantes || order.comprobantes.length === 0);
+    const botonesAccion = puedeElegirPago
+      ? `<div class="pedido-acciones-pago" onclick="event.stopPropagation()">
+           <button class="btn-accion-transf" onclick="abrirModalComprobanteDesde(${order.id}, '${totalFmt}')">
+             🏛️ Transferencia Web
+           </button>
+           <button class="btn-accion-efectivo" onclick="pixisElegirEfectivoLocal(${order.id})">
+             💵 Efectivo en Local
+           </button>
+         </div>`
+      : '';
+
+    // Muestra de la Reserva (Productos Precomprados / Próximo Ingreso)
+    let muestraReservaHtml = '';
+    if (esPreventa && order.items && order.items.length > 0) {
+      const prods = (window.PixisState && window.PixisState.state && window.PixisState.state.products) || [];
+      const itemsListHtml = order.items.map(it => {
+        const nomLimpio = (it.nombre_snapshot || '').replace(/\[PREVENTA\]\s*/i, '').replace(/\[RESERVA\]\s*/i, '').trim();
+        const prodCatalog = prods.find(pr => pr.id === it.producto_id || pr.title === nomLimpio);
+        const imgUrl = (prodCatalog && prodCatalog.img) || 'img/TECH24.png';
+        const subtotalItem = (it.precio_unitario_snapshot || 0) * (it.cantidad || 1);
+        return `
+          <div class="muestra-reserva-item" style="display: flex; align-items: center; gap: 10px; padding: 8px 10px; background: rgba(0,0,0,0.35); border: 1px solid rgba(245, 158, 11, 0.3); border-radius: 8px; margin-top: 6px;">
+            <img src="${imgUrl}" alt="${nomLimpio}" style="width: 44px; height: 44px; object-fit: contain; border-radius: 6px; background: rgba(255,255,255,0.06); padding: 2px; flex-shrink: 0;">
+            <div style="flex: 1; min-width: 0;">
+              <div style="font-weight: 700; font-size: 12.5px; color: #f8fafc; line-height: 1.3;">${nomLimpio}</div>
+              <div style="font-size: 11.5px; color: #fbbf24; font-weight: 600; margin-top: 2px;">
+                Reserva de Próximo Ingreso &bull; <strong>x${it.cantidad}</strong> &bull; $${subtotalItem.toLocaleString('es-AR')}
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      muestraReservaHtml = `
+        <div class="muestra-reserva-container" style="margin: 10px 0; padding: 10px 12px; background: rgba(245, 158, 11, 0.08); border: 1px solid rgba(245, 158, 11, 0.4); border-radius: 8px;">
+          <div style="font-size: 11.5px; font-weight: 800; color: #fbbf24; text-transform: uppercase; letter-spacing: 0.5px; display: flex; align-items: center; gap: 6px;">
+            <i class="fas fa-boxes"></i> Muestra de la Reserva (Productos Precomprados):
+          </div>
+          ${itemsListHtml}
+        </div>
+      `;
+    }
+
+    // Aviso formal de Preventa: SOLO si el pedido SIGUE en pendiente_revision
+    // NUNCA mostrar si fue rechazado, cancelado, completado o vencido
+    let avisoPreventaTag = '';
+    if (esPreventa && order.estado === 'pendiente_revision') {
+      avisoPreventaTag = `
+        <div class="pedido-aviso-inline aviso-preventa-tag" style="background: rgba(245, 158, 11, 0.15) !important; border: 1.5px solid rgba(245, 158, 11, 0.5) !important; color: #fbbf24 !important; border-radius: 8px; padding: 10px 14px; margin-top: 8px; font-size: 12.5px; line-height: 1.45; display: flex; align-items: flex-start; gap: 8px;">
+          <i class="fas fa-calendar-check" style="font-size: 16px; margin-top: 2px; color: #fbbf24; flex-shrink: 0;"></i>
+          <div>
+            <strong style="color: #fbbf24; display: block; margin-bottom: 2px;">✨ Reserva de Preventa</strong>
+            Su reserva ha sido realizada con éxito, nos estaremos comunicando con usted para que pueda finalizar su compra.
+          </div>
+        </div>`;
+    }
+
+    const preventaBadgeHtml = esPreventa ? `<span class="pedido-badge badge-preventa">📅 Reserva de Preventa</span>` : '';
+
+    return `
+      <div class="pedido-card" onclick="verDetallePedido(${order.id})" role="button" tabindex="0"
+           onkeydown="if(event.key==='Enter') verDetallePedido(${order.id})">
+        <div class="pedido-card-header">
+          <span class="pedido-card-num">#${String(order.id).padStart(4,'0')}</span>
+          ${preventaBadgeHtml}
+          <span class="pedido-badge ${estadoCls}">${estadoTexto}</span>
+          <span class="pedido-card-date">${fechaFmt}</span>
+          ${checkboxHtml}
+        </div>
+        <div class="pedido-card-total">Total: <strong>${totalFmt}</strong></div>
+        <div class="pedido-card-pago">Forma de pago: <span>${formaPagoInfo}</span></div>
+        ${timerHtml}
+        ${muestraReservaHtml}
+        ${avisoPreventaTag}
+        ${avisoPendienteTag}
+        ${botonesAccion}
+        ${compTag}
+      </div>`;
+  };
+
+  // ── Renderizado filtrado de pedidos o panel de garantía ──
+  window.renderMisPedidosFiltrados = function() {
+    const container = document.getElementById('pedidosListContainer');
+    if (!container) return;
+
+    const orders = window._ultimosPedidosCargados || [];
+    const filtro = window._filtroMisPedidosActivo || 'todas';
+
+    // Actualizar badges numéricos de las pestañas en tiempo real
+    const cTodas = orders.length;
+    const cCompras = orders.filter(o => _clasificarTipoPedido(o) === 'compras').length;
+    const cReservas = orders.filter(o => _clasificarTipoPedido(o) === 'reservas').length;
+    const cPrecompras = orders.filter(o => _clasificarTipoPedido(o) === 'precompras').length;
+
+    const bT = document.getElementById('badgeTabTodas'); if (bT) bT.textContent = cTodas;
+    const bC = document.getElementById('badgeTabCompras'); if (bC) bC.textContent = cCompras;
+    const bR = document.getElementById('badgeTabReservas'); if (bR) bR.textContent = cReservas;
+    const bP = document.getElementById('badgeTabPrecompras'); if (bP) bP.textContent = cPrecompras;
+
+    // 1. Si se selecciona la pestaña de Garantía
+    if (filtro === 'garantia') {
+      container.innerHTML = `
+        <div class="garantia-panel-corporate">
+          <div class="garantia-header">
+            <i class="fas fa-shield-alt"></i>
+            <div>
+              <h4>Póliza de Garantía Oficial — Pixis Informática</h4>
+              <span>Compromiso de calidad, respaldo técnico y transparencia</span>
+            </div>
+          </div>
+          
+          <div class="garantia-grid">
+            <div class="garantia-card">
+              <div class="garantia-card-title"><i class="fas fa-microchip"></i> Plazos de Cobertura</div>
+              <ul>
+                <li><strong>Hardware y Componentes Nuevos:</strong> 6 a 12 meses de garantía oficial según fabricante.</li>
+                <li><strong>Periféricos y Accesorios:</strong> 3 a 6 meses de garantía legal directa.</li>
+                <li><strong>Servicio Técnico y Reparaciones:</strong> 3 meses sobre mano de obra y repuestos sustituidos.</li>
+              </ul>
+            </div>
+
+            <div class="garantia-card">
+              <div class="garantia-card-title"><i class="fas fa-clipboard-check"></i> Requisitos Indispensables para RMA</div>
+              <ul>
+                <li>Presentar comprobante o número de pedido (<strong>#XXXX</strong>) registrado en tu cuenta.</li>
+                <li>Conservar caja original, manuales, cables y accesorios en buen estado.</li>
+                <li>Etiquetas de número de serie y sellos de garantía de fábrica totalmente legibles e intactos.</li>
+              </ul>
+            </div>
+
+            <div class="garantia-card">
+              <div class="garantia-card-title"><i class="fas fa-exclamation-triangle"></i> Exclusiones de Garantía</div>
+              <ul>
+                <li>Daños provocados por descargas eléctricas, picos de tensión o fuentes no certificadas.</li>
+                <li>Impactos físicos, caídas, humedad, óxido o manipulación por terceros no autorizados.</li>
+                <li>Actualizaciones fallidas de BIOS no oficiales o overclocking extremo no garantizado.</li>
+              </ul>
+            </div>
+
+            <div class="garantia-card">
+              <div class="garantia-card-title"><i class="fas fa-headset"></i> ¿Cómo gestionar un reclamo?</div>
+              <p>Acercate a nuestro laboratorio en <strong>Jujuy 412, Edificio San Antonio 2° piso Of. B</strong> (Santiago del Estero) o comunicate vía WhatsApp con nuestro equipo técnico indicando tu número de pedido para iniciar el diagnóstico sin demora.</p>
+              <div style="margin-top: 10px;">
+                <a href="https://wa.me/message/EYUUSVNG5HPNF1" target="_blank" class="btn-garantia-soporte">
+                  <i class="fab fa-whatsapp"></i> Contactar a Soporte de Garantía
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>`;
+      return;
+    }
+
+    // 2. Filtrar pedidos
+    let filtered = orders;
+    if (filtro === 'compras') {
+      filtered = orders.filter(o => _clasificarTipoPedido(o) === 'compras');
+    } else if (filtro === 'reservas') {
+      filtered = orders.filter(o => _clasificarTipoPedido(o) === 'reservas');
+    } else if (filtro === 'precompras') {
+      filtered = orders.filter(o => _clasificarTipoPedido(o) === 'precompras');
+    }
+
+    if (filtered.length === 0) {
+      let emptyMsg = 'Todavía no tenés ningún pedido registrado.';
+      if (filtro === 'compras') emptyMsg = 'No registrás compras finalizadas aún. Cuando un pedido o reserva sea entregado con éxito, figurará aquí con su comprobante.';
+      if (filtro === 'reservas') emptyMsg = 'No tenés reservas regulares pendientes en este momento.';
+      if (filtro === 'precompras') emptyMsg = 'No registrás precompras o reservas de próximo ingreso pendientes.';
+
+      container.innerHTML = `
+        <div class="pedidos-empty">
+          <i class="fas fa-inbox"></i>
+          <p>${emptyMsg}</p>
+        </div>`;
+      return;
+    }
+
+    const html = filtered.map(order => window._renderCardPedidoHtml(order)).join('');
+    container.innerHTML = `
+      <div class="pedidos-list">${html}</div>
+      <div id="barraEliminarPedidos" style="display:none; align-items:center; justify-content:center; gap:10px; padding:10px 0; margin-top:8px; border-top:1px solid rgba(168,85,247,0.2);">
+        <button id="btnEliminarSeleccionados" onclick="eliminarPedidosSeleccionados()"
+          style="background:rgba(248,113,113,0.15); border:1px solid rgba(248,113,113,0.4); color:#f87171; border-radius:8px; padding:7px 18px; font-size:13px; font-weight:600; cursor:pointer; font-family:'Orbitron',sans-serif; transition:0.2s;">
+          🗑 Eliminar seleccionados (0)
+        </button>
+      </div>`;
+
+    if (typeof iniciarLiveTimersPedidos === 'function') {
+      iniciarLiveTimersPedidos();
+    }
+  };
+
   // ── Cargar y renderizar lista de pedidos ──
 
   window.cargarMisPedidos = async function (silencioso = false) {
@@ -7581,226 +7924,7 @@ onPixisDOMReady(() => {
         window.marcarNotificacionesComoVistas(orders);
       }
 
-      if (orders.length === 0) {
-        container.innerHTML = `
-          <div class="pedidos-empty">
-            <i class="fas fa-box-open"></i>
-            <p>Todavía no hiciste ningún pedido.<br>¡Explorá nuestro catálogo y reservá online!</p>
-          </div>`;
-        return;
-      }
-
-      const html = orders.map(order => {
-        let { texto: estadoTexto, cls: estadoCls } = ESTADO_LABELS[order.estado] || { texto: order.estado, cls: '' };
-        
-        if (order.estado === 'reservado') {
-          const tieneCompSinRevisar = order.forma_pago === 'transferencia'
-            && order.comprobantes && order.comprobantes.some(c => !c.revisado_en);
-          if (tieneCompSinRevisar) {
-            estadoTexto = "Reservado, pendiente a comprobar el pago realizado";
-          } else {
-            estadoTexto = "Reservado, listo para retirar";
-          }
-        }
-
-        const tieneComp = order.comprobantes && order.comprobantes.length > 0;
-        const totalFmt = fmtPrecio(order.total);
-        const fechaFmt = fmtFecha(order.creado_en);
-        const compTag = tieneComp
-          ? `<div class="comp-subido-tag"><i class="fas fa-check-circle"></i> Comprobante enviado</div>`
-          : '';
-
-        const esEliminable = ESTADOS_ELIMINABLES.includes(order.estado);
-        const checkboxHtml = esEliminable ? `
-          <label class="pedido-check-label" onclick="event.stopPropagation()" title="Seleccionar para eliminar">
-            <input type="checkbox"
-              class="pedido-check"
-              ${pedidosSeleccionados.has(order.id) ? 'checked' : ''}
-              onchange="toggleSeleccionPedido(${order.id}, this)"
-              onclick="event.stopPropagation()">
-          </label>` : '';
-
-        // Desglose de forma de pago unificado
-        let formaPagoInfo = order.forma_pago || 'N/A';
-        let avisoPendienteTag = '';
-
-        if (order.forma_pago === 'tarjeta' && order.cuotas && order.cuotas > 0) {
-          const valorCuota = order.total / order.cuotas;
-          formaPagoInfo = `Tarjeta (${order.cuotas} cuotas de ${fmtPrecio(valorCuota)})`;
-        } else {
-          formaPagoInfo = fmtFormaPagoAmigable();
-        }
-
-        // Detección estricta e inteligente de Preventa / Reserva
-        const esPreventa = order.es_preventa === true || (order.items && order.items.some(it => {
-          const nom = it.nombre_snapshot || '';
-          if (nom.includes('[PREVENTA]') || nom.includes('[RESERVA]')) return true;
-          if (it.isReserva === true) return true;
-          const prods = (window.PixisState && window.PixisState.state && window.PixisState.state.products) || [];
-          const p = prods.find(pr => pr.id === it.producto_id || pr.title === nom.replace(/\[PREVENTA\]\s*/i, '').replace(/\[RESERVA\]\s*/i, '').trim());
-          return p && (p.proximoIngreso === true || p.isProximo === true);
-        }));
-
-        // ── EVALUACIÓN RIGUROSA DE ESTADOS (Rechazado y Cancelado tienen MÁXIMA prioridad) ──
-        if (order.estado === 'rechazado') {
-          estadoTexto = 'RECHAZADO';
-          estadoCls = 'estado-rechazado';
-          const motivoRaw = order.motivo_rechazo && order.motivo_rechazo.trim() !== '' ? order.motivo_rechazo : '';
-          const tempDiv = document.createElement('div');
-          tempDiv.textContent = motivoRaw;
-          const motivoEscaped = tempDiv.innerHTML;
-          const motivoStr = motivoEscaped !== ''
-            ? `Motivo: <strong>${motivoEscaped}</strong>`
-            : 'No ha sido posible confirmar la disponibilidad para este producto.';
-          avisoPendienteTag = `
-            <div class="pedido-aviso-inline aviso-rechazado-tag">
-              <i class="fas fa-times-circle"></i>
-              <div>
-                <strong>❌ ${esPreventa ? 'Reserva Rechazada' : 'Pedido Rechazado'}:</strong>
-                <span>${motivoStr}</span>
-                <div style="margin-top: 4px; font-size: 11.5px; opacity: 0.9;">
-                  Si tenés dudas, podés contactarnos por WhatsApp indicando el pedido #${String(order.id).padStart(4, '0')}.
-                </div>
-              </div>
-            </div>`;
-        } else if (order.estado === 'cancelado') {
-          estadoTexto = 'CANCELADO';
-          estadoCls = 'estado-cancelado';
-          avisoPendienteTag = `
-            <div class="pedido-aviso-inline aviso-rechazado-tag">
-              <i class="fas fa-ban"></i>
-              <div><strong>${esPreventa ? 'Reserva Cancelada' : 'Pedido Cancelado'}:</strong> Esta operación fue cancelada.</div>
-            </div>`;
-        } else if (esPreventa) {
-          // Solo asignar badge dorado si NO está rechazado ni cancelado
-          estadoTexto = 'RESERVA REGISTRADA';
-          estadoCls = 'badge-preventa';
-        } else if (order.estado === 'pendiente_revision') {
-          if (order.forma_pago === 'efectivo') {
-            avisoPendienteTag = `
-              <div class="pedido-aviso-inline aviso-efectivo-tag">
-                <i class="fas fa-info-circle"></i> Pendiente a confirmación del vendedor. Nos pondremos en contacto con usted.
-              </div>`;
-          } else if (order.forma_pago === 'tarjeta') {
-            const detalleCuotaStr = (order.cuotas && order.cuotas > 0)
-              ? ` para abonar en ${order.cuotas} cuotas de ${fmtPrecio(order.total / order.cuotas)}`
-              : '';
-            avisoPendienteTag = `
-              <div class="pedido-aviso-inline aviso-tarjeta-tag">
-                <i class="fas fa-credit-card"></i> Pendiente a confirmación. Le enviaremos el Link de pago${detalleCuotaStr} una vez confirmado.
-              </div>`;
-          }
-        } else if (order.estado === 'vencido') {
-          avisoPendienteTag = `
-            <div class="pedido-aviso-inline aviso-vencido-tag">
-              <i class="fas fa-clock"></i> Tu reserva se venció por falta de pago dentro del plazo establecido. El stock fue liberado.
-            </div>`;
-        }
-
-        // Timer en vivo: SOLO para ventas regulares pendientes de transferencia (NUNCA en preventas)
-        const timerVisible = !esPreventa && order.estado === 'pendiente_revision' && order.forma_pago === 'transferencia' && order.reservado_hasta;
-        const timerHtml = timerVisible
-          ? `<div class="pedido-timer-banner" data-timer-order-id="${order.id}" data-timer-end="${order.reservado_hasta}">
-               <i class="fas fa-hourglass-half"></i>
-               <span class="timer-msg">⏳ Tiempo restante:</span>
-               <strong class="timer-clock">--:--</strong>
-             </div>`
-          : '';
-
-        // Botones de elección de pago: SOLO para ventas regulares (NUNCA en preventas)
-        const puedeElegirPago = !esPreventa && order.estado === 'pendiente_revision'
-          && order.forma_pago === 'transferencia'
-          && (!order.comprobantes || order.comprobantes.length === 0);
-        const botonesAccion = puedeElegirPago
-          ? `<div class="pedido-acciones-pago" onclick="event.stopPropagation()">
-               <button class="btn-accion-transf" onclick="abrirModalComprobanteDesde(${order.id}, '${totalFmt}')">
-                 🏛️ Transferencia Web
-               </button>
-               <button class="btn-accion-efectivo" onclick="pixisElegirEfectivoLocal(${order.id})">
-                 💵 Efectivo en Local
-               </button>
-             </div>`
-          : '';
-
-        // Muestra de la Reserva (Productos Precomprados / Próximo Ingreso)
-        let muestraReservaHtml = '';
-        if (esPreventa && order.items && order.items.length > 0) {
-          const prods = (window.PixisState && window.PixisState.state && window.PixisState.state.products) || [];
-          const itemsListHtml = order.items.map(it => {
-            const nomLimpio = (it.nombre_snapshot || '').replace(/\[PREVENTA\]\s*/i, '').replace(/\[RESERVA\]\s*/i, '').trim();
-            const prodCatalog = prods.find(pr => pr.id === it.producto_id || pr.title === nomLimpio);
-            const imgUrl = (prodCatalog && prodCatalog.img) || 'img/TECH24.png';
-            const subtotalItem = (it.precio_unitario_snapshot || 0) * (it.cantidad || 1);
-            return `
-              <div class="muestra-reserva-item" style="display: flex; align-items: center; gap: 10px; padding: 8px 10px; background: rgba(0,0,0,0.35); border: 1px solid rgba(245, 158, 11, 0.3); border-radius: 8px; margin-top: 6px;">
-                <img src="${imgUrl}" alt="${nomLimpio}" style="width: 44px; height: 44px; object-fit: contain; border-radius: 6px; background: rgba(255,255,255,0.06); padding: 2px; flex-shrink: 0;">
-                <div style="flex: 1; min-width: 0;">
-                  <div style="font-weight: 700; font-size: 12.5px; color: #f8fafc; line-height: 1.3;">${nomLimpio}</div>
-                  <div style="font-size: 11.5px; color: #fbbf24; font-weight: 600; margin-top: 2px;">
-                    Reserva de Próximo Ingreso &bull; <strong>x${it.cantidad}</strong> &bull; $${subtotalItem.toLocaleString('es-AR')}
-                  </div>
-                </div>
-              </div>
-            `;
-          }).join('');
-
-          muestraReservaHtml = `
-            <div class="muestra-reserva-container" style="margin: 10px 0; padding: 10px 12px; background: rgba(245, 158, 11, 0.08); border: 1px solid rgba(245, 158, 11, 0.4); border-radius: 8px;">
-              <div style="font-size: 11.5px; font-weight: 800; color: #fbbf24; text-transform: uppercase; letter-spacing: 0.5px; display: flex; align-items: center; gap: 6px;">
-                <i class="fas fa-boxes"></i> Muestra de la Reserva (Productos Precomprados):
-              </div>
-              ${itemsListHtml}
-            </div>
-          `;
-        }
-
-        // Aviso formal de Preventa: SOLO si el pedido SIGUE en pendiente_revision
-        // NUNCA mostrar si fue rechazado, cancelado, completado o vencido
-        let avisoPreventaTag = '';
-        if (esPreventa && order.estado === 'pendiente_revision') {
-          avisoPreventaTag = `
-            <div class="pedido-aviso-inline aviso-preventa-tag" style="background: rgba(245, 158, 11, 0.15) !important; border: 1.5px solid rgba(245, 158, 11, 0.5) !important; color: #fbbf24 !important; border-radius: 8px; padding: 10px 14px; margin-top: 8px; font-size: 12.5px; line-height: 1.45; display: flex; align-items: flex-start; gap: 8px;">
-              <i class="fas fa-calendar-check" style="font-size: 16px; margin-top: 2px; color: #fbbf24; flex-shrink: 0;"></i>
-              <div>
-                <strong style="color: #fbbf24; display: block; margin-bottom: 2px;">✨ Reserva de Preventa</strong>
-                Su reserva ha sido realizada con éxito, nos estaremos comunicando con usted para que pueda finalizar su compra.
-              </div>
-            </div>`;
-        }
-
-        const preventaBadgeHtml = esPreventa ? `<span class="pedido-badge badge-preventa">📅 Reserva de Preventa</span>` : '';
-
-        return `
-          <div class="pedido-card" onclick="verDetallePedido(${order.id})" role="button" tabindex="0"
-               onkeydown="if(event.key==='Enter') verDetallePedido(${order.id})">
-            <div class="pedido-card-header">
-              <span class="pedido-card-num">#${String(order.id).padStart(4,'0')}</span>
-              ${preventaBadgeHtml}
-              <span class="pedido-badge ${estadoCls}">${estadoTexto}</span>
-              <span class="pedido-card-date">${fechaFmt}</span>
-              ${checkboxHtml}
-            </div>
-            <div class="pedido-card-total">Total: <strong>${totalFmt}</strong></div>
-            <div class="pedido-card-pago">Forma de pago: <span>${formaPagoInfo}</span></div>
-            ${timerHtml}
-            ${muestraReservaHtml}
-            ${avisoPreventaTag}
-            ${avisoPendienteTag}
-            ${botonesAccion}
-            ${compTag}
-          </div>`;
-      }).join('');
-
-      container.innerHTML = `
-        <div class="pedidos-list">${html}</div>
-        <div id="barraEliminarPedidos" style="display:none; align-items:center; justify-content:center; gap:10px; padding:10px 0; margin-top:8px; border-top:1px solid rgba(168,85,247,0.2);">
-          <button id="btnEliminarSeleccionados" onclick="eliminarPedidosSeleccionados()"
-            style="background:rgba(248,113,113,0.15); border:1px solid rgba(248,113,113,0.4); color:#f87171; border-radius:8px; padding:7px 18px; font-size:13px; font-weight:600; cursor:pointer; font-family:'Orbitron',sans-serif; transition:0.2s;">
-            🗑 Eliminar seleccionados (0)
-          </button>
-        </div>`;
-
-      iniciarLiveTimersPedidos();
+      window.renderMisPedidosFiltrados();
 
     } catch (err) {
       console.error('[MisPedidos] Error:', err);

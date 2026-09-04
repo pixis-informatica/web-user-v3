@@ -4484,15 +4484,32 @@ app.post('/api/sync', async (req, res) => {
   }
 });
 
-// POST /api/upload-image
+// POST /api/upload-image (Robustecido para Hostinger, Cloudflare y subidas móviles)
 app.post('/api/upload-image', (req, res) => {
-  const filename = (req.query.filename || `upload-${Date.now()}.jpg`).replace(/\\/g, '/');
-  const folder   = (req.query.folder || 'img/uploads').replace(/\\/g, '/');
+  const rawFilename = (req.query.filename || `upload-${Date.now()}.jpg`).replace(/\\/g, '/');
+  const rawFolder   = (req.query.folder || 'img/uploads').replace(/\\/g, '/');
 
-  if (!folder.startsWith('img') || folder.includes('..')) {
+  const filename = path.basename(rawFilename); // Sanitización contra path traversal
+  const folder   = rawFolder.replace(/\.\./g, '');
+
+  if (!folder.startsWith('img')) {
     return res.status(403).json({ error: 'Carpeta no permitida' });
   }
 
+  // Si el cliente envió JSON con Base64 (fallback WAF)
+  if (req.body && req.body.base64) {
+    try {
+      const buffer = Buffer.from(req.body.base64, 'base64');
+      const targetPath = path.join(BASE, ...folder.split('/'), filename);
+      fs.mkdirSync(path.dirname(targetPath), { recursive: true });
+      fs.writeFileSync(targetPath, buffer);
+      return res.json({ ok: true, url: `${folder}/${filename}` });
+    } catch (e) {
+      return res.status(500).json({ error: e.message });
+    }
+  }
+
+  // Stream binario directo
   let chunks = [];
   req.on('data', chunk => chunks.push(chunk));
   req.on('end', () => {
@@ -4505,13 +4522,17 @@ app.post('/api/upload-image', (req, res) => {
       
       const relativePath = `${folder}/${filename}`;
       const now = new Date().toLocaleTimeString('es-AR');
-      console.log(`  \x1b[35m📸 [${now}] Imagen subida: ${relativePath}\x1b[0m`);
+      console.log(`  \x1b[35m📸 [${now}] Imagen subida con éxito: ${relativePath} (${buffer.length} bytes)\x1b[0m`);
 
       res.json({ ok: true, url: relativePath });
     } catch (e) {
       console.error(`  \x1b[31m❌ Error en upload: ${e.message}\x1b[0m`);
       res.status(500).json({ error: e.message });
     }
+  });
+  req.on('error', (err) => {
+    console.error('❌ Error de stream en upload:', err);
+    res.status(500).json({ error: 'Falla en recepción de stream' });
   });
 });
 

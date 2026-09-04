@@ -1593,6 +1593,46 @@ window.PixisState = {
 
     html += `<div class="showcase-banner-media-overlay"></div>`;
     mediaBg.innerHTML = html;
+
+    // Actualización reactiva de textos, etiquetas, emojis, descripciones y botones
+    if (bannerData) {
+      if (bannerData.tag && bannerData.tag.trim()) {
+        const tagEl = card.querySelector('.showcase-banner-tag');
+        if (tagEl) tagEl.textContent = bannerData.tag.trim();
+      }
+      if (bannerData.title && bannerData.title.trim()) {
+        const titleEl = card.querySelector('.showcase-banner-title');
+        if (titleEl) titleEl.textContent = bannerData.title.trim();
+      }
+      if (bannerData.emoji && bannerData.emoji.trim()) {
+        const iconEl = card.querySelector('.showcase-banner-icon');
+        if (iconEl) {
+          const em = bannerData.emoji.trim();
+          if (em.startsWith('fa-') || em.startsWith('fas ') || em.startsWith('far ') || em.startsWith('fab ')) {
+            const faCls = em.includes('fa ') || em.includes('fas ') || em.includes('far ') || em.includes('fab ') ? em : 'fas ' + em;
+            iconEl.innerHTML = `<i class="${faCls}"></i>`;
+          } else {
+            iconEl.innerHTML = `<span style="font-size: 26px; line-height: 1;">${em}</span>`;
+          }
+        }
+      }
+      if (bannerData.desc && bannerData.desc.trim()) {
+        const descEl = card.querySelector('.showcase-banner-desc');
+        if (descEl) descEl.textContent = bannerData.desc.trim();
+      }
+      if (bannerData.btnText && bannerData.btnText.trim()) {
+        const btnEl = card.querySelector('.showcase-banner-action-btn');
+        if (btnEl) btnEl.textContent = bannerData.btnText.trim();
+      }
+      if (bannerData.headerTitle && bannerData.headerTitle.trim()) {
+        let headerBtn = null;
+        if (cardId === 'showcaseBannerDestacados') headerBtn = document.querySelector('.destacados-title-btn');
+        else if (cardId === 'showcaseBannerNuevos') headerBtn = document.querySelector('.nuevos-title-btn');
+        if (headerBtn) {
+          headerBtn.innerHTML = `${bannerData.headerTitle.trim()} <span class="title-btn-arrow">›</span>`;
+        }
+      }
+    }
   };
 
   if (site.showcaseBanners) {

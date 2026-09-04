@@ -32,7 +32,7 @@ html {
 }
 
 .brands-track img {
-  height: 100px;
+  height: 68px;
   opacity: 0.9;
   filter: drop-shadow(0 0 8px rgba(180, 0, 255, 0.55));
   transition: transform 0.3s ease, opacity 0.3s ease;
@@ -142,12 +142,12 @@ html {
   display: inline-flex;
   align-items: center;
   justify-content: flex-start;
-  gap: 12px;
+  gap: 10px;
   background: #ffffff;
-  padding: 10px 18px;
-  margin: 5px;
+  padding: 8px 15px;
+  margin: 4px;
   /* Separación lateral pasiva */
-  border-radius: 12px;
+  border-radius: 10px;
   text-decoration: none;
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
   transition: transform 0.2s;
@@ -160,7 +160,7 @@ html {
 }
 
 .info-badge i {
-  font-size: 26px;
+  font-size: 22px;
   flex-shrink: 0;
 }
 
@@ -170,46 +170,46 @@ html {
 }
 
 .info-badge .ib-text b {
-  font-size: 14px;
+  font-size: 13px;
   color: #111;
   font-weight: 700;
 }
 
 .info-badge .ib-text span {
-  font-size: 13px;
+  font-size: 11.5px;
   color: #666;
 }
 .banner-carousel-outer {
   position: relative;
   width: 100%;
-  max-width: 1540px; /* 1400px + 70px per side */
-  margin: 20px auto 60px;
-  padding: 0 70px; /* Espacio para las flechas fuera del banner */
+  max-width: 1460px; /* Ancho armónico equilibrado */
+  margin: 15px auto 48px;
+  padding: 0 50px; /* Espacio para las flechas fuera del banner */
   z-index: 5;
 }
 
-/* Banner Principal Superior (Ancho Completo Desktop - Imagen 1) */
+/* Banner Principal Superior (Ancho Completo Desktop - Proporción equilibrada) */
 .destacados .banner-carousel-outer {
-  max-width: 1720px;
+  max-width: 1460px;
   width: 100%;
-  padding: 0 50px;
-  margin: 20px auto 40px;
+  padding: 0 45px;
+  margin: 15px auto 48px;
   box-sizing: border-box;
 }
 
-/* Altura ampliada exclusiva para el Banner Superior en PC */
+/* Altura equilibrada para el Banner Superior en PC (Escala compacta y elegante) */
 .destacados .banner-carousel {
-  height: 540px; /* PC: Mayor altura para banner superior completo */
+  height: 440px; /* PC: Reducido de 540px a 440px para evitar gigantismo a escala 100% */
 }
 
 .banner-carousel {
   position: relative;
   width: 100%;
-  height: 440px; /* PC - Default para carrusel inferior nuevos ingresos */
+  height: 390px; /* PC - Reducido de 440px a 390px */
 
   margin: 0 auto; /* Centrado dentro de su outer */
 
-  border-radius: 20px;
+  border-radius: 18px;
   overflow: hidden;
 
   border: 2px solid transparent;
@@ -220,7 +220,7 @@ html {
 
   background-size: 400% 400%;
   animation: rgbBorder 6s linear infinite;
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.4);
 }
 
 @media (max-width: 768px) {
@@ -271,14 +271,14 @@ html {
   transform: translateY(-50%);
   z-index: 20;
 
-  width: 50px;
-  height: 50px;
+  width: 44px;
+  height: 44px;
   border-radius: 50%;
   border: 2px solid rgba(255, 255, 255, 0.2);
 
   background: rgba(255, 0, 191, 0.7);
   color: #fff;
-  font-size: 32px;
+  font-size: 26px;
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -300,7 +300,7 @@ html {
 /* DOTS CONTENEDOR */
 .banner-dots {
   position: absolute;
-  bottom: -30px; /* Fuera del banner */
+  bottom: -22px; /* Fuera del banner sin invadir el botón inferior */
   left: 50%;
   transform: translateX(-50%);
   display: flex;
@@ -667,7 +667,7 @@ html {
   display: flex;
   justify-content: center;
   align-items: center;
-  margin: 35px auto 22px;
+  margin: 18px auto 16px;
   width: 100%;
 }
 
@@ -676,45 +676,45 @@ html {
   color: #fff;
   border: 2px solid #a855f7;
   border-radius: 50px;
-  padding: 12px 36px;
+  padding: 10px 28px;
   font-family: 'Orbitron', sans-serif;
-  font-size: 20px;
+  font-size: 16px;
   font-weight: 800;
-  letter-spacing: 2px;
+  letter-spacing: 1.5px;
   cursor: pointer;
-  box-shadow: 0 0 20px rgba(168, 85, 247, 0.4), inset 0 0 15px rgba(168, 85, 247, 0.2);
+  box-shadow: 0 0 18px rgba(168, 85, 247, 0.4), inset 0 0 12px rgba(168, 85, 247, 0.2);
   transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
   display: inline-flex;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
   text-transform: uppercase;
 }
 
 .section-title-btn:hover {
-  transform: translateY(-3px) scale(1.03);
+  transform: translateY(-2px) scale(1.02);
   border-color: #ffd700;
-  box-shadow: 0 0 30px rgba(255, 215, 0, 0.6), inset 0 0 20px rgba(255, 215, 0, 0.3);
+  box-shadow: 0 0 26px rgba(255, 215, 0, 0.6), inset 0 0 18px rgba(255, 215, 0, 0.3);
   color: #ffd700;
 }
 
 .section-title-btn .title-btn-arrow {
-  font-size: 24px;
+  font-size: 20px;
   line-height: 1;
   transition: transform 0.3s ease;
 }
 
 .section-title-btn:hover .title-btn-arrow {
-  transform: translateX(5px);
+  transform: translateX(4px);
 }
 
 .nuevos-title-btn {
   border-color: #00e5ff;
-  box-shadow: 0 0 20px rgba(0, 229, 255, 0.4), inset 0 0 15px rgba(0, 229, 255, 0.2);
+  box-shadow: 0 0 18px rgba(0, 229, 255, 0.4), inset 0 0 12px rgba(0, 229, 255, 0.2);
 }
 
 .nuevos-title-btn:hover {
   border-color: #00e5ff;
-  box-shadow: 0 0 30px rgba(0, 229, 255, 0.7), inset 0 0 20px rgba(0, 229, 255, 0.4);
+  box-shadow: 0 0 26px rgba(0, 229, 255, 0.7), inset 0 0 18px rgba(0, 229, 255, 0.4);
   color: #00e5ff;
 }
 
@@ -723,26 +723,26 @@ html {
    ══════════════════════════════════════════════════════════════ */
 .showcase-section-layout {
   display: flex;
-  gap: 20px;
-  max-width: 1720px;
-  margin: 0 auto 50px;
-  padding: 0 20px;
+  gap: 14px;
+  max-width: 1480px;
+  margin: 0 auto 40px;
+  padding: 0 16px;
   box-sizing: border-box;
   align-items: stretch;
 }
 
 /* Tarjeta Lateral de Sección (Showcase Card) */
 .showcase-banner-card {
-  flex: 0 0 260px;
-  border-radius: 18px;
-  padding: 30px 24px;
+  flex: 0 0 220px;
+  border-radius: 16px;
+  padding: 22px 18px;
   box-sizing: border-box;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
   position: relative;
   overflow: hidden;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
   transition: transform 0.3s ease, box-shadow 0.3s ease;
   cursor: pointer;
 }
@@ -877,10 +877,10 @@ html {
   display: inline-block;
   background: rgba(255, 255, 255, 0.2);
   color: #fff;
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 800;
-  letter-spacing: 1.5px;
-  padding: 5px 12px;
+  letter-spacing: 1.2px;
+  padding: 4px 10px;
   border-radius: 20px;
   width: fit-content;
   backdrop-filter: blur(4px);
@@ -890,17 +890,17 @@ html {
 .showcase-banner-title {
   font-family: 'Orbitron', sans-serif;
   color: #fff;
-  font-size: 26px;
+  font-size: 21px;
   font-weight: 900;
-  margin: 15px 0 10px;
+  margin: 10px 0 8px;
   letter-spacing: 0.5px;
   line-height: 1.2;
 }
 
 .showcase-banner-icon {
-  font-size: 58px;
+  font-size: 44px;
   color: rgba(255, 255, 255, 0.9);
-  margin: 20px 0;
+  margin: 12px 0;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -909,9 +909,9 @@ html {
 
 .showcase-banner-desc {
   color: rgba(255, 255, 255, 0.92);
-  font-size: 14px;
-  line-height: 1.5;
-  margin-bottom: 25px;
+  font-size: 12.5px;
+  line-height: 1.45;
+  margin-bottom: 16px;
 }
 
 .showcase-banner-action-btn {
@@ -919,8 +919,8 @@ html {
   color: #1a1a1a;
   border: none;
   border-radius: 50px;
-  padding: 12px 24px;
-  font-size: 14px;
+  padding: 10px 18px;
+  font-size: 12px;
   font-weight: 800;
   cursor: pointer;
   transition: all 0.25s ease;
@@ -943,7 +943,7 @@ html {
   flex: 1;
   display: grid !important;
   grid-template-columns: repeat(5, 1fr) !important;
-  gap: 14px !important;
+  gap: 10px !important;
   align-content: start !important;
 }
 
@@ -953,14 +953,14 @@ html {
 .card {
   background: #0f071e;
   border: 1.5px solid rgba(168, 85, 247, 0.35);
-  border-radius: 16px;
-  padding: 14px;
+  border-radius: 14px;
+  padding: 10px 10px 12px;
   box-sizing: border-box;
   display: flex !important;
   flex-direction: column !important;
   justify-content: space-between !important;
   height: 100% !important;
-  min-height: 440px !important;
+  min-height: 380px !important;
   transition: transform 0.3s cubic-bezier(0.25, 0.8, 0.25, 1), box-shadow 0.3s ease, border-color 0.3s ease;
   text-decoration: none;
   color: inherit;
@@ -969,9 +969,9 @@ html {
 }
 
 .card:hover {
-  transform: translateY(-5px);
+  transform: translateY(-4px);
   border-color: #a855f7;
-  box-shadow: 0 12px 28px rgba(168, 85, 247, 0.35);
+  box-shadow: 0 10px 24px rgba(168, 85, 247, 0.35);
 }
 
 .destacados .card {
@@ -979,25 +979,25 @@ html {
 }
 .destacados .card:hover {
   border-color: #ffd700;
-  box-shadow: 0 12px 28px rgba(255, 215, 0, 0.35);
+  box-shadow: 0 10px 24px rgba(255, 215, 0, 0.35);
 }
 
-/* 1. Barra de insignias superior de altura fija (26px) */
+/* 1. Barra de insignias superior de altura fija (22px) */
 .card-top-bar {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  height: 26px;
-  margin-bottom: 8px;
+  height: 22px;
+  margin-bottom: 5px;
   width: 100%;
 }
 
 .card-pill {
-  font-size: 11px;
+  font-size: 9.5px;
   font-weight: 800;
-  padding: 3px 10px;
-  border-radius: 12px;
-  letter-spacing: 0.5px;
+  padding: 2px 8px;
+  border-radius: 10px;
+  letter-spacing: 0.4px;
   text-transform: uppercase;
 }
 
@@ -1021,9 +1021,9 @@ html {
 }
 
 .card-stock-pill {
-  font-size: 11px;
+  font-size: 9.5px;
   font-weight: 700;
-  letter-spacing: 0.3px;
+  letter-spacing: 0.2px;
 }
 
 .stock-disponible {
@@ -1040,14 +1040,14 @@ html {
 
 /* 2. Contenedor de Imagen de Altura Fija y Centrado */
 .card-img-wrap {
-  height: 180px;
+  height: 140px;
   width: 100%;
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-bottom: 10px;
+  margin-bottom: 6px;
   background: rgba(255, 255, 255, 0.02);
-  border-radius: 10px;
+  border-radius: 8px;
   overflow: hidden;
 }
 
@@ -1062,29 +1062,29 @@ html {
   transform: scale(1.05);
 }
 
-/* 3. Subcategoría / Rubro de altura fija (18px) */
+/* 3. Subcategoría / Rubro de altura fija (15px) */
 .card-subcat {
-  height: 18px;
-  font-size: 11px;
+  height: 15px;
+  font-size: 10px;
   color: #a78bfa;
   text-transform: uppercase;
-  letter-spacing: 0.8px;
+  letter-spacing: 0.6px;
   font-weight: 700;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  margin-bottom: 4px;
+  margin-bottom: 2px;
 }
 
-/* 4. Título con corte rígido a 2 líneas (altura fija 44px) */
+/* 4. Título con corte rígido a 2 líneas (altura fija 35px) */
 .card-title,
 .card h3 {
-  font-size: 14px !important;
+  font-size: 12.5px !important;
   font-weight: 700 !important;
   color: #f3f4f6 !important;
-  line-height: 1.4 !important;
-  height: 44px !important;
-  margin: 0 0 10px 0 !important;
+  line-height: 1.35 !important;
+  height: 35px !important;
+  margin: 0 0 5px 0 !important;
   display: -webkit-box !important;
   -webkit-line-clamp: 2 !important;
   line-clamp: 2 !important;
@@ -1094,47 +1094,47 @@ html {
   text-align: left !important;
 }
 
-/* 5. Caja de Precio estándar (altura fija 46px) */
+/* 5. Caja de Precio estándar (altura fija 36px) */
 .card .precio-box {
   display: flex;
   flex-direction: column;
   justify-content: flex-end;
-  min-height: 46px;
+  min-height: 36px;
   height: auto;
   margin-top: auto;
-  margin-bottom: 12px;
+  margin-bottom: 6px;
   text-align: left;
 }
 
 .card .precio-label {
-  font-size: 10px;
+  font-size: 9.5px;
   color: #cbd5e1;
   font-weight: 700;
-  letter-spacing: 0.5px;
-  margin-bottom: 3px;
+  letter-spacing: 0.4px;
+  margin-bottom: 1px;
   display: block;
 }
 
 .card .precio {
-  font-size: 20px;
+  font-size: 17px;
   font-weight: 800;
   color: #ffd700;
   font-family: 'Orbitron', sans-serif;
   letter-spacing: 0.5px;
 }
 
-/* 6. Fila de Acciones: Stepper + Agregar al carrito (altura fija 42px) */
+/* 6. Fila de Acciones: Stepper + Agregar al carrito (altura fija 34px) */
 .card .card-actions {
   display: flex !important;
   flex-direction: row !important;
   align-items: center !important;
-  gap: 8px !important;
-  height: 42px !important;
+  gap: 6px !important;
+  height: 34px !important;
   width: 100% !important;
   margin-top: 0 !important;
 }
 
-/* Stepper Selector de Cantidad (Estilo Imagen 5) */
+/* Stepper Selector de Cantidad */
 .card-qty-stepper {
   position: relative;
   z-index: 10;
@@ -1142,11 +1142,11 @@ html {
   align-items: center;
   background: #1a0f30;
   border: 1.5px solid rgba(168, 85, 247, 0.5);
-  border-radius: 8px;
-  height: 40px;
+  border-radius: 6px;
+  height: 32px;
   box-sizing: border-box;
   overflow: hidden;
-  flex: 0 0 88px;
+  flex: 0 0 74px;
   transition: border-color 0.2s ease;
 }
 
@@ -1159,12 +1159,12 @@ html {
   background: transparent;
   color: #fff;
   border: none;
-  width: 26px;
+  width: 22px;
   height: 100%;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 16px;
+  font-size: 14px;
   font-weight: bold;
   cursor: pointer;
   user-select: none;
@@ -1181,12 +1181,12 @@ html {
 }
 
 .card-qty-input {
-  width: 36px;
+  width: 30px;
   background: transparent;
   border: none;
   color: #fff;
   font-family: 'Orbitron', sans-serif;
-  font-size: 14px;
+  font-size: 12px;
   font-weight: 700;
   text-align: center;
   padding: 0;
@@ -1204,28 +1204,28 @@ html {
 /* Botón Agregar al Carrito */
 .card .btn-add-cart {
   flex: 1;
-  height: 40px;
+  height: 32px;
   background: linear-gradient(135deg, #7928ca 0%, #ff0080 100%);
   color: #fff;
   border: none;
-  border-radius: 8px;
-  font-size: 13px;
+  border-radius: 6px;
+  font-size: 11.5px;
   font-weight: 800;
   letter-spacing: 0.5px;
   cursor: pointer;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 6px;
+  gap: 5px;
   transition: all 0.25s ease;
   box-shadow: 0 4px 12px rgba(121, 40, 202, 0.35);
-  padding: 0 8px;
+  padding: 0 6px;
   white-space: nowrap;
 }
 
 .card .btn-add-cart:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 18px rgba(255, 0, 128, 0.5);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(255, 0, 128, 0.5);
   filter: brightness(1.1);
 }
 
@@ -1252,19 +1252,19 @@ html {
 .card.proximo-ingreso .btn-add-cart,
 .card .btn-add-cart.btn-reservar {
   flex: 1 !important;
-  height: 40px !important;
+  height: 32px !important;
   background: linear-gradient(180deg, #ffd700 0%, #b8860b 100%) !important;
   color: #050505 !important;
   border: none !important;
-  border-radius: 8px !important;
-  box-shadow: 0 3px 0 #8c6800, 0 4px 12px rgba(255, 215, 0, 0.35) !important;
+  border-radius: 6px !important;
+  box-shadow: 0 2px 0 #8c6800, 0 3px 8px rgba(255, 215, 0, 0.35) !important;
   font-family: 'Orbitron', system-ui, sans-serif !important;
-  font-size: 13px !important;
+  font-size: 11.5px !important;
   font-weight: 800 !important;
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
-  gap: 6px !important;
+  gap: 5px !important;
   white-space: nowrap !important;
   cursor: pointer !important;
   transition: all 0.15s ease !important;
@@ -1274,7 +1274,7 @@ html {
 .card.proximo-ingreso .btn-add-cart:hover,
 .card .btn-add-cart.btn-reservar:hover {
   background: linear-gradient(180deg, #ffe033 0%, #d49b0d 100%) !important;
-  box-shadow: 0 4px 0 #8c6800, 0 6px 16px rgba(255, 215, 0, 0.5) !important;
+  box-shadow: 0 3px 0 #8c6800, 0 5px 14px rgba(255, 215, 0, 0.5) !important;
   transform: translateY(-1px);
 }
 
@@ -6149,26 +6149,167 @@ body.modal-open {
 
 /* Tarjeta Short / Reel (9:16) */
 .short-card-premium {
-  width: 200px !important;
+  width: 175px !important;
   aspect-ratio: 9/16 !important;
 }
 
 .short-card-premium:hover {
-  transform: translateY(-6px) scale(1.02) !important;
-  box-shadow: 0 14px 30px rgba(168, 85, 247, 0.45) !important;
+  transform: translateY(-5px) scale(1.02) !important;
+  box-shadow: 0 12px 26px rgba(168, 85, 247, 0.45) !important;
   border-color: rgba(216, 70, 239, 0.8) !important;
 }
 
-/* Tarjeta Video Panorámico (16:9) */
+/* ══════════════════════════════════════════════════════════════
+   SECCIÓN "APRENDE CON NOSOTROS": SIMETRÍA IDÉNTICA BANNER VS VIDEOS (340px === 340px)
+   ══════════════════════════════════════════════════════════════ */
+
+/* Altura unificada de 340px en PC para la sección, banner y carrusel */
+@media (min-width: 769px) {
+  .videos-section .showcase-section-layout {
+    align-items: stretch !important;
+  }
+
+  .videos-section .showcase-banner-card {
+    height: 340px !important;
+    min-height: 340px !important;
+    max-height: 340px !important;
+  }
+
+  .videos-section .media-carousel-wrapper {
+    height: 340px !important;
+    display: flex !important;
+    align-items: stretch !important;
+  }
+
+  .videos-section .video-scroll-track {
+    height: 100% !important;
+    display: flex !important;
+    align-items: stretch !important;
+    gap: 14px !important;
+  }
+
+  .video-card-premium {
+    width: 280px !important;
+    height: 340px !important;
+    min-height: 340px !important;
+    max-height: 340px !important;
+  }
+}
+
+/* Tarjeta Video Panorámico Estructurada con Altura Idéntica al Banner */
 .video-card-premium {
-  width: 320px !important;
-  aspect-ratio: 16/9 !important;
+  width: 280px !important;
+  aspect-ratio: unset !important;
+  display: flex !important;
+  flex-direction: column !important;
+  background: #0c0a14 !important;
+  border: 1px solid rgba(0, 255, 213, 0.25) !important;
+  border-radius: 16px !important;
+  overflow: hidden !important;
+  position: relative !important;
+  flex-shrink: 0 !important;
+  transition: transform 0.3s cubic-bezier(0.2, 0, 0.2, 1), box-shadow 0.3s ease, border-color 0.3s !important;
 }
 
 .video-card-premium:hover {
-  transform: translateY(-6px) scale(1.02) !important;
-  box-shadow: 0 14px 30px rgba(0, 255, 213, 0.4) !important;
+  transform: translateY(-5px) scale(1.02) !important;
+  box-shadow: 0 14px 30px rgba(0, 255, 213, 0.35) !important;
   border-color: rgba(0, 255, 213, 0.8) !important;
+}
+
+/* 1. Módulo Superior de Video: Miniatura 16:9 */
+.video-card-premium .media-img-wrap-169 {
+  position: relative !important;
+  inset: auto !important;
+  width: 100% !important;
+  height: 165px !important;
+  min-height: 165px !important;
+  max-height: 165px !important;
+  overflow: hidden !important;
+  z-index: 1 !important;
+}
+
+.video-card-premium .media-img-wrap-169 img {
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: cover !important;
+  display: block !important;
+}
+
+/* Botón Play centrado sobre el thumbnail 16:9 */
+.video-card-premium .media-glass-play {
+  top: 82px !important;
+  left: 50% !important;
+  transform: translate(-50%, -50%) !important;
+}
+
+.video-card-premium:hover .media-glass-play {
+  transform: translate(-50%, -50%) scale(1.18) !important;
+}
+
+/* 2. Módulo Inferior Informativo de Video (175px = 340px - 165px) */
+.video-card-premium .media-card-info {
+  position: relative !important;
+  bottom: auto !important;
+  left: auto !important;
+  right: auto !important;
+  height: 175px !important;
+  min-height: 175px !important;
+  max-height: 175px !important;
+  flex: 1 1 auto !important;
+  box-sizing: border-box !important;
+  padding: 14px 14px 12px 14px !important;
+  background: linear-gradient(180deg, #120b22 0%, #080210 100%) !important;
+  border-top: 1px solid rgba(255, 255, 255, 0.08) !important;
+  display: flex !important;
+  flex-direction: column !important;
+  justify-content: space-between !important;
+  gap: 0 !important;
+}
+
+.video-card-premium .media-card-title {
+  color: #ffffff !important;
+  font-size: 13px !important;
+  font-weight: 700 !important;
+  line-height: 1.35 !important;
+  margin-bottom: 4px !important;
+  display: -webkit-box !important;
+  -webkit-line-clamp: 2 !important;
+  -webkit-box-orient: vertical !important;
+  overflow: hidden !important;
+}
+
+.video-card-premium .media-card-subtitle {
+  color: #94a3b8 !important;
+  font-size: 11px !important;
+  font-weight: 500 !important;
+  line-height: 1.35 !important;
+  display: -webkit-box !important;
+  -webkit-line-clamp: 2 !important;
+  -webkit-box-orient: vertical !important;
+  overflow: hidden !important;
+  margin-bottom: auto !important;
+  white-space: normal !important;
+}
+
+/* Botón inferior de llamado a la acción "Ver Video" */
+.video-card-action-link {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+  color: #00ffd5 !important;
+  font-size: 10.5px !important;
+  font-weight: 700 !important;
+  font-family: 'Orbitron', sans-serif !important;
+  letter-spacing: 0.5px !important;
+  margin-top: 8px !important;
+  text-transform: uppercase !important;
+  transition: color 0.2s ease, transform 0.2s ease !important;
+}
+
+.video-card-premium:hover .video-card-action-link {
+  color: #fff !important;
+  transform: translateX(3px) !important;
 }
 
 /* Badges Temáticos de Card */
@@ -6211,8 +6352,7 @@ body.modal-open {
 }
 
 /* Envoltura de Imagen y Efecto Zoom */
-.media-img-wrap,
-.media-img-wrap-169 {
+.media-img-wrap {
   position: absolute;
   inset: 0;
   width: 100%;
@@ -6315,6 +6455,26 @@ body.modal-open {
 
   .video-card-premium {
     width: 270px !important;
+    height: 320px !important;
+    min-height: 320px !important;
+    max-height: 320px !important;
+  }
+
+  .video-card-premium .media-img-wrap-169 {
+    height: 152px !important;
+    min-height: 152px !important;
+    max-height: 152px !important;
+  }
+
+  .video-card-premium .media-glass-play {
+    top: 76px !important;
+  }
+
+  .video-card-premium .media-card-info {
+    height: 168px !important;
+    min-height: 168px !important;
+    max-height: 168px !important;
+    padding: 12px 10px 10px !important;
   }
 
   .reels-section,
@@ -7148,11 +7308,12 @@ html, body {
 .cart-modal {
     width: 100% !important;
     max-width: 100% !important;
-    /* Ocupa desde debajo del header fijo hasta el fondo de la pantalla */
-    top: 120px !important;
+    top: 115px !important;
     left: 0 !important;
     right: 0 !important;
-    height: calc(100dvh - 120px) !important;
+    bottom: 0 !important;
+    height: calc(100dvh - 115px) !important;
+    max-height: calc(100dvh - 115px) !important;
     margin: 0 !important;
     border-radius: 0 !important;
     transform: translateY(30px) !important;
@@ -7160,6 +7321,9 @@ html, body {
     border-top: 2px solid #b026ff !important;
     box-sizing: border-box !important;
     z-index: 50000 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    overflow: hidden !important;
   }
 
 #toggle-cart:checked~.cart-modal {
@@ -7168,6 +7332,7 @@ html, body {
 
 /* 📱 CART HEADER MOBILE — simétrico y sin superposición */
 .cart-header {
+    flex: 0 0 auto !important;
     flex-wrap: wrap !important;
     justify-content: center !important;
     gap: 8px !important;
@@ -7212,11 +7377,14 @@ body:has(#toggle-cart:checked) {
   }
 
 .cart-body {
-    padding: 15px;
-    height: 60% !important;
-    max-height: 60% !important;
+    padding: 12px 15px !important;
+    height: auto !important;
+    max-height: 38dvh !important;
+    min-height: 80px !important;
     overflow-y: auto !important;
-    flex: none !important;
+    flex: 0 1 auto !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
+    -webkit-overflow-scrolling: touch !important;
   }
 
 .cart-item {
@@ -7233,11 +7401,15 @@ body:has(#toggle-cart:checked) {
   }
 
 .cart-footer {
-    height: 32% !important;
-    max-height: 32% !important;
+    height: auto !important;
+    max-height: none !important;
     overflow-y: auto !important;
-    flex: none !important;
-    padding: 15px;
+    flex: 1 1 auto !important;
+    padding: 15px 15px calc(env(safe-area-inset-bottom, 20px) + 36px) 15px !important;
+    -webkit-overflow-scrolling: touch !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 12px !important;
   }
 
 .cuota-item-carrito {
@@ -9037,9 +9209,14 @@ body.product-page-active .modal-precios {
    ══════════════════════════════════════════════════════════════ */
 @media (max-width: 900px) {
 
-  /* Contenido del modal se ajusta al ancho del celular */
+  /* Contenido del modal se ajusta al ancho del celular con despeje del header fijo */
+  body.product-page-active #modalProduct .modal-content,
+  body.product-page-active .modal-product .modal-content,
   body.product-page-active .modal-content {
-    padding: 10px 3% !important;
+    padding-top: 135px !important; /* Despeje total de 135px frente al header móvil de ~125px */
+    padding-left: 4% !important;
+    padding-right: 4% !important;
+    padding-bottom: 30px !important;
     max-height: none !important;
     height: auto !important;
     overflow: visible !important;
@@ -9116,26 +9293,29 @@ body.product-page-active .modal-precios {
     overflow-y: visible !important;
   }
 
-  /* Barra superior: Volver en fila compacta */
+  /* Barra superior: Volver centrada y simétrica */
   .product-page-back-container {
     position: relative !important;
     top: auto !important;
     left: auto !important;
-    margin: 0 0 12px 0 !important;
-    padding: 8px 0 !important;
+    margin: 0 auto 14px auto !important;
+    padding: 4px 0 !important;
     display: flex !important;
     justify-content: center !important;
+    width: 100% !important;
+    max-width: 360px !important;
   }
 
-  /* Botón Volver más compacto en mobile */
+  /* Botón Volver simétrico y legible */
   .product-page-back-container .modal-close {
-    flex: 1 !important;
-    max-width: 280px !important;
-    padding: 8px 12px !important;
+    width: 100% !important;
+    max-width: 320px !important;
+    padding: 9px 16px !important;
     font-size: 12px !important;
     white-space: nowrap;
     text-align: center !important;
     justify-content: center !important;
+    border-radius: 10px !important;
   }
 
   /* Botón Menú de Productos en mobile - Escondido para persistir sólo el burger */
@@ -9143,26 +9323,42 @@ body.product-page-active .modal-precios {
     display: none !important;
   }
 
-  /* Imagen del producto: más compacta en celular */
+  /* Imagen del producto: Simétrica, proporcionada y centrada */
   body.product-page-active .modal-img-zoom {
-    height: 175px !important;
-    min-height: 175px !important;
-    border-radius: 10px !important;
-    padding: 5px !important;
+    height: 240px !important;
+    min-height: 240px !important;
+    max-width: 360px !important;
+    width: 100% !important;
+    margin: 0 auto !important;
+    border-radius: 16px !important;
+    padding: 12px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    box-sizing: border-box !important;
+    background: radial-gradient(circle at center, rgba(32, 10, 52, 0.75) 0%, rgba(10, 1, 18, 0.95) 100%) !important;
+    border: 1.5px solid rgba(0, 255, 213, 0.3) !important;
     touch-action: pan-y !important; /* Permite scroll vertical, pinch-zoom en JS */
   }
 
   body.product-page-active .modal-img-zoom img {
-    max-height: 165px !important;
+    max-height: 216px !important;
+    max-width: 100% !important;
     width: auto !important;
+    height: auto !important;
+    object-fit: contain !important;
     margin: 0 auto !important;
   }
 
-  /* Thumbnails compactos */
+  /* Miniaturas simétricas y centradas */
   body.product-page-active .modal-thumbs {
     display: flex !important;
     flex-direction: row !important;
-    gap: 6px !important;
+    justify-content: center !important;
+    align-items: center !important;
+    gap: 8px !important;
+    max-width: 360px !important;
+    margin: 8px auto 0 auto !important;
     overflow-x: auto !important;
     max-height: none !important;
     padding-bottom: 4px;
@@ -10543,6 +10739,208 @@ body.light-mode .btn-view-toggle.active {
   }
 }
 
+/* ══════════════════════════════════════════════════════════════
+   PESTAÑAS CORPORATIVAS DE "MIS PEDIDOS" Y PÓLIZA DE GARANTÍA
+   ══════════════════════════════════════════════════════════════ */
+.mis-pedidos-tabs-nav {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 16px;
+  overflow-x: auto;
+  padding-bottom: 6px;
+  scrollbar-width: thin;
+  -webkit-overflow-scrolling: touch;
+}
+
+.mis-pedidos-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 8px 14px;
+  border-radius: 10px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: #94a3b8;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.2s ease;
+  font-family: inherit;
+}
+
+.mis-pedidos-tab:hover {
+  color: #f1f5f9;
+  background: rgba(168, 85, 247, 0.12);
+  border-color: rgba(168, 85, 247, 0.35);
+}
+
+.mis-pedidos-tab.active {
+  color: #ffffff;
+  background: linear-gradient(135deg, rgba(168, 85, 247, 0.3) 0%, rgba(139, 92, 246, 0.2) 100%);
+  border-color: #a855f7;
+  box-shadow: 0 0 15px rgba(168, 85, 247, 0.3);
+}
+
+.mis-pedidos-tab.tab-garantia {
+  margin-left: auto;
+  border-color: rgba(0, 255, 213, 0.25);
+  color: #5eead4;
+}
+
+.mis-pedidos-tab.tab-garantia:hover {
+  background: rgba(0, 255, 213, 0.12);
+  border-color: rgba(0, 255, 213, 0.5);
+  color: #2dd4bf;
+}
+
+.mis-pedidos-tab.tab-garantia.active {
+  background: linear-gradient(135deg, rgba(0, 255, 213, 0.25) 0%, rgba(20, 184, 166, 0.2) 100%);
+  border-color: #00ffd5;
+  color: #ffffff;
+  box-shadow: 0 0 15px rgba(0, 255, 213, 0.3);
+}
+
+.tab-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  font-size: 10.5px;
+  font-weight: 700;
+  border-radius: 9px;
+  background: rgba(255, 255, 255, 0.12);
+  color: #cbd5e1;
+}
+
+.mis-pedidos-tab.active .tab-badge {
+  background: #a855f7;
+  color: #ffffff;
+}
+
+/* Panel de Garantía Corporativa Oficial */
+.garantia-panel-corporate {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  animation: fadeInModal 0.25s ease;
+  text-align: left;
+}
+
+.garantia-header {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 16px 20px;
+  background: linear-gradient(135deg, rgba(0, 255, 213, 0.12) 0%, rgba(168, 85, 247, 0.1) 100%);
+  border: 1px solid rgba(0, 255, 213, 0.35);
+  border-radius: 12px;
+}
+
+.garantia-header i {
+  font-size: 32px;
+  color: #00ffd5;
+  filter: drop-shadow(0 0 8px rgba(0, 255, 213, 0.5));
+}
+
+.garantia-header h4 {
+  margin: 0 0 4px 0;
+  font-size: 15px;
+  font-weight: 700;
+  color: #ffffff;
+  font-family: 'Orbitron', sans-serif;
+  letter-spacing: 0.5px;
+}
+
+.garantia-header span {
+  font-size: 12px;
+  color: #94a3b8;
+}
+
+.garantia-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+
+@media (max-width: 640px) {
+  .garantia-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.garantia-card {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  padding: 16px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.garantia-card-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: #c084fc;
+  font-family: 'Orbitron', sans-serif;
+  letter-spacing: 0.5px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.garantia-card ul {
+  margin: 0;
+  padding-left: 18px;
+  font-size: 12px;
+  line-height: 1.6;
+  color: #cbd5e1;
+}
+
+.garantia-card ul li {
+  margin-bottom: 6px;
+}
+
+.garantia-card ul li strong {
+  color: #f1f5f9;
+}
+
+.garantia-card p {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.55;
+  color: #cbd5e1;
+}
+
+.garantia-card p strong {
+  color: #f1f5f9;
+}
+
+.btn-garantia-soporte {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: #25d366;
+  color: #ffffff !important;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 8px 16px;
+  border-radius: 8px;
+  text-decoration: none;
+  transition: background 0.2s ease, transform 0.15s ease;
+  box-shadow: 0 4px 12px rgba(37, 211, 102, 0.3);
+}
+
+.btn-garantia-soporte:hover {
+  background: #1eb956;
+  transform: translateY(-1px);
+}
+
 /* Lista de pedidos */
 .pedidos-list {
   display: flex;
@@ -10899,6 +11297,91 @@ body.light-mode #modalMisPedidos.modal-client-auth .modal-content {
 body.light-mode #misPedidosTitle,
 body.light-mode #modalMisPedidos .modal-close {
   color: #6b21a8 !important;
+}
+
+/* Pestañas de Mis Pedidos y Términos de Garantía en Modo Claro */
+body.light-mode .mis-pedidos-tab {
+  background: #f1f5f9 !important;
+  border-color: #cbd5e1 !important;
+  color: #475569 !important;
+}
+
+body.light-mode .mis-pedidos-tab:hover {
+  background: #e2e8f0 !important;
+  color: #0f172a !important;
+  border-color: #94a3b8 !important;
+}
+
+body.light-mode .mis-pedidos-tab.active {
+  background: #ede9fe !important;
+  border-color: #8b5cf6 !important;
+  color: #5b21b6 !important;
+  box-shadow: 0 2px 8px rgba(139, 92, 246, 0.2) !important;
+}
+
+body.light-mode .mis-pedidos-tab.tab-garantia {
+  background: #f0fdfa !important;
+  border-color: #99f6e4 !important;
+  color: #0f766e !important;
+}
+
+body.light-mode .mis-pedidos-tab.tab-garantia:hover {
+  background: #ccfbf1 !important;
+  border-color: #14b8a6 !important;
+  color: #0f766e !important;
+}
+
+body.light-mode .mis-pedidos-tab.tab-garantia.active {
+  background: #ccfbf1 !important;
+  border-color: #14b8a6 !important;
+  color: #115e59 !important;
+  box-shadow: 0 2px 8px rgba(20, 184, 166, 0.2) !important;
+}
+
+body.light-mode .mis-pedidos-tab .tab-badge {
+  background: #e2e8f0 !important;
+  color: #475569 !important;
+}
+
+body.light-mode .mis-pedidos-tab.active .tab-badge {
+  background: #8b5cf6 !important;
+  color: #ffffff !important;
+}
+
+body.light-mode .garantia-panel-corporate {
+  color: #1e293b !important;
+}
+
+body.light-mode .garantia-header {
+  background: linear-gradient(135deg, #f0fdfa 0%, #f5f3ff 100%) !important;
+  border-color: #99f6e4 !important;
+}
+
+body.light-mode .garantia-header h4 {
+  color: #0f172a !important;
+}
+
+body.light-mode .garantia-header span {
+  color: #64748b !important;
+}
+
+body.light-mode .garantia-card {
+  background: #f8fafc !important;
+  border-color: #e2e8f0 !important;
+}
+
+body.light-mode .garantia-card-title {
+  color: #6b21a8 !important;
+}
+
+body.light-mode .garantia-card ul,
+body.light-mode .garantia-card p {
+  color: #334155 !important;
+}
+
+body.light-mode .garantia-card ul li strong,
+body.light-mode .garantia-card p strong {
+  color: #0f172a !important;
 }
 
 /* Tarjetas de Pedidos en Modo Claro */
@@ -11495,7 +11978,7 @@ body.light-mode .fanpage-lateral-card:hover {
   display: grid !important;
   grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
   grid-auto-rows: 1fr !important;
-  gap: 14px !important;
+  gap: 10px !important;
   width: 100% !important;
   max-width: 100% !important;
   padding: 0 !important;

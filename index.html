@@ -147,8 +147,8 @@
     }
     </script>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700&family=Inter:wght@400;700&family=Montserrat:wght@400;700&family=Roboto:wght@400;700&family=Outfit:wght@400;700&family=Poppins:wght@400;700&family=Lato:wght@400;700&family=Open+Sans:wght@400;700&family=Oswald:wght@400;700&family=Raleway:wght@400;700&family=Nunito:wght@400;700&family=Ubuntu:wght@400;700&family=Playfair+Display:wght@400;700&family=Cinzel:wght@400;700&family=Kanit:wght@400;700&family=Bebas+Neue&family=Fira+Sans:wght@400;700&family=Quicksand:wght@400;700&family=Syne:wght@400;700&family=Teko:wght@400;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="css/style.css?v=1.12044">
-    <link rel="stylesheet" href="css/lightmode.css?v=1.12044" id="lightmode" disabled>
+    <link rel="stylesheet" href="css/style.css?v=1.12047">
+    <link rel="stylesheet" href="css/lightmode.css?v=1.12047" id="lightmode" disabled>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <style>
         /* 🔥 Desactivar transiciones CSS durante la edición/arrastre para lograr fluidez instantánea */
@@ -1253,6 +1253,7 @@
                         <div class="media-card-info">
                             <span class="media-card-title">Bienvenidos a Pixis Informática</span>
                             <span class="media-card-subtitle">Conocé nuestro local y catálogo</span>
+                            <span class="video-card-action-link">▶ Ver Video <i class="fas fa-external-link-alt" style="font-size:9px;"></i></span>
                         </div>
                     </a>
                     <a href="https://www.youtube.com/watch?v=ya6CQZQ16LA" target="_blank" class="media-card video-card-premium" title="Mantenimiento Preventivo y Limpieza de PS4">
@@ -1264,6 +1265,7 @@
                         <div class="media-card-info">
                             <span class="media-card-title">Mantenimiento de Consolas PS4</span>
                             <span class="media-card-subtitle">Limpieza térmica y cambio de pasta</span>
+                            <span class="video-card-action-link">▶ Ver Video <i class="fas fa-external-link-alt" style="font-size:9px;"></i></span>
                         </div>
                     </a>
                     <a href="https://www.youtube.com/watch?v=ETbF3492Hps" target="_blank" class="media-card video-card-premium" title="Mantenimiento Completo RTX: Pasta Térmica y Pads">
@@ -1275,6 +1277,7 @@
                         <div class="media-card-info">
                             <span class="media-card-title">Mantenimiento Completo RTX</span>
                             <span class="media-card-subtitle">Thermal pads y pasta de alto rendimiento</span>
+                            <span class="video-card-action-link">▶ Ver Video <i class="fas fa-external-link-alt" style="font-size:9px;"></i></span>
                         </div>
                     </a>
                     <a href="https://www.youtube.com/watch?v=g8X4RCxeqvY" target="_blank" class="media-card video-card-premium" title="Review: Headset Raptor Inferno Pro X Wireless 7.1">
@@ -1286,6 +1289,7 @@
                         <div class="media-card-info">
                             <span class="media-card-title">Inferno Pro X Wireless 7.1 White</span>
                             <span class="media-card-subtitle">Test de audio, micro y latencia</span>
+                            <span class="video-card-action-link">▶ Ver Video <i class="fas fa-external-link-alt" style="font-size:9px;"></i></span>
                         </div>
                     </a>
                     <a href="https://www.youtube.com/watch?v=BWup0n9fS8Y" target="_blank" class="media-card video-card-premium" title="Ensamble PC Gamer de Alto Rendimiento Paso a Paso">
@@ -1297,6 +1301,7 @@
                         <div class="media-card-info">
                             <span class="media-card-title">Ensamble PC Gamer Paso a Paso</span>
                             <span class="media-card-subtitle">Armado profesional y cable management</span>
+                            <span class="video-card-action-link">▶ Ver Video <i class="fas fa-external-link-alt" style="font-size:9px;"></i></span>
                         </div>
                     </a>
                     <a href="https://www.youtube.com/watch?v=gZ-wXPUasYY" target="_blank" class="media-card video-card-premium" title="Mantenimiento a Fondo MSI Radeon RX 6900 XT Trio">
@@ -1308,6 +1313,7 @@
                         <div class="media-card-info">
                             <span class="media-card-title">Mantenimiento MSI RX 6900 XT</span>
                             <span class="media-card-subtitle">Gaming X Trio: Rejuvenecé tu gráfica</span>
+                            <span class="video-card-action-link">▶ Ver Video <i class="fas fa-external-link-alt" style="font-size:9px;"></i></span>
                         </div>
                     </a>
                 </div>
@@ -1875,7 +1881,7 @@
                 <div id="listaCuotas"></div>
             </div>
         </div>
-        <script src="js/versionalizador.js?v=1.12044"></script>
+        <script src="js/versionalizador.js?v=1.12047"></script>
 
 
             <!-- ========================= LIGHTBOX IMAGEN COMPLETA ========================= -->
@@ -2012,12 +2018,40 @@
                         </h3>
 
                         <!-- Botón cerrar sesión cliente y editar perfil -->
-                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; gap:8px;">
                             <button id="btnEditarPerfilCliente" onclick="abrirEditarPerfil()" style="background:none; border:1px solid rgba(168,85,247,0.4); color:#c084fc; border-radius:6px; padding:5px 12px; font-size:12px; cursor:pointer; transition:0.2s;">
                                 <i class="fas fa-user-edit"></i> Editar mis datos
                             </button>
                             <button id="btnCerrarSesionCliente" onclick="cerrarSesionCliente()" style="background:none; border:1px solid rgba(248,113,113,0.4); color:#f87171; border-radius:6px; padding:5px 12px; font-size:12px; cursor:pointer; transition:0.2s;">
                                 <i class="fas fa-sign-out-alt"></i> Cerrar sesión
+                            </button>
+                        </div>
+
+                        <!-- Pestañas Corporativas Aisladas -->
+                        <div class="mis-pedidos-tabs-nav" id="misPedidosTabsNav">
+                            <button type="button" class="mis-pedidos-tab active" data-tab="todas" onclick="window.cambiarFiltroMisPedidos('todas')">
+                                <i class="fas fa-layer-group"></i>
+                                <span>Todos</span>
+                                <span class="tab-badge" id="badgeTabTodas">0</span>
+                            </button>
+                            <button type="button" class="mis-pedidos-tab" data-tab="compras" onclick="window.cambiarFiltroMisPedidos('compras')">
+                                <i class="fas fa-check-circle"></i>
+                                <span>Compras Realizadas</span>
+                                <span class="tab-badge" id="badgeTabCompras">0</span>
+                            </button>
+                            <button type="button" class="mis-pedidos-tab" data-tab="reservas" onclick="window.cambiarFiltroMisPedidos('reservas')">
+                                <i class="fas fa-box"></i>
+                                <span>Reservas</span>
+                                <span class="tab-badge" id="badgeTabReservas">0</span>
+                            </button>
+                            <button type="button" class="mis-pedidos-tab" data-tab="precompras" onclick="window.cambiarFiltroMisPedidos('precompras')">
+                                <i class="fas fa-clock"></i>
+                                <span>Precompras / Preventas</span>
+                                <span class="tab-badge" id="badgeTabPrecompras">0</span>
+                            </button>
+                            <button type="button" class="mis-pedidos-tab tab-garantia" data-tab="garantia" onclick="window.cambiarFiltroMisPedidos('garantia')">
+                                <i class="fas fa-shield-alt"></i>
+                                <span>Términos de Garantía</span>
                             </button>
                         </div>
 
