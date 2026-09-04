@@ -6,10 +6,12 @@ header('Pragma: no-cache');
 header('Expires: Thu, 01 Jan 1970 00:00:00 GMT');
 
 $domain = 'https://pixistech.store';
-if (isset($_SERVER['HTTP_HOST'])) {
-    $protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? "https://" : "http://";
-    $domain = $protocol . $_SERVER['HTTP_HOST'];
-}
+$host = isset($_SERVER['HTTP_X_FORWARDED_HOST']) ? trim(explode(',', $_SERVER['HTTP_X_FORWARDED_HOST'])[0]) : (isset($_SERVER['HTTP_HOST']) ? $_SERVER['HTTP_HOST'] : 'pixistech.store');
+$is_https = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') || 
+            (isset($_SERVER['HTTP_X_FORWARDED_PROTO']) && strtolower(trim(explode(',', $_SERVER['HTTP_X_FORWARDED_PROTO'])[0])) === 'https') ||
+            (isset($_SERVER['SERVER_PORT']) && $_SERVER['SERVER_PORT'] == 443);
+$protocol = $is_https ? "https://" : "http://";
+$domain = $protocol . $host;
 
 // Redirect real users to the frontend immediately if not a bot
 $user_agent = isset($_SERVER['HTTP_USER_AGENT']) ? $_SERVER['HTTP_USER_AGENT'] : '';
@@ -341,9 +343,10 @@ if (!$og_title && isset($_GET['categoria'])) {
                     $cat_id = isset($cat['id']) ? trim($cat['id']) : '';
                     $cat_name_slug = isset($cat['name']) ? get_slug($cat['name']) : '';
 
+                    $cat_query_slug = get_slug($categoria_query);
                     if (
-                        ($cat_id !== '' && strcasecmp($cat_id, $categoria_query) === 0) ||
-                        ($cat_name_slug !== '' && strcasecmp($cat_name_slug, $categoria_query) === 0)
+                        ($cat_id !== '' && (strcasecmp($cat_id, $categoria_query) === 0 || strcasecmp($cat_id, $cat_query_slug) === 0 || stripos($cat_id, $categoria_query) !== false)) ||
+                        ($cat_name_slug !== '' && (strcasecmp($cat_name_slug, $categoria_query) === 0 || strcasecmp($cat_name_slug, $cat_query_slug) === 0 || stripos($cat_name_slug, $cat_query_slug) !== false))
                     ) {
                         $found_category = $cat;
                         break;

@@ -4991,17 +4991,322 @@ app.use((req, res, next) => {
   next();
 });
 
-// ── SERVIR ARCHIVOS ESTÁTICOS ─────────────────────────────────
-app.use(express.static(BASE));
+// ── MOTOR SSR DE METADATOS OPEN GRAPH Y SEO (WhatsApp, Facebook, Instagram, Bots) ──
 
-// Fallback para URLs limpias de productos locales (evita 404 al abrir en pestaña nueva)
-// Compatible con Express v5 (no usa wildcards * en rutas, usa middleware manual)
+const ssrJsonCache = new Map();
+function ssrGetJsonCached(filePath) {
+  try {
+    if (!fs.existsSync(filePath)) return null;
+    const stat = fs.statSync(filePath);
+    const cached = ssrJsonCache.get(filePath);
+    if (cached && cached.mtimeMs === stat.mtimeMs) {
+      return cached.data;
+    }
+    const data = JSON.parse(fs.readFileSync(filePath, 'utf8'));
+    ssrJsonCache.set(filePath, { mtimeMs: stat.mtimeMs, data });
+    return data;
+  } catch (e) {
+    console.error(`[SSR] Error leyendo ${filePath}:`, e.message);
+    const cached = ssrJsonCache.get(filePath);
+    return cached ? cached.data : null;
+  }
+}
+
+let ssrCachedIndexHtml = null;
+let ssrCachedIndexMtime = 0;
+
+function getSsrIndexTemplate() {
+  const indexPath = path.join(BASE, 'index.html');
+  try {
+    const stat = fs.statSync(indexPath);
+    if (!ssrCachedIndexHtml || stat.mtimeMs !== ssrCachedIndexMtime) {
+      ssrCachedIndexHtml = fs.readFileSync(indexPath, 'utf8');
+      ssrCachedIndexMtime = stat.mtimeMs;
+    }
+  } catch (err) {
+    if (!ssrCachedIndexHtml) {
+      ssrCachedIndexHtml = '<!DOCTYPE html><html lang="es"><head><title>Pixis Informática</title></head><body></body></html>';
+    }
+  }
+  return ssrCachedIndexHtml;
+}
+
+function ssrSlugify(text) {
+  if (!text) return '';
+  return text.toString().toLowerCase()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9\s-]/g, '')
+    .trim()
+    .replace(/[\s-]+/g, '-');
+}
+
+function ssrCleanDescription(desc) {
+  if (!desc) return '';
+  let clean = desc.replace(/<[^>]*>/g, ' ').replace(/[\r\n]+/g, ' ').replace(/\s+/g, ' ').trim();
+  if (clean.length > 160) {
+    clean = clean.substring(0, 157) + '...';
+  }
+  return clean;
+}
+
+function ssrBuildAbsoluteUrl(domain, relPath) {
+  if (!relPath) return '';
+  let p = relPath.replace(/\\/g, '/').replace(/^\/+/, '').replace(/\/+/g, '/');
+  const segments = p.split('/').map(seg => encodeURIComponent(seg));
+  return domain.replace(/\/+$/, '') + '/' + segments.join('/');
+}
+
+function ssrFormatPrice(p) {
+  let val = 0;
+  if (p.priceLocal && !isNaN(Number(p.priceLocal))) {
+    val = Number(p.priceLocal);
+  } else if (p.cashPrice) {
+    const cleaned = String(p.cashPrice).replace(/[^0-9]/g, '');
+    if (cleaned) val = Number(cleaned);
+  } else if (p.price && !isNaN(Number(p.price))) {
+    val = Number(p.price);
+  }
+  if (val > 0) {
+    return '$' + Math.round(val).toLocaleString('es-AR');
+  }
+  if (p.priceVisible) return String(p.priceVisible).trim();
+  return '';
+}
+
+function ssrEscapeAttr(str) {
+  if (!str) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
+}
+
+function ssrFindProduct(productsList, query) {
+  if (!query || !Array.isArray(productsList)) return null;
+  const q = String(query).trim();
+  const qSlug = ssrSlugify(q);
+  const qNorm = q.toLowerCase().replace(/[-._\s]/g, '');
+  const qSlugNorm = qSlug.replace(/[-._\s]/g, '');
+
+  return productsList.find(p => {
+    if (!p) return false;
+    const pId = String(p.id || '').trim();
+    const pSlug = String(p.slug || '').trim();
+    const pTitleSlug = ssrSlugify(p.title || '');
+
+    const pIdNorm = pId.toLowerCase().replace(/[-._\s]/g, '');
+    const pSlugNorm = pSlug.toLowerCase().replace(/[-._\s]/g, '');
+    const pTitleSlugNorm = pTitleSlug.replace(/[-._\s]/g, '');
+
+    if (pId && (pId.toLowerCase() === q.toLowerCase() || pIdNorm === qNorm)) return true;
+    if (pSlug && (pSlug.toLowerCase() === q.toLowerCase() || pSlugNorm === qNorm)) return true;
+    if (pTitleSlug && (
+      pTitleSlug === q ||
+      pTitleSlug === qSlug ||
+      pTitleSlugNorm === qNorm ||
+      pTitleSlugNorm === qSlugNorm
+    )) return true;
+
+    return false;
+  }) || null;
+}
+
+function ssrRenderHtml(templateHtml, meta) {
+  let html = templateHtml;
+
+  if (meta.title) {
+    html = html.replace(/<title>.*?<\/title>/is, `<title>${ssrEscapeAttr(meta.title)}</title>`);
+  }
+  if (meta.description) {
+    html = html.replace(/<meta\s+[^>]*?name="description"[^>]*?content="[^"]*"[^>]*?>/is, `<meta name="description" content="${ssrEscapeAttr(meta.description)}">`);
+  }
+  if (meta.title) {
+    if (html.includes('id="meta-og-title"')) {
+      html = html.replace(/(<meta\s+[^>]*?id="meta-og-title"\s+[^>]*?content=")([^"]*)(")/is, `$1${ssrEscapeAttr(meta.title)}$3`);
+    } else {
+      html = html.replace(/(<meta\s+[^>]*?property=["']og:title["']\s+[^>]*?content=")([^"]*)(")/is, `$1${ssrEscapeAttr(meta.title)}$3`);
+    }
+    if (html.includes('id="meta-twitter-title"')) {
+      html = html.replace(/(<meta\s+[^>]*?id="meta-twitter-title"\s+[^>]*?content=")([^"]*)(")/is, `$1${ssrEscapeAttr(meta.title)}$3`);
+    }
+  }
+  if (meta.description) {
+    if (html.includes('id="meta-og-desc"')) {
+      html = html.replace(/(<meta\s+[^>]*?id="meta-og-desc"\s+[^>]*?content=")([^"]*)(")/is, `$1${ssrEscapeAttr(meta.description)}$3`);
+    } else {
+      html = html.replace(/(<meta\s+[^>]*?property=["']og:description["']\s+[^>]*?content=")([^"]*)(")/is, `$1${ssrEscapeAttr(meta.description)}$3`);
+    }
+    if (html.includes('id="meta-twitter-desc"')) {
+      html = html.replace(/(<meta\s+[^>]*?id="meta-twitter-desc"\s+[^>]*?content=")([^"]*)(")/is, `$1${ssrEscapeAttr(meta.description)}$3`);
+    }
+  }
+  if (meta.image) {
+    if (html.includes('id="meta-og-image"')) {
+      html = html.replace(/(<meta\s+[^>]*?id="meta-og-image"\s+[^>]*?content=")([^"]*)(")/is, `$1${ssrEscapeAttr(meta.image)}$3`);
+    } else {
+      html = html.replace(/(<meta\s+[^>]*?property=["']og:image["']\s+[^>]*?content=")([^"]*)(")/is, `$1${ssrEscapeAttr(meta.image)}$3`);
+    }
+    if (html.includes('id="meta-twitter-image"')) {
+      html = html.replace(/(<meta\s+[^>]*?id="meta-twitter-image"\s+[^>]*?content=")([^"]*)(")/is, `$1${ssrEscapeAttr(meta.image)}$3`);
+    }
+  }
+  if (meta.canonicalUrl) {
+    if (html.includes('id="meta-og-url"')) {
+      html = html.replace(/(<meta\s+[^>]*?id="meta-og-url"\s+[^>]*?content=")([^"]*)(")/is, `$1${ssrEscapeAttr(meta.canonicalUrl)}$3`);
+    } else {
+      html = html.replace(/(<meta\s+[^>]*?property=["']og:url["']\s+[^>]*?content=")([^"]*)(")/is, `$1${ssrEscapeAttr(meta.canonicalUrl)}$3`);
+    }
+    const canonicalTag = `<link rel="canonical" href="${ssrEscapeAttr(meta.canonicalUrl)}">`;
+    if (html.includes('<link rel="canonical"')) {
+      html = html.replace(/<link\s+rel="canonical"\s+href="[^"]*">/is, canonicalTag);
+    } else {
+      html = html.replace(/(<body[^>]*?>)/is, `${canonicalTag}\n$1`);
+    }
+  }
+  if (meta.jsonLd) {
+    const scriptTag = `\n<script type="application/ld+json">\n${JSON.stringify(meta.jsonLd, null, 2)}\n</script>\n`;
+    html = html.replace(/<\/body>/i, `${scriptTag}</body>`);
+  }
+
+  return html;
+}
+
+// Middleware SSR para servir Páginas con Metadatos Dinámicos
 app.use((req, res, next) => {
-  if (req.method === 'GET' && req.path.includes('--id-') && !req.path.includes('.')) {
+  if (req.method !== 'GET') return next();
+
+  const reqPath = req.path;
+  const isCleanProductUrl = reqPath.includes('--id-') && !reqPath.includes('.');
+  const isSharePhp = reqPath === '/share.php';
+  const isRootWithQuery = (reqPath === '/' || reqPath === '/index.html') && (req.query.producto || req.query.categoria || req.query.banner);
+
+  if (!isCleanProductUrl && !isSharePhp && !isRootWithQuery) {
+    return next();
+  }
+
+  try {
+    const proto = (req.headers['x-forwarded-proto'] || req.protocol || 'https').split(',')[0].trim();
+    const host = (req.headers['x-forwarded-host'] || req.get('host') || 'pixistech.store').split(',')[0].trim();
+    const domain = `${proto}://${host}`;
+
+    const fallbackTitle = "Pixis Informática | Especialistas N°1 en Santiago del Estero en Reparaciones y Servicio Técnico";
+    const fallbackDescription = "Especialistas N°1 en Santiago del Estero en reparaciones y servicio técnico de computadoras y laptops de oficina y gamer. Venta de insumos informáticos, accesorios y hardware de alto rendimiento.";
+    const fallbackImage = `${domain}/img/logo_pixis.png`;
+
+    let targetTitle = fallbackTitle;
+    let targetDescription = fallbackDescription;
+    let targetImage = fallbackImage;
+    let targetCanonical = `${domain}/`;
+    let targetJsonLd = null;
+
+    let productoQuery = null;
+    if (isCleanProductUrl) {
+      const match = reqPath.match(/--id-(.+)$/);
+      if (match) productoQuery = decodeURIComponent(match[1]);
+    } else if (req.query.producto) {
+      productoQuery = String(req.query.producto).trim();
+    }
+
+    if (productoQuery) {
+      const productsList = ssrGetJsonCached(path.join(BASE, 'data', 'products.json')) || [];
+      const prod = ssrFindProduct(productsList, productoQuery);
+
+      if (prod) {
+        const formattedPrice = ssrFormatPrice(prod);
+        targetTitle = formattedPrice ? `${prod.title} — ${formattedPrice} | Pixis Informática` : `${prod.title} | Pixis Informática`;
+        targetDescription = prod.desc ? ssrCleanDescription(prod.desc) : `Comprá ${prod.title} al mejor precio en Pixis Informática. Hardware de alto rendimiento en Santiago del Estero.`;
+        
+        let pImage = '';
+        if (prod.img) {
+          pImage = prod.img.split(',')[0].trim();
+        } else if (prod.gallery) {
+          pImage = prod.gallery.split(',')[0].trim();
+        }
+        targetImage = pImage ? ssrBuildAbsoluteUrl(domain, pImage) : fallbackImage;
+        
+        const slug = prod.slug || ssrSlugify(prod.title) || prod.id;
+        targetCanonical = `${domain}/${encodeURIComponent(slug)}--id-${encodeURIComponent(prod.id)}`;
+
+        const inStock = prod.inStock !== false && prod.stockNum !== 0;
+        targetJsonLd = {
+          "@context": "https://schema.org",
+          "@type": "Product",
+          "name": prod.title,
+          "description": targetDescription,
+          "image": [targetImage],
+          "sku": String(prod.id),
+          "brand": { "@type": "Brand", "name": "Pixis Informática" },
+          "offers": {
+            "@type": "Offer",
+            "url": targetCanonical,
+            "priceCurrency": "ARS",
+            "availability": inStock ? "https://schema.org/InStock" : "https://schema.org/OutOfStock",
+            "price": prod.priceLocal || prod.cashPrice || prod.price || 0
+          }
+        };
+      }
+    } else if (req.query.categoria) {
+      const catQuery = String(req.query.categoria).trim();
+      const qLower = catQuery.toLowerCase();
+      const qSlug = ssrSlugify(catQuery);
+      const categoriesList = ssrGetJsonCached(path.join(BASE, 'data', 'categories.json')) || [];
+      const cat = categoriesList.find(c => {
+        if (!c) return false;
+        const cId = String(c.id || '').toLowerCase();
+        const cSlug = ssrSlugify(c.id || '');
+        const cNameSlug = ssrSlugify(c.name || '');
+        return cId === qLower || cSlug === qSlug || cNameSlug === qSlug || cNameSlug.includes(qSlug) || cId.includes(qLower);
+      });
+      if (cat) {
+        targetTitle = `${cat.name} — Pixis Informática`;
+        targetDescription = `Explorá nuestra categoría de ${cat.name} en Pixis Informática. Encontrá los mejores precios y hardware de alto rendimiento.`;
+        if (cat.customIcon) targetImage = ssrBuildAbsoluteUrl(domain, cat.customIcon);
+        targetCanonical = `${domain}/?categoria=${encodeURIComponent(cat.id || catQuery)}`;
+      }
+    } else if (req.query.banner) {
+      const bannerQuery = String(req.query.banner).trim();
+      const siteData = ssrGetJsonCached(path.join(BASE, 'data', 'site.json')) || {};
+      let bannerTitle = '';
+      let bannerImg = '';
+      if (siteData.banners && siteData.banners[bannerQuery]) {
+        bannerTitle = siteData.banners[bannerQuery].t || '';
+      }
+      const carousels = [...(siteData.carouselTop || []), ...(siteData.carouselBottom || [])];
+      const slide = carousels.find(s => s.bannerId === bannerQuery);
+      if (slide && slide.imgPc) bannerImg = slide.imgPc;
+
+      if (bannerTitle || bannerImg) {
+        targetTitle = bannerTitle ? `🔥 ¡Equipate Ya! ${bannerTitle} en Pixis Informática` : fallbackTitle;
+        targetDescription = `¡No dejes pasar esta oportunidad! Descubrí los mejores productos en Pixis Informática con envíos a todo el país.`;
+        if (bannerImg) targetImage = ssrBuildAbsoluteUrl(domain, bannerImg);
+        targetCanonical = `${domain}/?banner=${encodeURIComponent(bannerQuery)}`;
+      }
+    }
+
+    const template = getSsrIndexTemplate();
+    const renderedHtml = ssrRenderHtml(template, {
+      title: targetTitle,
+      description: targetDescription,
+      image: targetImage,
+      canonicalUrl: targetCanonical,
+      jsonLd: targetJsonLd
+    });
+
+    res.setHeader('Content-Type', 'text/html; charset=utf-8');
+    res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate, max-age=0');
+    res.setHeader('Pragma', 'no-cache');
+    res.setHeader('Expires', 'Thu, 01 Jan 1970 00:00:00 GMT');
+    return res.send(renderedHtml);
+  } catch (err) {
+    console.error('[SSR] Error en middleware SSR de metadatos:', err);
     return res.sendFile(path.join(BASE, 'index.html'));
   }
-  next();
 });
+
+// ── SERVIR ARCHIVOS ESTÁTICOS ─────────────────────────────────
+app.use(express.static(BASE));
 
 // Manejo de errores 404 para archivos no encontrados
 app.use((req, res) => {
