@@ -3772,6 +3772,87 @@ app.delete('/api/admin/favicons/:slot', verifyAdminToken, async (req, res) => {
   }
 });
 
+// ── TÉRMINOS Y POLÍTICAS DE GARANTÍA EDITABLES ──
+const defaultGarantiaConfig = {
+  tituloGeneral: "Póliza de Garantía Oficial — Pixis Informática",
+  subtituloGeneral: "Compromiso de calidad, respaldo técnico y transparencia",
+  plazosCobertura: {
+    titulo: "Plazos de Cobertura",
+    items: [
+      "Hardware y Componentes Nuevos: 6 a 12 meses de garantía oficial según fabricante.",
+      "Periféricos y Accesorios: 3 a 6 meses de garantía legal directa.",
+      "Servicio Técnico y Reparaciones: 3 meses sobre mano de obra y repuestos sustituidos."
+    ]
+  },
+  requisitosRMA: {
+    titulo: "Requisitos Indispensables para RMA",
+    items: [
+      "Presentar comprobante o número de pedido (#XXXX) registrado en tu cuenta.",
+      "Conservar caja original, manuales, cables y accesorios en buen estado.",
+      "Etiquetas de número de serie y sellos de garantía de fábrica totalmente legibles e intactos."
+    ]
+  },
+  exclusiones: {
+    titulo: "Exclusiones de Garantía",
+    items: [
+      "Daños provocados por descargas eléctricas, picos de tensión o fuentes no certificadas.",
+      "Impactos físicos, caídas, humedad, óxido o manipulación por terceros no autorizados.",
+      "Actualizaciones fallidas de BIOS no oficiales o overclocking extremo no garantizado."
+    ]
+  },
+  gestionReclamo: {
+    titulo: "¿Cómo gestionar un reclamo?",
+    descripcion: "Acercate a nuestro laboratorio en Jujuy 412, Edificio San Antonio 2° piso Of. B (Santiago del Estero) o comunicate vía WhatsApp con nuestro equipo técnico indicando tu número de pedido para iniciar el diagnóstico sin demora."
+  },
+  soporteBtn: {
+    texto: "Contactar a Soporte de Garantía",
+    url: "https://wa.me/message/EYUUSVNG5HPNF1"
+  }
+};
+
+// GET /api/shop/garantia-config (Público)
+app.get('/api/shop/garantia-config', async (req, res) => {
+  try {
+    const sitePath = path.join(BASE, 'data', 'site.json');
+    const site = (await readJsonMutex(sitePath)) || {};
+    const config = (site.terminosGarantia && typeof site.terminosGarantia === 'object')
+      ? { ...defaultGarantiaConfig, ...site.terminosGarantia }
+      : defaultGarantiaConfig;
+    res.json({ ok: true, config });
+  } catch (err) {
+    console.error('Error al obtener términos de garantía:', err);
+    res.json({ ok: true, config: defaultGarantiaConfig });
+  }
+});
+
+// POST /api/admin/garantia/config (Protegido por token de administrador)
+app.post('/api/admin/garantia/config', verifyAdminToken, async (req, res) => {
+  try {
+    const config = req.body.config || req.body;
+    if (!config || typeof config !== 'object' || !config.tituloGeneral) {
+      return res.status(400).json({ error: 'Configuración de garantía inválida. Faltan datos requeridos.' });
+    }
+
+    const sitePath = path.join(BASE, 'data', 'site.json');
+    const site = (await readJsonMutex(sitePath)) || {};
+
+    site.terminosGarantia = config;
+
+    await writeJsonMutex(sitePath, site);
+
+    // Actualizar site-version.json para invalidar caché
+    const verPath = path.join(BASE, 'data', 'site-version.json');
+    const verData = { v: String(Date.now()), ts: Date.now() };
+    await writeJsonMutex(verPath, verData);
+
+    console.log('🛡️ [ADMIN] Términos de garantía actualizados y site-version.json sincronizado.');
+    res.json({ ok: true, message: 'Términos de garantía guardados correctamente.' });
+  } catch (e) {
+    console.error('Error al guardar términos de garantía:', e);
+    res.status(500).json({ error: 'Error interno del servidor al guardar garantía.' });
+  }
+});
+
 // POST /api/admin/settings/reservation — Guardar configuración de tiempos y mensajes de reserva
 app.post('/api/admin/settings/reservation', verifyAdminToken, async (req, res) => {
   try {

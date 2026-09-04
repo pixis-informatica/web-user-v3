@@ -194,6 +194,7 @@
         <button class="main-tab-btn" id="mainTab-cupones" onclick="switchMainTab('cupones')" style="display: none; background: rgba(168, 85, 247, 0.15); color: #c084fc; border: 1px solid rgba(168, 85, 247, 0.4);">🎟️ Cupones</button>
         <button type="button" id="btnResetTotalPedidos" class="main-tab-btn btn-reset-total-pedidos" onclick="confirmarResetearTotalPedidos()" style="display: none; background: rgba(245, 158, 11, 0.15); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.35);" title="Resetear a 0 el contador acumulado de Total Pedidos Web">🔄 Resetear Total Pedidos</button>
         <button type="button" id="btnFaviconModal" class="main-tab-btn" onclick="abrirModalFaviconManager()" style="display: none; background: rgba(56, 189, 248, 0.15); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.35);" title="Personalizar íconos y logos de las pestañas del navegador (Favicons)">🖼️ Logos de Pestaña</button>
+        <button type="button" id="btnGarantiaModal" class="main-tab-btn" onclick="abrirModalGarantiaManager()" style="display: none; background: rgba(0, 255, 213, 0.15); color: #00ffd5; border: 1px solid rgba(0, 255, 213, 0.35);" title="Personalizar y editar las tarjetas y términos de garantía para los clientes">🛡️ Términos de Garantía</button>
       </div>
     </div>
 
@@ -880,6 +881,96 @@
           <button type="button" id="btnGuardarFaviconConfig" onclick="guardarFaviconConfigAdmin()" style="padding: 10px 20px; background: linear-gradient(135deg, #38bdf8, #a855f7); color: #000; font-weight: 800; border: none; border-radius: 8px; cursor: pointer; font-size: 0.85rem; font-family: 'Orbitron';">💾 Guardar Asignaciones</button>
         </div>
       </div>
+    </div>
+  </div>
+
+  <!-- ── MODAL ADMINISTRADOR DE TÉRMINOS DE GARANTÍA ── -->
+  <div id="modalGarantiaManager" class="modal-container" style="display: none; z-index: 999999;">
+    <div class="modal-overlay" onclick="cerrarModalGarantiaManager()"></div>
+    <div class="modal-content" style="max-width: 840px; width: 92%; max-height: 90vh; overflow-y: auto; background: #0d0218; border: 1.5px solid #00ffd5; box-shadow: 0 0 35px rgba(0, 255, 213, 0.25); border-radius: 14px; padding: 24px; color: #fff;">
+      <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 14px; margin-bottom: 18px;">
+        <h3 style="margin: 0; color: #00ffd5; font-family: 'Orbitron', sans-serif; font-size: 1.2rem; display: flex; align-items: center; gap: 8px;">
+          🛡️ Editor de Términos y Políticas de Garantía
+        </h3>
+        <button type="button" onclick="cerrarModalGarantiaManager()" style="background: none; border: none; color: #aaa; font-size: 1.5rem; cursor: pointer;">&times;</button>
+      </div>
+
+      <p style="font-size: 0.85rem; color: #cbd5e1; margin-bottom: 18px; line-height: 1.5;">
+        Personalizá el contenido que visualizan los clientes en la pestaña <strong>"Términos de Garantía"</strong> de su cuenta. Podés modificar plazos, requisitos RMA, exclusiones, instrucciones del reclamo y el enlace de contacto directo a WhatsApp.
+      </p>
+
+      <form id="formGarantiaManager" onsubmit="guardarGarantiaConfigAdmin(event)">
+        <!-- Encabezado General -->
+        <div style="background: rgba(255,255,255,0.03); border: 1px solid rgba(0,255,213,0.25); border-radius: 10px; padding: 14px; margin-bottom: 14px;">
+          <label style="display: block; font-size: 0.82rem; color: #00ffd5; font-weight: 700; margin-bottom: 4px;">Título General de la Póliza:</label>
+          <input type="text" id="garantiaInputTituloGeneral" class="panel-input" style="width: 100%; padding: 8px 12px; border-radius: 6px; background: #170929; border: 1px solid #333; color: #fff; margin-bottom: 10px; box-sizing: border-box; font-size: 13px;">
+          <label style="display: block; font-size: 0.82rem; color: #94a3b8; font-weight: 600; margin-bottom: 4px;">Subtítulo de la Póliza:</label>
+          <input type="text" id="garantiaInputSubtituloGeneral" class="panel-input" style="width: 100%; padding: 8px 12px; border-radius: 6px; background: #170929; border: 1px solid #333; color: #fff; box-sizing: border-box; font-size: 13px;">
+        </div>
+
+        <!-- Tarjetas 1 y 2 en Grid -->
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px;">
+          <!-- Tarjeta 1: Plazos de Cobertura -->
+          <div style="background: rgba(255,255,255,0.03); border: 1px solid rgba(168,85,247,0.3); border-radius: 10px; padding: 14px;">
+            <label style="display: block; font-size: 0.85rem; color: #c084fc; font-weight: 700; margin-bottom: 6px;"><i class="fas fa-microchip"></i> Plazos de Cobertura:</label>
+            <input type="text" id="garantiaInputTituloPlazos" placeholder="Título de la tarjeta" style="width: 100%; padding: 7px 10px; border-radius: 6px; background: #170929; border: 1px solid #333; color: #fff; font-size: 12px; margin-bottom: 6px; box-sizing: border-box;">
+            <span style="font-size: 11px; color: #94a3b8;">Ítems de cobertura (uno por línea):</span>
+            <textarea id="garantiaTextareaPlazos" rows="4" style="width: 100%; padding: 8px; border-radius: 6px; background: #170929; border: 1px solid #333; color: #fff; font-size: 12px; resize: vertical; margin-top: 4px; box-sizing: border-box;"></textarea>
+          </div>
+
+          <!-- Tarjeta 2: Requisitos Indispensables para RMA -->
+          <div style="background: rgba(255,255,255,0.03); border: 1px solid rgba(56,189,248,0.3); border-radius: 10px; padding: 14px;">
+            <label style="display: block; font-size: 0.85rem; color: #38bdf8; font-weight: 700; margin-bottom: 6px;"><i class="fas fa-clipboard-check"></i> Requisitos RMA:</label>
+            <input type="text" id="garantiaInputTituloRMA" placeholder="Título de la tarjeta" style="width: 100%; padding: 7px 10px; border-radius: 6px; background: #170929; border: 1px solid #333; color: #fff; font-size: 12px; margin-bottom: 6px; box-sizing: border-box;">
+            <span style="font-size: 11px; color: #94a3b8;">Requisitos obligatorios (uno por línea):</span>
+            <textarea id="garantiaTextareaRMA" rows="4" style="width: 100%; padding: 8px; border-radius: 6px; background: #170929; border: 1px solid #333; color: #fff; font-size: 12px; resize: vertical; margin-top: 4px; box-sizing: border-box;"></textarea>
+          </div>
+        </div>
+
+        <!-- Tarjetas 3 y 4 en Grid -->
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px;">
+          <!-- Tarjeta 3: Exclusiones de Garantía -->
+          <div style="background: rgba(255,255,255,0.03); border: 1px solid rgba(248,113,113,0.3); border-radius: 10px; padding: 14px;">
+            <label style="display: block; font-size: 0.85rem; color: #f87171; font-weight: 700; margin-bottom: 6px;"><i class="fas fa-exclamation-triangle"></i> Exclusiones de Garantía:</label>
+            <input type="text" id="garantiaInputTituloExclusiones" placeholder="Título de la tarjeta" style="width: 100%; padding: 7px 10px; border-radius: 6px; background: #170929; border: 1px solid #333; color: #fff; font-size: 12px; margin-bottom: 6px; box-sizing: border-box;">
+            <span style="font-size: 11px; color: #94a3b8;">Motivos de exclusión (uno por línea):</span>
+            <textarea id="garantiaTextareaExclusiones" rows="4" style="width: 100%; padding: 8px; border-radius: 6px; background: #170929; border: 1px solid #333; color: #fff; font-size: 12px; resize: vertical; margin-top: 4px; box-sizing: border-box;"></textarea>
+          </div>
+
+          <!-- Tarjeta 4: ¿Cómo gestionar un reclamo? -->
+          <div style="background: rgba(255,255,255,0.03); border: 1px solid rgba(251,191,36,0.3); border-radius: 10px; padding: 14px;">
+            <label style="display: block; font-size: 0.85rem; color: #fbbf24; font-weight: 700; margin-bottom: 6px;"><i class="fas fa-headset"></i> ¿Cómo gestionar un reclamo?:</label>
+            <input type="text" id="garantiaInputTituloGestion" placeholder="Título de la tarjeta" style="width: 100%; padding: 7px 10px; border-radius: 6px; background: #170929; border: 1px solid #333; color: #fff; font-size: 12px; margin-bottom: 6px; box-sizing: border-box;">
+            <span style="font-size: 11px; color: #94a3b8;">Instrucciones para el cliente:</span>
+            <textarea id="garantiaTextareaGestion" rows="4" style="width: 100%; padding: 8px; border-radius: 6px; background: #170929; border: 1px solid #333; color: #fff; font-size: 12px; resize: vertical; margin-top: 4px; box-sizing: border-box;"></textarea>
+          </div>
+        </div>
+
+        <!-- Botón de Contacto / WhatsApp de Soporte -->
+        <div style="background: rgba(0,255,213,0.05); border: 1px solid rgba(0,255,213,0.35); border-radius: 10px; padding: 14px; margin-bottom: 18px;">
+          <label style="display: block; font-size: 0.85rem; color: #00ffd5; font-weight: 700; margin-bottom: 6px;"><i class="fab fa-whatsapp"></i> Botón de Contacto a Soporte de Garantía:</label>
+          <div style="display: grid; grid-template-columns: 1fr 1.5fr; gap: 10px;">
+            <div>
+              <span style="font-size: 11px; color: #94a3b8;">Texto del botón:</span>
+              <input type="text" id="garantiaInputBtnTexto" placeholder="Contactar a Soporte de Garantía" style="width: 100%; padding: 8px 10px; border-radius: 6px; background: #170929; border: 1px solid #333; color: #fff; font-size: 12px; margin-top: 4px; box-sizing: border-box;">
+            </div>
+            <div>
+              <span style="font-size: 11px; color: #94a3b8;">Enlace de WhatsApp:</span>
+              <input type="url" id="garantiaInputBtnUrl" placeholder="https://wa.me/message/EYUUSVNG5HPNF1" style="width: 100%; padding: 8px 10px; border-radius: 6px; background: #170929; border: 1px solid #333; color: #fff; font-size: 12px; margin-top: 4px; box-sizing: border-box;">
+            </div>
+          </div>
+        </div>
+
+        <!-- Mensaje de Feedback -->
+        <div id="msgGarantiaSave" style="display: none; padding: 10px; border-radius: 6px; font-size: 12px; margin-bottom: 14px; text-align: center;"></div>
+
+        <!-- Botones de Acción -->
+        <div style="display: flex; gap: 10px; justify-content: flex-end; align-items: center;">
+          <button type="button" onclick="restaurarGarantiaDefecto()" style="padding: 10px 16px; border-radius: 6px; background: rgba(245,158,11,0.15); border: 1px solid #f59e0b; color: #fbbf24; font-size: 12px; font-weight: 700; cursor: pointer;">🔄 Restaurar Defecto</button>
+          <button type="button" onclick="cerrarModalGarantiaManager()" style="padding: 10px 16px; border-radius: 6px; background: rgba(255,255,255,0.08); border: 1px solid #555; color: #ddd; font-size: 12px; cursor: pointer;">Cancelar</button>
+          <button type="submit" id="btnSubmitGarantia" style="padding: 10px 22px; border-radius: 6px; background: #00ffd5; border: none; color: #0d0218; font-size: 12px; font-weight: 800; cursor: pointer; display: flex; align-items: center; gap: 6px;">💾 Guardar Cambios</button>
+        </div>
+      </form>
     </div>
   </div>
 

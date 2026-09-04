@@ -135,7 +135,7 @@
       "t": "nuevos ingresos pronto"
     }
   },
-  "cacheVersion": 1788475863011,
+  "cacheVersion": 1788535005206,
   "lateralBanners": {
     "enabled": true,
     "count": 1,
@@ -183,22 +183,78 @@
     "destacados": {
       "img": "img/uploads/showcase_destacados_pc_1788475752341_banner_destacados.png",
       "imgMobile": "",
-      "title": "Destacados"
+      "tag": "TOP VENTAS",
+      "emoji": "🔥",
+      "title": "Destacados",
+      "desc": "Los productos más elegidos y recomendados de nuestra tienda.",
+      "btnText": "Ver todos",
+      "headerTitle": "🔥 DESTACADOS 🔥"
     },
     "nuevos": {
-      "img": "img/uploads/showcase_nuevos_pc_1788475776734_banner_destacados.png",
-      "imgMobile": "",
-      "title": "Nuevos Ingresos"
+      "img": "img/uploads/showcase_nuevos_pc_1788534994463_banner_nuevos.jpg",
+      "imgMobile": "img/uploads/showcase_nuevos_mobile_1788535000879_banner_nuevos_movil.jpg",
+      "tag": "RECIÉN LLEGADO",
+      "emoji": "🚚",
+      "title": "Nuevos Ingresos",
+      "desc": "Descubrí lo último que entró a Pixis Informática.",
+      "btnText": "Ver todas",
+      "headerTitle": "🔥 NUEVOS INGRESOS 🔥"
     },
     "reels": {
       "img": "img/uploads/showcase_reels_pc_1788475801403_45545555.png",
       "imgMobile": "",
-      "title": "Pixis Reels"
+      "tag": "⚡ SHORTS & REELS",
+      "emoji": "▶️",
+      "title": "Pixis Reels",
+      "desc": "Reviews rápidas de 60s, pruebas de rendimiento y unboxings en vivo.",
+      "btnText": "Ver en Shorts",
+      "headerTitle": "⚡ PIXIS REELS ⚡"
     },
     "aprende": {
       "img": "img/uploads/showcase_aprende_pc_1788475811750_96655.png",
       "imgMobile": "",
-      "title": "Aprende con Nosotros"
+      "tag": "🎓 PIXIS ACADEMY",
+      "emoji": "🔧",
+      "title": "Aprende con Nosotros",
+      "desc": "Guías paso a paso de armado, mantenimiento preventivo y optimización de hardware.",
+      "btnText": "Suscribirse al Canal",
+      "headerTitle": "🎓 APRENDE CON NOSOTROS 🎓"
+    }
+  },
+  "terminosGarantia": {
+    "tituloGeneral": "Póliza de Garantía Oficial — Pixis Informática",
+    "subtituloGeneral": "Compromiso de calidad, respaldo técnico y transparencia",
+    "plazosCobertura": {
+      "titulo": "Plazos de Cobertura",
+      "items": [
+        "Hardware y Componentes Nuevos: 6 a 12 meses de garantía oficial según fabricante.",
+        "Periféricos y Accesorios: 3 a 6 meses de garantía legal directa.",
+        "Servicio Técnico y Reparaciones: 3 meses sobre mano de obra y repuestos sustituidos."
+      ]
+    },
+    "requisitosRMA": {
+      "titulo": "Requisitos Indispensables para RMA",
+      "items": [
+        "Presentar comprobante o número de pedido (#X-X-) registrado en tu cuenta.",
+        "Conservar caja original, manuales, cables y accesorios en buen estado.",
+        "Etiquetas de número de serie y sellos de garantía de fábrica totalmente legibles e intactos."
+      ]
+    },
+    "exclusiones": {
+      "titulo": "Exclusiones de Garantía",
+      "items": [
+        "Daños provocados por descargas eléctricas, picos de tensión o fuentes no certificadas.",
+        "Impactos físicos, caídas, humedad, óxido o manipulación por terceros no autorizados.",
+        "Actualizaciones fallidas de BIOS no oficiales o overclocking extremo no garantizado."
+      ]
+    },
+    "gestionReclamo": {
+      "titulo": "¿Cómo gestionar un reclamo?",
+      "descripcion": "Acercate a nuestro laboratorio en Jujuy 412, Edificio San Antonio 2° piso Of. B (Santiago del Estero) o comunicate vía WhatsApp con nuestro equipo técnico indicando tu número de pedido para iniciar el diagnóstico sin demora."
+    },
+    "soporteBtn": {
+      "texto": "Contactar a Soporte de Garantía",
+      "url": "https://wa.me/message/EYUUSVNG5HPNF1"
     }
   }
 }

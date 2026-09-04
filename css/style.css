@@ -770,7 +770,6 @@ html {
   height: 100% !important;
   object-fit: cover !important;
   object-position: center !important;
-  display: block !important;
   border-radius: inherit !important;
   transition: transform 0.4s ease !important;
 }
@@ -816,16 +815,20 @@ html {
   justify-content: space-between !important;
 }
 
-/* Soporte de variantes PC y Celular */
-.showcase-media-mobile {
+/* Soporte estricto de variantes PC y Celular (Aislamiento Total anti-superposición) */
+.showcase-banner-media-bg .showcase-media-pc {
+  display: block !important;
+}
+
+.showcase-banner-media-bg .showcase-media-mobile {
   display: none !important;
 }
 
 @media (max-width: 900px) {
-  .showcase-media-pc.has-mobile-alt {
+  .showcase-banner-media-bg .showcase-media-pc.has-mobile-alt {
     display: none !important;
   }
-  .showcase-media-mobile {
+  .showcase-banner-media-bg .showcase-media-mobile {
     display: block !important;
   }
 }
@@ -1309,9 +1312,7 @@ html {
     align-items: center;
   }
   .showcase-banner-card.has-custom-bg {
-    background-image: linear-gradient(to bottom, rgba(14, 0, 22, 0.45) 0%, rgba(14, 0, 22, 0.85) 100%), var(--banner-bg-mobile, var(--banner-bg-pc)) !important;
-    background-size: cover !important;
-    background-position: center !important;
+    background: #0e0016 !important;
   }
   .showcase-banner-content {
     flex-direction: row;
@@ -1368,9 +1369,7 @@ html {
     height: 160px !important;
     max-height: 160px !important;
     border-radius: 12px !important;
-    background-image: linear-gradient(to bottom, rgba(14, 0, 22, 0.45) 0%, rgba(14, 0, 22, 0.85) 100%), var(--banner-bg-mobile, var(--banner-bg-pc)) !important;
-    background-size: cover !important;
-    background-position: center !important;
+    background: #0e0016 !important;
   }
   .showcase-custom-banner-img {
     height: 160px;
@@ -10576,17 +10575,99 @@ body.light-mode .btn-view-toggle.active {
   box-shadow: 0 8px 30px rgba(168, 85, 247, 0.7);
 }
 
-/* Modal Mis Pedidos: overrides de tamaño (expansión a 900px de ancho) */
+/* Modal Mis Pedidos: base por defecto */
 #modalMisPedidos.modal-client-auth .modal-content {
-  max-width: 900px !important;
-  width: 92% !important;
-  padding: 30px 36px !important;
-  background: rgba(13, 9, 26, 0.97) !important;
-  backdrop-filter: blur(24px) !important;
-  border: 1px solid rgba(168, 85, 247, 0.45) !important;
-  box-shadow: 0 0 45px rgba(168, 85, 247, 0.35), 0 25px 60px rgba(0, 0, 0, 0.85) !important;
-  border-radius: 20px !important;
-  color: #f3f4f6 !important;
+  max-width: 900px;
+  width: 92%;
+  padding: 24px 28px;
+  background: rgba(13, 9, 26, 0.97);
+  backdrop-filter: blur(24px);
+  border: 1px solid rgba(168, 85, 247, 0.45);
+  box-shadow: 0 0 45px rgba(168, 85, 247, 0.35), 0 25px 60px rgba(0, 0, 0, 0.85);
+  border-radius: 20px;
+  color: #f3f4f6;
+}
+
+/* Modal Mis Pedidos: overrides de tamaño y apariencia corporativa exclusiva en PC */
+@media (min-width: 769px) {
+  #modalMisPedidos.modal-client-auth .modal-content {
+    max-width: 1140px !important;
+    width: 94% !important;
+    max-height: 88vh !important;
+    padding: 34px 44px !important;
+    background: rgba(13, 9, 26, 0.98) !important;
+    backdrop-filter: blur(28px) !important;
+    border: 1px solid rgba(168, 85, 247, 0.45) !important;
+    box-shadow: 0 0 50px rgba(168, 85, 247, 0.3), 0 30px 80px rgba(0, 0, 0, 0.9) !important;
+    border-radius: 22px !important;
+    display: flex !important;
+    flex-direction: column !important;
+  }
+
+  /* Barra de pestañas en PC: Espaciosa, alineada y sin scrollbar forzado */
+  .mis-pedidos-tabs-nav {
+    display: flex !important;
+    align-items: center !important;
+    gap: 10px !important;
+    margin-bottom: 22px !important;
+    overflow-x: auto !important;
+    scrollbar-width: none !important;
+    -ms-overflow-style: none !important;
+    padding: 4px 2px 8px 2px !important;
+  }
+
+  .mis-pedidos-tabs-nav::-webkit-scrollbar {
+    display: none !important;
+  }
+
+  .mis-pedidos-tab {
+    padding: 9px 18px !important;
+    font-size: 13px !important;
+    letter-spacing: 0.3px !important;
+    border-radius: 10px !important;
+    white-space: nowrap !important;
+  }
+
+  /* Grid de Garantía en PC: 2x2 equilibrado y amplio */
+  .garantia-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 18px !important;
+  }
+
+  .garantia-card {
+    padding: 22px !important;
+  }
+
+  /* Botones superiores de acción en PC */
+  #btnEditarPerfilCliente {
+    padding: 7px 16px !important;
+    font-size: 12.5px !important;
+    border-radius: 8px !important;
+    background: rgba(168, 85, 247, 0.08) !important;
+    border: 1px solid rgba(168, 85, 247, 0.4) !important;
+    transition: all 0.2s ease !important;
+  }
+  #btnEditarPerfilCliente:hover {
+    background: rgba(168, 85, 247, 0.2) !important;
+    border-color: #a855f7 !important;
+    color: #fff !important;
+    transform: translateY(-1px) !important;
+  }
+
+  #btnCerrarSesionCliente {
+    padding: 7px 16px !important;
+    font-size: 12.5px !important;
+    border-radius: 8px !important;
+    background: rgba(248, 113, 113, 0.08) !important;
+    border: 1px solid rgba(248, 113, 113, 0.4) !important;
+    transition: all 0.2s ease !important;
+  }
+  #btnCerrarSesionCliente:hover {
+    background: rgba(248, 113, 113, 0.2) !important;
+    border-color: #ef4444 !important;
+    color: #fff !important;
+    transform: translateY(-1px) !important;
+  }
 }
 
 /* Formulario "Editar Mis Datos" — Grilla de 2 columnas y alto contraste */

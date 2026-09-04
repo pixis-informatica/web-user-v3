@@ -1533,8 +1533,13 @@ window.PixisState = {
     const card = document.getElementById(cardId);
     if (!card) return;
 
-    const pcMedia = (bannerData?.img || bannerData?.imgPc || '').trim();
-    const mobileMedia = (bannerData?.imgMobile || '').trim() || pcMedia;
+    let pcMedia = (bannerData?.img || bannerData?.imgPc || '').trim();
+    let mobileMedia = (bannerData?.imgMobile || '').trim();
+    if (!pcMedia && mobileMedia) {
+      pcMedia = mobileMedia;
+    } else if (!mobileMedia && pcMedia) {
+      mobileMedia = pcMedia;
+    }
     const title = (bannerData?.title || '').trim();
 
     const isVideo = (url) => {

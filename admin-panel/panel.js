@@ -665,6 +665,14 @@ function switchMainTab(tab) {
       btnFavicon.style.display = 'none';
     }
   }
+  const btnGarantia = document.getElementById('btnGarantiaModal');
+  if (btnGarantia) {
+    if (tab === 'ajustes' && ajustesUnlocked) {
+      btnGarantia.style.display = 'inline-flex';
+    } else {
+      btnGarantia.style.display = 'none';
+    }
+  }
 
   // Ocultar todo por defecto
   seccionPedidos.style.display  = 'none';
@@ -2139,3 +2147,224 @@ function aplicarFaviconEnNavegador(url) {
 
 // Inicializar favicon de admin al cargar panel
 cargarFaviconConfigAdmin();
+
+// ── GESTOR DE TÉRMINOS Y POLÍTICAS DE GARANTÍA ──
+const defaultGarantiaConfigClient = {
+  tituloGeneral: "Póliza de Garantía Oficial — Pixis Informática",
+  subtituloGeneral: "Compromiso de calidad, respaldo técnico y transparencia",
+  plazosCobertura: {
+    titulo: "Plazos de Cobertura",
+    items: [
+      "Hardware y Componentes Nuevos: 6 a 12 meses de garantía oficial según fabricante.",
+      "Periféricos y Accesorios: 3 a 6 meses de garantía legal directa.",
+      "Servicio Técnico y Reparaciones: 3 meses sobre mano de obra y repuestos sustituidos."
+    ]
+  },
+  requisitosRMA: {
+    titulo: "Requisitos Indispensables para RMA",
+    items: [
+      "Presentar comprobante o número de pedido (#XXXX) registrado en tu cuenta.",
+      "Conservar caja original, manuales, cables y accesorios en buen estado.",
+      "Etiquetas de número de serie y sellos de garantía de fábrica totalmente legibles e intactos."
+    ]
+  },
+  exclusiones: {
+    titulo: "Exclusiones de Garantía",
+    items: [
+      "Daños provocados por descargas eléctricas, picos de tensión o fuentes no certificadas.",
+      "Impactos físicos, caídas, humedad, óxido o manipulación por terceros no autorizados.",
+      "Actualizaciones fallidas de BIOS no oficiales o overclocking extremo no garantizado."
+    ]
+  },
+  gestionReclamo: {
+    titulo: "¿Cómo gestionar un reclamo?",
+    descripcion: "Acercate a nuestro laboratorio en Jujuy 412, Edificio San Antonio 2° piso Of. B (Santiago del Estero) o comunicate vía WhatsApp con nuestro equipo técnico indicando tu número de pedido para iniciar el diagnóstico sin demora."
+  },
+  soporteBtn: {
+    texto: "Contactar a Soporte de Garantía",
+    url: "https://wa.me/message/EYUUSVNG5HPNF1"
+  }
+};
+
+window.abrirModalGarantiaManager = async function() {
+  const modal = document.getElementById('modalGarantiaManager');
+  if (modal) {
+    modal.style.display = 'flex';
+    const msg = document.getElementById('msgGarantiaSave');
+    if (msg) msg.style.display = 'none';
+    await cargarGarantiaConfigAdmin();
+  }
+};
+
+window.cerrarModalGarantiaManager = function() {
+  const modal = document.getElementById('modalGarantiaManager');
+  if (modal) modal.style.display = 'none';
+  const msg = document.getElementById('msgGarantiaSave');
+  if (msg) msg.style.display = 'none';
+};
+
+function popularFormularioGarantia(cfg) {
+  const c = cfg || defaultGarantiaConfigClient;
+  
+  const inTituloGen = document.getElementById('garantiaInputTituloGeneral');
+  const inSubGen = document.getElementById('garantiaInputSubtituloGeneral');
+  
+  const inTitPlazos = document.getElementById('garantiaInputTituloPlazos');
+  const txtPlazos = document.getElementById('garantiaTextareaPlazos');
+  
+  const inTitRMA = document.getElementById('garantiaInputTituloRMA');
+  const txtRMA = document.getElementById('garantiaTextareaRMA');
+  
+  const inTitExcl = document.getElementById('garantiaInputTituloExclusiones');
+  const txtExcl = document.getElementById('garantiaTextareaExclusiones');
+  
+  const inTitGest = document.getElementById('garantiaInputTituloGestion');
+  const txtGest = document.getElementById('garantiaTextareaGestion');
+  
+  const inBtnTxt = document.getElementById('garantiaInputBtnTexto');
+  const inBtnUrl = document.getElementById('garantiaInputBtnUrl');
+
+  if (inTituloGen) inTituloGen.value = c.tituloGeneral || '';
+  if (inSubGen) inSubGen.value = c.subtituloGeneral || '';
+
+  if (inTitPlazos) inTitPlazos.value = c.plazosCobertura?.titulo || 'Plazos de Cobertura';
+  if (txtPlazos) txtPlazos.value = (c.plazosCobertura?.items || []).join('\n');
+
+  if (inTitRMA) inTitRMA.value = c.requisitosRMA?.titulo || 'Requisitos Indispensables para RMA';
+  if (txtRMA) txtRMA.value = (c.requisitosRMA?.items || []).join('\n');
+
+  if (inTitExcl) inTitExcl.value = c.exclusiones?.titulo || 'Exclusiones de Garantía';
+  if (txtExcl) txtExcl.value = (c.exclusiones?.items || []).join('\n');
+
+  if (inTitGest) inTitGest.value = c.gestionReclamo?.titulo || '¿Cómo gestionar un reclamo?';
+  if (txtGest) txtGest.value = c.gestionReclamo?.descripcion || '';
+
+  if (inBtnTxt) inBtnTxt.value = c.soporteBtn?.texto || 'Contactar a Soporte de Garantía';
+  if (inBtnUrl) inBtnUrl.value = c.soporteBtn?.url || 'https://wa.me/message/EYUUSVNG5HPNF1';
+}
+
+window.cargarGarantiaConfigAdmin = async function() {
+  try {
+    const res = await fetch('/api/shop/garantia-config');
+    const data = await res.json();
+    if (data && data.ok && data.config) {
+      popularFormularioGarantia(data.config);
+    } else {
+      popularFormularioGarantia(defaultGarantiaConfigClient);
+    }
+  } catch (err) {
+    console.error('Error al cargar config de garantía:', err);
+    popularFormularioGarantia(defaultGarantiaConfigClient);
+  }
+};
+
+window.restaurarGarantiaDefecto = function() {
+  if (!confirm('¿Restablecer los textos y campos a los valores predeterminados originales de Pixis Informática?')) return;
+  popularFormularioGarantia(defaultGarantiaConfigClient);
+  const msg = document.getElementById('msgGarantiaSave');
+  if (msg) {
+    msg.style.display = 'block';
+    msg.style.background = 'rgba(251,191,36,0.15)';
+    msg.style.border = '1px solid #fbbf24';
+    msg.style.color = '#fbbf24';
+    msg.textContent = 'ℹ️ Valores predeterminados cargados en el formulario. Hacé clic en "Guardar Cambios" para confirmar.';
+  }
+};
+
+window.guardarGarantiaConfigAdmin = async function(event) {
+  if (event && event.preventDefault) event.preventDefault();
+
+  const btn = document.getElementById('btnSubmitGarantia');
+  const msg = document.getElementById('msgGarantiaSave');
+
+  const payload = {
+    tituloGeneral: (document.getElementById('garantiaInputTituloGeneral')?.value || '').trim(),
+    subtituloGeneral: (document.getElementById('garantiaInputSubtituloGeneral')?.value || '').trim(),
+    plazosCobertura: {
+      titulo: (document.getElementById('garantiaInputTituloPlazos')?.value || '').trim() || 'Plazos de Cobertura',
+      items: (document.getElementById('garantiaTextareaPlazos')?.value || '')
+        .split('\n')
+        .map(l => l.trim())
+        .filter(Boolean)
+    },
+    requisitosRMA: {
+      titulo: (document.getElementById('garantiaInputTituloRMA')?.value || '').trim() || 'Requisitos Indispensables para RMA',
+      items: (document.getElementById('garantiaTextareaRMA')?.value || '')
+        .split('\n')
+        .map(l => l.trim())
+        .filter(Boolean)
+    },
+    exclusiones: {
+      titulo: (document.getElementById('garantiaInputTituloExclusiones')?.value || '').trim() || 'Exclusiones de Garantía',
+      items: (document.getElementById('garantiaTextareaExclusiones')?.value || '')
+        .split('\n')
+        .map(l => l.trim())
+        .filter(Boolean)
+    },
+    gestionReclamo: {
+      titulo: (document.getElementById('garantiaInputTituloGestion')?.value || '').trim() || '¿Cómo gestionar un reclamo?',
+      descripcion: (document.getElementById('garantiaTextareaGestion')?.value || '').trim()
+    },
+    soporteBtn: {
+      texto: (document.getElementById('garantiaInputBtnTexto')?.value || '').trim() || 'Contactar a Soporte de Garantía',
+      url: (document.getElementById('garantiaInputBtnUrl')?.value || '').trim() || 'https://wa.me/message/EYUUSVNG5HPNF1'
+    }
+  };
+
+  if (btn) {
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Guardando...';
+  }
+
+  try {
+    const res = await fetch('/api/admin/garantia/config', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ config: payload })
+    });
+    const data = await res.json();
+
+    if (btn) {
+      btn.disabled = false;
+      btn.innerHTML = '💾 Guardar Cambios';
+    }
+
+    if (!res.ok) {
+      if (msg) {
+        msg.style.display = 'block';
+        msg.style.background = 'rgba(239,68,68,0.15)';
+        msg.style.border = '1px solid #ef4444';
+        msg.style.color = '#f87171';
+        msg.textContent = '❌ ' + (data.error || 'Error al guardar la configuración.');
+      }
+      return;
+    }
+
+    if (msg) {
+      msg.style.display = 'block';
+      msg.style.background = 'rgba(34,197,94,0.15)';
+      msg.style.border = '1px solid #22c55e';
+      msg.style.color = '#4ade80';
+      msg.textContent = '✅ ' + (data.message || 'Términos de garantía actualizados con éxito.');
+    }
+
+    setTimeout(() => {
+      cerrarModalGarantiaManager();
+    }, 1500);
+
+  } catch (err) {
+    console.error('Error al guardar términos de garantía:', err);
+    if (btn) {
+      btn.disabled = false;
+      btn.innerHTML = '💾 Guardar Cambios';
+    }
+    if (msg) {
+      msg.style.display = 'block';
+      msg.style.background = 'rgba(239,68,68,0.15)';
+      msg.style.border = '1px solid #ef4444';
+      msg.style.color = '#f87171';
+      msg.textContent = '❌ Error de conexión al guardar los datos.';
+    }
+  }
+};
+

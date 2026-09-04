@@ -7570,12 +7570,115 @@ onPixisDOMReady(() => {
     return 'reservas';
   }
 
+  // ── Configuración y Ayudantes de Términos de Garantía ──
+  const _defaultGarantiaConfig = {
+    tituloGeneral: "Póliza de Garantía Oficial — Pixis Informática",
+    subtituloGeneral: "Compromiso de calidad, respaldo técnico y transparencia",
+    plazosCobertura: {
+      titulo: "Plazos de Cobertura",
+      items: [
+        "Hardware y Componentes Nuevos: 6 a 12 meses de garantía oficial según fabricante.",
+        "Periféricos y Accesorios: 3 a 6 meses de garantía legal directa.",
+        "Servicio Técnico y Reparaciones: 3 meses sobre mano de obra y repuestos sustituidos."
+      ]
+    },
+    requisitosRMA: {
+      titulo: "Requisitos Indispensables para RMA",
+      items: [
+        "Presentar comprobante o número de pedido (#XXXX) registrado en tu cuenta.",
+        "Conservar caja original, manuales, cables y accesorios en buen estado.",
+        "Etiquetas de número de serie y sellos de garantía de fábrica totalmente legibles e intactos."
+      ]
+    },
+    exclusiones: {
+      titulo: "Exclusiones de Garantía",
+      items: [
+        "Daños provocados por descargas eléctricas, picos de tensión o fuentes no certificadas.",
+        "Impactos físicos, caídas, humedad, óxido o manipulación por terceros no autorizados.",
+        "Actualizaciones fallidas de BIOS no oficiales o overclocking extremo no garantizado."
+      ]
+    },
+    gestionReclamo: {
+      titulo: "¿Cómo gestionar un reclamo?",
+      descripcion: "Acercate a nuestro laboratorio en Jujuy 412, Edificio San Antonio 2° piso Of. B (Santiago del Estero) o comunicate vía WhatsApp con nuestro equipo técnico indicando tu número de pedido para iniciar el diagnóstico sin demora."
+    },
+    soporteBtn: {
+      texto: "Contactar a Soporte de Garantía",
+      url: "https://wa.me/message/EYUUSVNG5HPNF1"
+    }
+  };
+
+  function _escapeGarantiaHtml(str) {
+    if (str === null || str === undefined) return '';
+    return String(str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#039;');
+  }
+
+  function _renderContenidoSeguroGarantia(raw) {
+    if (!raw) return '';
+    let str = String(raw).trim();
+    let safe = _escapeGarantiaHtml(str);
+    safe = safe.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+    safe = safe.replace(/\(#XXXX\)/gi, '(<strong>#XXXX</strong>)');
+    safe = safe.replace(/Jujuy 412, Edificio San Antonio 2° piso Of\. B/g, '<strong>Jujuy 412, Edificio San Antonio 2° piso Of. B</strong>');
+    safe = safe.replace(/\n/g, '<br>');
+    return safe;
+  }
+
+  function _formatearItemGarantia(raw) {
+    if (!raw) return '';
+    const text = String(raw).trim();
+    const colonIdx = text.indexOf(':');
+    if (colonIdx > 0 && colonIdx < 55) {
+      const boldPart = text.substring(0, colonIdx);
+      const rest = text.substring(colonIdx + 1);
+      return `<strong>${_escapeGarantiaHtml(boldPart)}:</strong>${_renderContenidoSeguroGarantia(rest)}`;
+    }
+    return _renderContenidoSeguroGarantia(text);
+  }
+
+  window._garantiaConfigCache = null;
+
+  window._obtenerGarantiaConfig = function() {
+    if (window.PixisState?.state?.site?.terminosGarantia) {
+      return { ..._defaultGarantiaConfig, ...window.PixisState.state.site.terminosGarantia };
+    }
+    if (window._garantiaConfigCache) {
+      return window._garantiaConfigCache;
+    }
+    return _defaultGarantiaConfig;
+  };
+
+  window._cargarGarantiaConfigAsync = async function() {
+    try {
+      const res = await fetch('/api/shop/garantia-config');
+      if (res.ok) {
+        const data = await res.json();
+        if (data && data.ok && data.config) {
+          window._garantiaConfigCache = { ..._defaultGarantiaConfig, ...data.config };
+          if (window._filtroMisPedidosActivo === 'garantia') {
+            window.renderMisPedidosFiltrados();
+          }
+        }
+      }
+    } catch (e) {
+      // Fallback silencioso
+    }
+  };
+
   window.cambiarFiltroMisPedidos = function(tab) {
     window._filtroMisPedidosActivo = tab || 'todas';
     const tabs = document.querySelectorAll('.mis-pedidos-tab');
     tabs.forEach(btn => {
       btn.classList.toggle('active', btn.dataset.tab === tab);
     });
+    if (tab === 'garantia') {
+      window._cargarGarantiaConfigAsync();
+    }
     window.renderMisPedidosFiltrados();
   };
 
@@ -7802,50 +7905,61 @@ onPixisDOMReady(() => {
 
     // 1. Si se selecciona la pestaña de Garantía
     if (filtro === 'garantia') {
+      const gCfg = window._obtenerGarantiaConfig();
+      const titGeneral = _escapeGarantiaHtml(gCfg.tituloGeneral || _defaultGarantiaConfig.tituloGeneral);
+      const subGeneral = _escapeGarantiaHtml(gCfg.subtituloGeneral || _defaultGarantiaConfig.subtituloGeneral);
+      const plazosTit = _escapeGarantiaHtml(gCfg.plazosCobertura?.titulo || 'Plazos de Cobertura');
+      const plazosItems = (gCfg.plazosCobertura?.items || _defaultGarantiaConfig.plazosCobertura.items)
+        .map(it => `<li>${_formatearItemGarantia(it)}</li>`).join('');
+      const rmaTit = _escapeGarantiaHtml(gCfg.requisitosRMA?.titulo || 'Requisitos Indispensables para RMA');
+      const rmaItems = (gCfg.requisitosRMA?.items || _defaultGarantiaConfig.requisitosRMA.items)
+        .map(it => `<li>${_formatearItemGarantia(it)}</li>`).join('');
+      const exclTit = _escapeGarantiaHtml(gCfg.exclusiones?.titulo || 'Exclusiones de Garantía');
+      const exclItems = (gCfg.exclusiones?.items || _defaultGarantiaConfig.exclusiones.items)
+        .map(it => `<li>${_formatearItemGarantia(it)}</li>`).join('');
+      const gestTit = _escapeGarantiaHtml(gCfg.gestionReclamo?.titulo || '¿Cómo gestionar un reclamo?');
+      const gestDesc = _renderContenidoSeguroGarantia(gCfg.gestionReclamo?.descripcion || _defaultGarantiaConfig.gestionReclamo.descripcion);
+      const btnUrl = _escapeGarantiaHtml(gCfg.soporteBtn?.url || _defaultGarantiaConfig.soporteBtn.url);
+      const btnTexto = _escapeGarantiaHtml(gCfg.soporteBtn?.texto || _defaultGarantiaConfig.soporteBtn.texto);
+
       container.innerHTML = `
         <div class="garantia-panel-corporate">
           <div class="garantia-header">
             <i class="fas fa-shield-alt"></i>
             <div>
-              <h4>Póliza de Garantía Oficial — Pixis Informática</h4>
-              <span>Compromiso de calidad, respaldo técnico y transparencia</span>
+              <h4>${titGeneral}</h4>
+              <span>${subGeneral}</span>
             </div>
           </div>
           
           <div class="garantia-grid">
             <div class="garantia-card">
-              <div class="garantia-card-title"><i class="fas fa-microchip"></i> Plazos de Cobertura</div>
+              <div class="garantia-card-title"><i class="fas fa-microchip"></i> ${plazosTit}</div>
               <ul>
-                <li><strong>Hardware y Componentes Nuevos:</strong> 6 a 12 meses de garantía oficial según fabricante.</li>
-                <li><strong>Periféricos y Accesorios:</strong> 3 a 6 meses de garantía legal directa.</li>
-                <li><strong>Servicio Técnico y Reparaciones:</strong> 3 meses sobre mano de obra y repuestos sustituidos.</li>
+                ${plazosItems}
               </ul>
             </div>
 
             <div class="garantia-card">
-              <div class="garantia-card-title"><i class="fas fa-clipboard-check"></i> Requisitos Indispensables para RMA</div>
+              <div class="garantia-card-title"><i class="fas fa-clipboard-check"></i> ${rmaTit}</div>
               <ul>
-                <li>Presentar comprobante o número de pedido (<strong>#XXXX</strong>) registrado en tu cuenta.</li>
-                <li>Conservar caja original, manuales, cables y accesorios en buen estado.</li>
-                <li>Etiquetas de número de serie y sellos de garantía de fábrica totalmente legibles e intactos.</li>
+                ${rmaItems}
               </ul>
             </div>
 
             <div class="garantia-card">
-              <div class="garantia-card-title"><i class="fas fa-exclamation-triangle"></i> Exclusiones de Garantía</div>
+              <div class="garantia-card-title"><i class="fas fa-exclamation-triangle"></i> ${exclTit}</div>
               <ul>
-                <li>Daños provocados por descargas eléctricas, picos de tensión o fuentes no certificadas.</li>
-                <li>Impactos físicos, caídas, humedad, óxido o manipulación por terceros no autorizados.</li>
-                <li>Actualizaciones fallidas de BIOS no oficiales o overclocking extremo no garantizado.</li>
+                ${exclItems}
               </ul>
             </div>
 
             <div class="garantia-card">
-              <div class="garantia-card-title"><i class="fas fa-headset"></i> ¿Cómo gestionar un reclamo?</div>
-              <p>Acercate a nuestro laboratorio en <strong>Jujuy 412, Edificio San Antonio 2° piso Of. B</strong> (Santiago del Estero) o comunicate vía WhatsApp con nuestro equipo técnico indicando tu número de pedido para iniciar el diagnóstico sin demora.</p>
+              <div class="garantia-card-title"><i class="fas fa-headset"></i> ${gestTit}</div>
+              <p>${gestDesc}</p>
               <div style="margin-top: 10px;">
-                <a href="https://wa.me/message/EYUUSVNG5HPNF1" target="_blank" class="btn-garantia-soporte">
-                  <i class="fab fa-whatsapp"></i> Contactar a Soporte de Garantía
+                <a href="${btnUrl}" target="_blank" rel="noopener noreferrer" class="btn-garantia-soporte">
+                  <i class="fab fa-whatsapp"></i> ${btnTexto}
                 </a>
               </div>
             </div>
@@ -7922,6 +8036,9 @@ onPixisDOMReady(() => {
       window._ultimosPedidosCargados = orders;
       if (typeof window.marcarNotificacionesComoVistas === 'function') {
         window.marcarNotificacionesComoVistas(orders);
+      }
+      if (typeof window._cargarGarantiaConfigAsync === 'function') {
+        window._cargarGarantiaConfigAsync();
       }
 
       window.renderMisPedidosFiltrados();
